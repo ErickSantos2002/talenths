@@ -1,0 +1,1 @@
+ALTER TABLE public.test_invitations ADD COLUMN description text;
