@@ -1,0 +1,55 @@
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import settings
+from app.database import init_db, close_db
+from app.auth.router import router as auth_router
+from app.routers.companies import router as companies_router
+from app.routers.departments import router as departments_router
+from app.routers.profiles import router as profiles_router
+from app.routers.collaborators import router as collaborators_router
+from app.routers.tests import router as tests_router
+from app.routers.invitations import router as invitations_router
+from app.routers.comparisons import router as comparisons_router
+from app.routers.chat import router as chat_router
+from app.routers.notifications import router as notifications_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+    await close_db()
+
+
+app = FastAPI(
+    title="TalentHS API",
+    description="API do sistema de RH e desenvolvimento pessoal TalentHS",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[settings.FRONTEND_URL, "http://localhost:8080", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth_router)
+app.include_router(companies_router)
+app.include_router(departments_router)
+app.include_router(profiles_router)
+app.include_router(collaborators_router)
+app.include_router(tests_router)
+app.include_router(invitations_router)
+app.include_router(comparisons_router)
+app.include_router(chat_router)
+app.include_router(notifications_router)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "version": "1.0.0"}
