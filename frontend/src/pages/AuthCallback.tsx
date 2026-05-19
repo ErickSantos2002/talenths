@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { setToken } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +13,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { reloadUser } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,8 +30,7 @@ export default function AuthCallback() {
     }
 
     setToken(accessToken);
-    // Full reload so AuthProvider re-initializes and chama loadMe()
-    window.location.href = "/dashboard";
+    reloadUser().then(() => navigate("/dashboard", { replace: true }));
   }, []);
 
   if (errorMsg) {

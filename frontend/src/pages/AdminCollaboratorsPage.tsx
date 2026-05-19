@@ -236,7 +236,7 @@ export default function AdminCollaboratorsPage() {
     const missingFields: string[] = [];
     if (!editName.trim()) missingFields.push("Nome");
     if (editCpf.trim() && editCpf.replace(/\D/g, "").length < 11) missingFields.push("CPF (deve ter 11 dígitos)");
-    if (!editPhone.trim() || editPhone.replace(/\D/g, "").length < 11) missingFields.push("Telefone");
+    if (editPhone.trim() && editPhone.replace(/\D/g, "").length < 11) missingFields.push("Telefone (deve ter 11 dígitos)");
     if (missingFields.length > 0) {
       toast({ title: `Campos obrigatórios: ${missingFields.join(", ")}`, variant: "destructive" });
       return;
@@ -282,7 +282,7 @@ export default function AdminCollaboratorsPage() {
     if (!addName.trim()) missingFields.push("Nome");
     if (!addEmail.trim()) missingFields.push("Email");
     if (addCpf.trim() && addCpf.replace(/\D/g, "").length < 11) missingFields.push("CPF (deve ter 11 dígitos)");
-    if (!addPhone.trim() || addPhone.replace(/\D/g, "").length < 11) missingFields.push("Telefone");
+    if (addPhone.trim() && addPhone.replace(/\D/g, "").length < 11) missingFields.push("Telefone (deve ter 11 dígitos)");
     if (missingFields.length > 0) {
       toast({ title: `Campos obrigatórios: ${missingFields.join(", ")}`, variant: "destructive" });
       return;
@@ -531,7 +531,7 @@ export default function AdminCollaboratorsPage() {
                 <Input value={addCpf} onChange={(e) => setAddCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" />
               </div>
               <div className="space-y-2">
-                <Label>Telefone *</Label>
+                <Label>Telefone</Label>
                 <Input value={addPhone} onChange={(e) => setAddPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" />
               </div>
             </div>
@@ -592,7 +592,7 @@ export default function AdminCollaboratorsPage() {
                 <Input value={editCpf} onChange={(e) => setEditCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" />
               </div>
               <div className="space-y-2">
-                <Label>Telefone *</Label>
+                <Label>Telefone</Label>
                 <Input value={editPhone} onChange={(e) => setEditPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" />
               </div>
             </div>
