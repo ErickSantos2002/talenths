@@ -189,42 +189,33 @@ async def upsert_entries(
     entries = body.get("entries", [])
 
     for e in entries:
-        b90 = float(e["band_90"])
-        b95 = float(e["band_95"])
-        b100 = float(e["band_100"])
-        b105 = float(e["band_105"])
-        b110 = float(e["band_110"])
+        b90, b95, b100, b105, b110 = (
+            float(e["band_90"]), float(e["band_95"]), float(e["band_100"]),
+            float(e["band_105"]), float(e["band_110"]),
+        )
         if not (b90 < b95 < b100 < b105 < b110):
             raise HTTPException(
                 422,
                 f"Bandas inválidas para {e['job_family']} {e['seniority']}: devem ser crescentes (90 < 95 < 100 < 105 < 110)",
             )
 
-    result = []
-    for e in entries:
-        row = await conn.fetchrow(
-            """INSERT INTO public.salary_table_entries
-                   (reference_id, company_id, job_family, seniority, band_90, band_95, band_100, band_105, band_110)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-               ON CONFLICT (reference_id, job_family, seniority) DO UPDATE
-               SET band_90 = EXCLUDED.band_90,
-                   band_95 = EXCLUDED.band_95,
-                   band_100 = EXCLUDED.band_100,
-                   band_105 = EXCLUDED.band_105,
-                   band_110 = EXCLUDED.band_110,
-                   updated_at = now()
-               RETURNING *""",
-            reference_id,
-            company_id,
-            e["job_family"],
-            e["seniority"],
-            float(e["band_90"]),
-            float(e["band_95"]),
-            float(e["band_100"]),
-            float(e["band_105"]),
-            float(e["band_110"]),
+    async with conn.transaction():
+        await conn.execute(
+            "DELETE FROM public.salary_table_entries WHERE reference_id = $1 AND company_id = $2",
+            reference_id, company_id,
         )
-        result.append(_ser_entry(row))
+        result = []
+        for e in entries:
+            row = await conn.fetchrow(
+                """INSERT INTO public.salary_table_entries
+                       (reference_id, company_id, job_family, seniority, band_90, band_95, band_100, band_105, band_110)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *""",
+                reference_id, company_id,
+                e["job_family"], e["seniority"],
+                float(e["band_90"]), float(e["band_95"]), float(e["band_100"]),
+                float(e["band_105"]), float(e["band_110"]),
+            )
+            result.append(_ser_entry(row))
     return result
 
 
@@ -259,27 +250,32 @@ async def update_entry(
 
 @router.get("/positioning")
 async def get_positioning(
+    reference_id: str,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    ref_row = await conn.fetchrow(
+        "SELECT id FROM public.salary_market_references WHERE id = $1 AND company_id = $2",
+        reference_id, company_id,
+    )
+    if not ref_row:
+        raise HTTPException(404, "Referência não encontrada")
     rows = await conn.fetch(
         """SELECT p.user_id, p.name, p.current_salary, p.job_family, p.seniority,
                   d.name AS department,
                   e.band_90, e.band_95, e.band_100, e.band_105, e.band_110
            FROM public.profiles p
            LEFT JOIN public.departments d ON d.id = p.department_id
-           LEFT JOIN public.salary_market_references r
-               ON r.company_id = p.company_id AND r.is_active = true
            LEFT JOIN public.salary_table_entries e
-               ON e.reference_id = r.id
+               ON e.reference_id = $2
                AND e.job_family = p.job_family
                AND e.seniority = p.seniority
                AND e.company_id = p.company_id
            WHERE p.company_id = $1
            ORDER BY p.name""",
-        company_id,
+        company_id, reference_id,
     )
 
     result = []

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { salary as salaryApi } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -43,11 +43,13 @@ function CurrencyInput({
   onChange,
   placeholder = "0,00",
   className,
+  highlight = false,
 }: {
   value: string;
   onChange: (raw: string) => void;
   placeholder?: string;
   className?: string;
+  highlight?: boolean;
 }) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cents = parseCurrencyToCents(e.target.value);
@@ -60,7 +62,7 @@ function CurrencyInput({
     <div className={cn("relative", className)}>
       <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">R$</span>
       <Input
-        className="pl-8 text-right text-sm h-8"
+        className={cn("pl-8 text-right text-sm h-8", highlight && "border-destructive focus-visible:ring-destructive")}
         value={displayValue}
         onChange={handleChange}
         placeholder={placeholder}
@@ -99,7 +101,9 @@ function BandBadge({ band }: { band?: SalaryBand }) {
 
 // ── Positions ─────────────────────────────────────────────────────────────────
 
-const POSITIONS = [
+type GridPosition = { job_family: string; seniority: string };
+
+const DEFAULT_POSITIONS: GridPosition[] = [
   { job_family: "Diretor", seniority: "" },
   { job_family: "Gerente", seniority: "Sênior" },
   { job_family: "Gerente", seniority: "Pleno" },
@@ -112,11 +116,7 @@ const POSITIONS = [
   { job_family: "Analista", seniority: "Júnior" },
 ];
 
-function positionLabel(p: { job_family: string; seniority: string }): string {
-  return p.seniority ? `${p.job_family} ${p.seniority}` : p.job_family;
-}
-
-function positionKey(p: { job_family: string; seniority: string }): string {
+function positionKey(p: GridPosition): string {
   return `${p.job_family}|${p.seniority}`;
 }
 
@@ -211,53 +211,69 @@ const BANDS: { key: BandKey; label: string }[] = [
   { key: "band_110", label: "P110" },
 ];
 
-function SalaryTableTab() {
+function SalaryTableTab({
+  selectedRefId,
+  positions,
+  tableEntries,
+  entriesLoading,
+  grid,
+  setGrid,
+}: {
+  selectedRefId: string;
+  positions: GridPosition[];
+  tableEntries?: SalaryTableEntry[];
+  entriesLoading: boolean;
+  grid: Record<string, GridRow>;
+  setGrid: React.Dispatch<React.SetStateAction<Record<string, GridRow>>>;
+}) {
   const qc = useQueryClient();
   const { toast } = useToast();
 
-  const { data: references = [], isLoading: refsLoading } = useQuery({
-    queryKey: ["salary-references"],
-    queryFn: salaryApi.references,
-  });
+  const setCell = (posKey: string, band: BandKey, value: string) => {
+    setGrid((prev) => ({
+      ...prev,
+      [posKey]: { ...(prev[posKey] ?? emptyRow()), [band]: value },
+    }));
+  };
 
-  const [selectedRefId, setSelectedRefId] = useState<string>("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [grid, setGrid] = useState<Record<string, GridRow>>({});
-  const [gridLoaded, setGridLoaded] = useState<string>("");
-
-  const { isLoading: entriesLoading } = useQuery({
-    queryKey: ["salary-table", selectedRefId],
-    queryFn: () => salaryApi.table(selectedRefId),
-    enabled: !!selectedRefId,
-    onSuccess: (entries: SalaryTableEntry[]) => {
-      const next: Record<string, GridRow> = {};
-      for (const pos of POSITIONS) {
-        const key = positionKey(pos);
-        const found = entries.find((e) => e.job_family === pos.job_family && e.seniority === pos.seniority);
-        next[key] = found ? entryToRow(found) : emptyRow();
+  const incompleteCells = new Set<string>();
+  let filledRowCount = 0;
+  for (const pos of positions) {
+    if (!pos.job_family) continue;
+    const key = positionKey(pos);
+    const row = grid[key] ?? emptyRow();
+    const filled = BANDS.filter((b) => row[b.key] && parseFloat(row[b.key]) > 0);
+    if (filled.length === 0) continue;
+    filledRowCount++;
+    if (filled.length < BANDS.length) {
+      for (const b of BANDS) {
+        if (!row[b.key] || parseFloat(row[b.key]) <= 0) {
+          incompleteCells.add(`${key}|${b.key}`);
+        }
       }
-      setGrid(next);
-      setGridLoaded(selectedRefId);
-    },
-  });
+    }
+  }
+  const canSave = filledRowCount > 0 && incompleteCells.size === 0;
 
   const saveMutation = useMutation({
     mutationFn: () => {
-      const entries = POSITIONS.map((pos) => {
-        const row = grid[positionKey(pos)] ?? emptyRow();
-        return {
-          job_family: pos.job_family,
-          seniority: pos.seniority,
-          band_90: parseFloat(row.band_90 || "0"),
-          band_95: parseFloat(row.band_95 || "0"),
-          band_100: parseFloat(row.band_100 || "0"),
-          band_105: parseFloat(row.band_105 || "0"),
-          band_110: parseFloat(row.band_110 || "0"),
-        };
-      });
+      const entries = positions
+        .filter((pos) => pos.job_family.trim())
+        .map((pos) => {
+          const row = grid[positionKey(pos)] ?? emptyRow();
+          return {
+            job_family: pos.job_family.trim(),
+            seniority: pos.seniority.trim(),
+            band_90: parseFloat(row.band_90 || "0"),
+            band_95: parseFloat(row.band_95 || "0"),
+            band_100: parseFloat(row.band_100 || "0"),
+            band_105: parseFloat(row.band_105 || "0"),
+            band_110: parseFloat(row.band_110 || "0"),
+          };
+        })
+        .filter((e) => e.band_100 > 0);
 
       for (const e of entries) {
-        if (e.band_100 === 0) continue;
         if (!(e.band_90 < e.band_95 && e.band_95 < e.band_100 && e.band_100 < e.band_105 && e.band_105 < e.band_110)) {
           throw new Error(`Bandas inválidas para ${e.job_family} ${e.seniority}: devem ser crescentes (P90 < P95 < Mediana < P105 < P110)`);
         }
@@ -268,74 +284,13 @@ function SalaryTableTab() {
     onSuccess: () => {
       toast({ title: "Tabela salva com sucesso" });
       qc.invalidateQueries({ queryKey: ["salary-table", selectedRefId] });
-      qc.invalidateQueries({ queryKey: ["salary-positioning"] });
+      qc.invalidateQueries({ queryKey: ["salary-positioning"], exact: false });
     },
     onError: (e: Error) => toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" }),
   });
 
-  const deleteRefMutation = useMutation({
-    mutationFn: (id: string) => salaryApi.deleteReference(id),
-    onSuccess: () => {
-      toast({ title: "Referência excluída" });
-      setSelectedRefId("");
-      qc.invalidateQueries({ queryKey: ["salary-references"] });
-    },
-    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
-
-  const setCell = (posKey: string, band: BandKey, value: string) => {
-    setGrid((prev) => ({
-      ...prev,
-      [posKey]: { ...(prev[posKey] ?? emptyRow()), [band]: value },
-    }));
-  };
-
-  const activeRef = references.find((r) => r.id === selectedRefId);
-
-  if (refsLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
-
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Select value={selectedRefId} onValueChange={setSelectedRefId}>
-          <SelectTrigger className="w-72">
-            <SelectValue placeholder="Selecione uma referência de mercado" />
-          </SelectTrigger>
-          <SelectContent>
-            {references.map((r) => (
-              <SelectItem key={r.id} value={r.id}>
-                {r.name} ({r.reference_year})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button variant="outline" size="sm" onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4 mr-1" />
-          Nova referência
-        </Button>
-        {activeRef && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => {
-              if (confirm(`Excluir "${activeRef.name}"? Todos os dados desta tabela serão removidos.`)) {
-                deleteRefMutation.mutate(activeRef.id);
-              }
-            }}
-          >
-            <Trash2 className="w-4 h-4 mr-1" />
-            Excluir referência
-          </Button>
-        )}
-      </div>
-
-      {activeRef && (
-        <p className="text-sm text-muted-foreground">
-          {activeRef.market} · {activeRef.region} · {activeRef.reference_year}
-        </p>
-      )}
-
       {!selectedRefId && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
@@ -345,39 +300,43 @@ function SalaryTableTab() {
         </Card>
       )}
 
-      {selectedRefId && (entriesLoading && gridLoaded !== selectedRefId) && (
+      {selectedRefId && entriesLoading && (
         <p className="text-sm text-muted-foreground">Carregando tabela...</p>
       )}
 
-      {selectedRefId && (!entriesLoading || gridLoaded === selectedRefId) && (
+      {selectedRefId && !entriesLoading && (
         <>
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50 border-b">
-                  <th className="sticky left-0 bg-muted/50 z-10 text-left px-4 py-2 font-medium min-w-44">Cargo</th>
+                  <th className="sticky left-0 bg-muted/50 z-10 text-left px-4 py-2 font-medium min-w-52">Cargo</th>
                   {BANDS.map((b) => (
                     <th key={b.key} className="text-center px-3 py-2 font-medium min-w-36">{b.label}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {POSITIONS.map((pos, i) => {
+                {positions.map((pos, i) => {
                   const key = positionKey(pos);
                   const row = grid[key] ?? emptyRow();
                   return (
-                    <tr key={key} className={cn("border-b last:border-0", i % 2 === 0 ? "" : "bg-muted/20")}>
-                      <td className="sticky left-0 bg-background z-10 px-4 py-2 font-medium border-r">
-                        {positionLabel(pos)}
+                    <tr key={i} className={cn("border-b last:border-0", i % 2 === 0 ? "" : "bg-muted/20")}>
+                      <td className="sticky left-0 bg-background z-10 px-4 py-2 font-medium border-r whitespace-nowrap">
+                        {pos.job_family}{pos.seniority ? ` ${pos.seniority}` : ""}
                       </td>
-                      {BANDS.map((b) => (
-                        <td key={b.key} className="px-2 py-1">
-                          <CurrencyInput
-                            value={row[b.key]}
-                            onChange={(v) => setCell(key, b.key, v)}
-                          />
-                        </td>
-                      ))}
+                      {BANDS.map((b) => {
+                        const isEmpty = incompleteCells.has(`${key}|${b.key}`);
+                        return (
+                          <td key={b.key} className="px-2 py-1">
+                            <CurrencyInput
+                              value={row[b.key]}
+                              onChange={(v) => setCell(key, b.key, v)}
+                              highlight={isEmpty}
+                            />
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })}
@@ -385,36 +344,113 @@ function SalaryTableTab() {
             </table>
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+          <div className="flex items-center justify-end gap-3">
+            {incompleteCells.size > 0 && (
+              <p className="text-xs text-destructive">Linhas parcialmente preenchidas — complete todas as bandas ou deixe a linha vazia.</p>
+            )}
+            <Button onClick={() => saveMutation.mutate()} disabled={!canSave || saveMutation.isPending}>
               {saveMutation.isPending ? "Salvando..." : "Salvar tabela"}
             </Button>
           </div>
         </>
       )}
 
-      <CreateReferenceDialog
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreated={(ref) => {
-          qc.invalidateQueries({ queryKey: ["salary-references"] });
-          setSelectedRefId(ref.id);
-        }}
-      />
+    </div>
+  );
+}
+
+// ── Cargos tab ────────────────────────────────────────────────────────────────
+
+function CargosTab({
+  selectedRefId,
+  positions,
+  setPositions,
+}: {
+  selectedRefId: string;
+  positions: GridPosition[];
+  setPositions: (p: GridPosition[]) => void;
+}) {
+  const { toast } = useToast();
+  const [familyInput, setFamilyInput] = useState("");
+  const [seniorityInput, setSeniorityInput] = useState("");
+
+  if (!selectedRefId) return <p className="text-sm text-muted-foreground">Selecione uma referência acima para gerenciar os cargos.</p>;
+
+  const handleAdd = () => {
+    const family = familyInput.trim();
+    if (!family) return;
+    const duplicate = positions.some(
+      (p) => p.job_family === family && p.seniority === seniorityInput.trim()
+    );
+    if (duplicate) {
+      toast({ title: "Cargo duplicado", description: "Esse cargo já existe na lista.", variant: "destructive" });
+      return;
+    }
+    setPositions([...positions, { job_family: family, seniority: seniorityInput.trim() }]);
+    setFamilyInput("");
+    setSeniorityInput("");
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Cargos da tabela</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {positions.map((pos, index) => (
+            <div key={index} className="flex items-center justify-between py-1 border-b last:border-0">
+              <span className="text-sm font-medium">
+                {`${pos.job_family}${pos.seniority ? ` ${pos.seniority}` : ""}`.trim()}
+              </span>
+              <button
+                onClick={() => setPositions(positions.filter((_, i) => i !== index))}
+                className="text-muted-foreground hover:text-destructive transition-colors px-2 text-base leading-none"
+                title="Remover cargo"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+
+          <div className="flex items-end gap-2 pt-3">
+            <div className="flex-1">
+              <Label className="text-xs mb-1 block">Família</Label>
+              <Input
+                value={familyInput}
+                onChange={(e) => setFamilyInput(e.target.value)}
+                placeholder="ex: Especialista"
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              />
+            </div>
+            <div className="flex-1">
+              <Label className="text-xs mb-1 block">Nível</Label>
+              <Input
+                value={seniorityInput}
+                onChange={(e) => setSeniorityInput(e.target.value)}
+                placeholder="ex: Sênior (opcional)"
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              />
+            </div>
+            <Button onClick={handleAdd} disabled={!familyInput.trim()}>
+              Adicionar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 // ── Edit employee dialog ──────────────────────────────────────────────────────
 
-const JOB_FAMILIES = ["Diretor", "Gerente", "Coordenador", "Analista"];
-const SENIORITIES = ["__none__", "Sênior", "Pleno", "Júnior"];
-
 function EditEmployeeDialog({
   employee,
+  positions,
   onClose,
 }: {
   employee: SalaryPositioning;
+  positions: GridPosition[];
   onClose: () => void;
 }) {
   const qc = useQueryClient();
@@ -422,6 +458,20 @@ function EditEmployeeDialog({
   const [salary, setSalary] = useState(employee.current_salary != null ? String(employee.current_salary) : "");
   const [jobFamily, setJobFamily] = useState(employee.job_family || "__none__");
   const [seniority, setSeniority] = useState(employee.seniority || "__none__");
+
+  // Unique families from the active reference's positions, preserving order
+  const families = Array.from(new Map(positions.map((p) => [p.job_family, p.job_family])).values());
+
+  // Seniorities available for the selected family
+  const senioritiesForFamily = positions
+    .filter((p) => p.job_family === jobFamily)
+    .map((p) => p.seniority);
+  const hasSeniority = senioritiesForFamily.some((s) => s !== "");
+
+  const handleFamilyChange = (v: string) => {
+    setJobFamily(v);
+    setSeniority("__none__");
+  };
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -432,7 +482,7 @@ function EditEmployeeDialog({
       }),
     onSuccess: () => {
       toast({ title: "Dados atualizados" });
-      qc.invalidateQueries({ queryKey: ["salary-positioning"] });
+      qc.invalidateQueries({ queryKey: ["salary-positioning"], exact: false });
       onClose();
     },
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
@@ -451,31 +501,34 @@ function EditEmployeeDialog({
           </div>
           <div>
             <Label>Família de cargo</Label>
-            <Select value={jobFamily} onValueChange={setJobFamily}>
+            <Select value={jobFamily} onValueChange={handleFamilyChange}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__none__">—</SelectItem>
-                {JOB_FAMILIES.map((f) => (
+                {families.map((f) => (
                   <SelectItem key={f} value={f}>{f}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Senioridade</Label>
-            <Select value={seniority} onValueChange={setSeniority}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {SENIORITIES.map((s) => (
-                  <SelectItem key={s} value={s}>{s === "__none__" ? "—" : s}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {hasSeniority && (
+            <div>
+              <Label>Senioridade</Label>
+              <Select value={seniority} onValueChange={setSeniority}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">—</SelectItem>
+                  {senioritiesForFamily.filter((s) => s !== "").map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
@@ -495,34 +548,27 @@ function formatBRL(value?: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function PositioningTab() {
-  const { data: refs = [] } = useQuery({
-    queryKey: ["salary-references"],
-    queryFn: salaryApi.references,
-  });
-
+function PositioningTab({ positions, selectedRefId }: { positions: GridPosition[]; selectedRefId: string }) {
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ["salary-positioning"],
-    queryFn: salaryApi.positioning,
+    queryKey: ["salary-positioning", selectedRefId],
+    queryFn: () => salaryApi.positioning(selectedRefId),
+    enabled: !!selectedRefId,
   });
 
   const [editing, setEditing] = useState<SalaryPositioning | null>(null);
 
-  const hasActiveRef = refs.some((r) => r.is_active);
-
-  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
-
-  if (!hasActiveRef && employees.length === 0) {
+  if (!selectedRefId) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
           <DollarSign className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>Nenhuma referência de mercado encontrada.</p>
-          <p className="text-sm mt-1">Crie uma referência na aba <strong>Tabela Salarial</strong> para começar.</p>
+          <p>Selecione uma referência de mercado acima para ver o posicionamento salarial.</p>
         </CardContent>
       </Card>
     );
   }
+
+  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   return (
     <div className="space-y-4">
@@ -583,7 +629,7 @@ function PositioningTab() {
       </Card>
 
       {editing && (
-        <EditEmployeeDialog employee={editing} onClose={() => setEditing(null)} />
+        <EditEmployeeDialog employee={editing} positions={positions} onClose={() => setEditing(null)} />
       )}
     </div>
   );
@@ -592,6 +638,62 @@ function PositioningTab() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function SalaryTablePage() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const [selectedRefId, setSelectedRefId] = useState<string>("");
+  const [positions, setPositions] = useState<GridPosition[]>(DEFAULT_POSITIONS);
+  const [grid, setGrid] = useState<Record<string, GridRow>>({});
+  const [loadedRefId, setLoadedRefId] = useState<string>("");
+  const [showCreate, setShowCreate] = useState(false);
+
+  const { data: references = [] } = useQuery({
+    queryKey: ["salary-references"],
+    queryFn: salaryApi.references,
+  });
+
+  const { data: tableEntries, isLoading: entriesLoading } = useQuery({
+    queryKey: ["salary-table", selectedRefId],
+    queryFn: () => salaryApi.table(selectedRefId),
+    enabled: !!selectedRefId,
+  });
+
+  // Only initialize positions/grid when the selected reference actually changes
+  useEffect(() => {
+    if (!selectedRefId) {
+      setPositions(DEFAULT_POSITIONS);
+      setGrid({});
+      setLoadedRefId("");
+      return;
+    }
+    if (loadedRefId === selectedRefId) return;
+    if (tableEntries === undefined) return; // still loading
+    setLoadedRefId(selectedRefId);
+    if (tableEntries.length > 0) {
+      setPositions(tableEntries.map((e) => ({ job_family: e.job_family, seniority: e.seniority })));
+      const next: Record<string, GridRow> = {};
+      for (const e of tableEntries) {
+        next[positionKey(e)] = entryToRow(e);
+      }
+      setGrid(next);
+    } else {
+      setPositions(DEFAULT_POSITIONS);
+      setGrid({});
+    }
+  }, [tableEntries, selectedRefId, loadedRefId]);
+
+  const deleteRefMutation = useMutation({
+    mutationFn: (id: string) => salaryApi.deleteReference(id),
+    onSuccess: () => {
+      toast({ title: "Referência excluída" });
+      setSelectedRefId("");
+      setLoadedRefId("");
+      qc.invalidateQueries({ queryKey: ["salary-references"] });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const activeRef = references.find((r) => r.id === selectedRefId);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -603,16 +705,72 @@ export default function SalaryTablePage() {
           </div>
         </div>
 
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={selectedRefId} onValueChange={(v) => { setLoadedRefId(""); setSelectedRefId(v); }}>
+            <SelectTrigger className="w-72">
+              <SelectValue placeholder="Selecione uma referência de mercado" />
+            </SelectTrigger>
+            <SelectContent>
+              {references.map((r) => (
+                <SelectItem key={r.id} value={r.id}>{r.name} ({r.reference_year})</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="w-4 h-4 mr-1" />Nova referência
+          </Button>
+          {activeRef && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={() => {
+                if (confirm(`Excluir "${activeRef.name}"? Todos os dados serão removidos.`)) deleteRefMutation.mutate(activeRef.id);
+              }}
+            >
+              <Trash2 className="w-4 h-4 mr-1" />Excluir referência
+            </Button>
+          )}
+        </div>
+
+        {activeRef && <p className="text-sm text-muted-foreground">{activeRef.market} · {activeRef.region} · {activeRef.reference_year}</p>}
+        {!selectedRefId && <p className="text-sm text-muted-foreground">Selecione ou crie uma referência para editar a tabela e os cargos.</p>}
+
+        <CreateReferenceDialog
+          open={showCreate}
+          onClose={() => setShowCreate(false)}
+          onCreated={(ref) => {
+            qc.invalidateQueries({ queryKey: ["salary-references"] });
+            setLoadedRefId("");
+            setSelectedRefId(ref.id);
+          }}
+        />
+
         <Tabs defaultValue="tabela">
           <TabsList>
             <TabsTrigger value="tabela">Tabela Salarial</TabsTrigger>
             <TabsTrigger value="posicionamento">Posicionamento</TabsTrigger>
+            <TabsTrigger value="cargos">Cargos</TabsTrigger>
           </TabsList>
           <TabsContent value="tabela" className="mt-4">
-            <SalaryTableTab />
+            <SalaryTableTab
+              selectedRefId={selectedRefId}
+              positions={positions}
+              tableEntries={tableEntries}
+              entriesLoading={entriesLoading}
+              grid={grid}
+              setGrid={setGrid}
+            />
           </TabsContent>
           <TabsContent value="posicionamento" className="mt-4">
-            <PositioningTab />
+            <PositioningTab positions={positions} selectedRefId={selectedRefId} />
+          </TabsContent>
+          <TabsContent value="cargos" className="mt-4">
+            <CargosTab
+              selectedRefId={selectedRefId}
+              positions={positions}
+              setPositions={setPositions}
+            />
           </TabsContent>
         </Tabs>
       </div>

@@ -479,7 +479,7 @@ export const salary = {
   table: (referenceId: string) => get<SalaryTableEntry[]>(`/salary/table?reference_id=${referenceId}`),
   upsertTable: (data: object) => post<SalaryTableEntry[]>("/salary/table", data),
   updateEntry: (id: string, data: object) => put<SalaryTableEntry>(`/salary/table/${id}`, data),
-  positioning: () => get<SalaryPositioning[]>("/salary/positioning"),
+  positioning: (referenceId: string) => get<SalaryPositioning[]>(`/salary/positioning?reference_id=${referenceId}`),
   updateEmployee: (profileId: string, data: object) => patch<{ ok: boolean }>(`/salary/employee/${profileId}`, data),
 };
 
