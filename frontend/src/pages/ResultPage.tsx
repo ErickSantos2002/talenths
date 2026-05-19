@@ -177,7 +177,7 @@ function getBigFivePracticalText(bf: { O: number; C: number; E: number; A: numbe
 export default function ResultPage() {
   const isMobile = useIsMobile();
   const { user, hasRole } = useAuth();
-  const isAdmin = hasRole("master_admin") || hasRole("company_admin");
+  const isAdmin = hasRole("master_admin") || hasRole("manager");
   const [searchParams] = useSearchParams();
   const shareToken = searchParams.get("token");
   const paramUserId = searchParams.get("userId");

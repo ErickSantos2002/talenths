@@ -62,12 +62,12 @@ export default function TeamAnalysisPage() {
       const deptList = (deptsData as any[]);
       setDepts(deptList.map((d: any) => ({ id: d.id, name: d.name })));
 
-      // Derive leader/admin sets from profile role field
+      // Gerentes são tratados como "líderes" na análise de equipe
       const leaderIds = new Set<string>();
       const adminIds = new Set<string>();
       for (const p of profileList) {
-        if (p.role === "leader") leaderIds.add(p.user_id);
-        if (p.role === "company_admin") adminIds.add(p.user_id);
+        if (p.role === "manager") leaderIds.add(p.user_id);
+        if (p.role === "master_admin") adminIds.add(p.user_id);
       }
       setLeaderUserIds(leaderIds);
       setAdminUserIds(adminIds);

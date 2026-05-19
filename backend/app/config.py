@@ -11,5 +11,10 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     FRONTEND_URL: str = "http://localhost:8080"
 
+    MS_CLIENT_ID: str = ""
+    MS_TENANT_ID: str = ""
+    MS_CLIENT_SECRET: str = ""
+    MS_REDIRECT_URI: str = "http://localhost:8000/auth/microsoft/callback"
+
 
 settings = Settings()

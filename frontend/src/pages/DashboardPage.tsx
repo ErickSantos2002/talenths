@@ -158,16 +158,13 @@ export default function DashboardPage() {
   const [completionRate, setCompletionRate] = useState("0%");
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 
-  const isManager = hasRole("master_admin") || hasRole("company_admin") || hasRole("leader");
+  const isManager = hasRole("master_admin") || hasRole("manager");
 
   useEffect(() => {
     if (!profile || !isManager) return;
     const fetchStats = async () => {
       setLoading(true);
       const isMaster = hasRole("master_admin");
-      const isLeader = hasRole("leader");
-      const isCompanyAdmin = hasRole("company_admin");
-
       const companyFilter = isMaster ? selectedCompanyId : profile.company_id;
 
       try {
@@ -178,11 +175,6 @@ export default function DashboardPage() {
         ]);
 
         let filteredProfiles = profilesData as any[];
-        if (isLeader && !isMaster && !isCompanyAdmin && profile.department_id) {
-          filteredProfiles = filteredProfiles.filter(
-            (p: any) => p.department_id === profile.department_id
-          );
-        }
 
         const collaboratorCount = filteredProfiles.length;
         const deptCount = (deptsData as any[]).length;

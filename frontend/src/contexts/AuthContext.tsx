@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { auth as authApi, companies as companiesApi, getToken, setToken, clearToken } from "@/lib/api";
+import { auth as authApi, getToken, setToken, clearToken } from "@/lib/api";
 
-type AppRole = "master_admin" | "company_admin" | "leader" | "user";
+type AppRole = "master_admin" | "manager" | "user";
 
 interface User {
   id: string;
@@ -40,27 +40,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(() =>
-    localStorage.getItem("selectedCompanyId")
-  );
-
-  const handleSetSelectedCompanyId = (id: string | null) => {
-    setSelectedCompanyId(id);
-    if (id === null) localStorage.removeItem("selectedCompanyId");
-    else localStorage.setItem("selectedCompanyId", id);
-  };
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
   const loadMe = async () => {
     try {
       const me = await authApi.me();
       setUser({ id: me.id, email: me.email });
-      if (me.profile) setProfile(me.profile as unknown as Profile);
+      if (me.profile) {
+        const p = me.profile as unknown as Profile;
+        setProfile(p);
+        if (p.company_id) setSelectedCompanyId(p.company_id);
+      }
       setRoles(me.roles.map((r) => r.role as AppRole));
     } catch {
       clearToken();
       setUser(null);
       setProfile(null);
       setRoles([]);
+      setSelectedCompanyId(null);
     }
   };
 
@@ -71,14 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }, []);
-
-  // Auto-seleciona primeira empresa para master_admin
-  useEffect(() => {
-    if (selectedCompanyId || !profile || !roles.includes("master_admin")) return;
-    companiesApi.list().then((list) => {
-      if (list.length > 0) handleSetSelectedCompanyId(list[0].id as string);
-    }).catch(() => {});
-  }, [profile, roles, selectedCompanyId]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -110,14 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setRoles([]);
-    localStorage.removeItem("selectedCompanyId");
+    setSelectedCompanyId(null);
   };
 
   const hasRole = (role: AppRole) => roles.includes(role);
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, roles, loading, selectedCompanyId, setSelectedCompanyId: handleSetSelectedCompanyId, signIn, signUp, signOut, hasRole }}
+      value={{ user, profile, roles, loading, selectedCompanyId, setSelectedCompanyId, signIn, signUp, signOut, hasRole }}
     >
       {children}
     </AuthContext.Provider>

@@ -2,23 +2,45 @@
 
 ## Visão do Projeto
 
-**TalentHS** é um sistema de RH focado no desenvolvimento pessoal de colaboradores dentro de suas empresas. Partiu de um remix do sistema DN.IA (disponibilizado pela dn.ia) e está sendo transformado em produto próprio.
+**TalentHS** é um sistema de RH focado no desenvolvimento pessoal de colaboradores da HealthSafety Tech. Partiu de um remix do sistema DN.IA e está sendo transformado em produto próprio — **single-tenant**, feito exclusivamente para uso interno da empresa.
 
-O objetivo central é: cada colaborador consegue ver seu próprio desenvolvimento pessoal na empresa — via avaliações comportamentais, histórico de resultados, comparações de perfil e orientações de liderança.
+O objetivo central é: cada colaborador consegue ver seu próprio desenvolvimento pessoal na empresa — via avaliações comportamentais, histórico de resultados, comparações de perfil e orientações de RH.
+
+---
+
+## Filosofia de Desenvolvimento
+
+**Qualidade acima de velocidade.** Não há pressa. Cada decisão deve ser tomada da forma correta, mesmo que leve mais tempo. Isso inclui:
+
+- Fazer migrações de banco de dados adequadas em vez de gambiarras de frontend
+- Renomear conceitos no código quando o domínio muda, não só nos labels da UI
+- Não acumular dívida técnica por conveniência momentânea
 
 ---
 
 ## Stack Técnica
 
+**Frontend**
 - **React 18** + **TypeScript** + **Vite** (SWC)
 - **React Router DOM 6** — roteamento client-side
 - **Tailwind CSS** + **shadcn/ui** (Radix UI) — sistema de design
 - **TanStack React Query 5** — estado de servidor e cache
 - **React Hook Form** + **Zod** — formulários e validação
-- **Supabase** — banco PostgreSQL, auth, Edge Functions (Deno), RLS
 - **Recharts** — gráficos e visualizações
 - **next-themes** — dark mode
 - **Bun** — package manager preferido (`bun install`, `bun dev`)
+
+**Backend**
+- **FastAPI** + **Python 3.13** — API REST
+- **asyncpg** — driver PostgreSQL assíncrono
+- **PyJWT** + **bcrypt** — autenticação JWT
+- **Anthropic SDK** — integração com Claude AI
+- **uvicorn** — servidor ASGI (desenvolvimento)
+
+**Banco de Dados**
+- **PostgreSQL** hospedado na VPS (Easypanel, `62.72.11.28:9632`)
+- RLS (Row Level Security) para isolamento por empresa
+- Migrações em `backend/migrations/` — sempre criar nova, nunca editar existentes
 
 ---
 
@@ -78,25 +100,25 @@ talenths/                        # raiz do repositório git
 
 Gerenciado pelo `AuthContext` (`src/contexts/AuthContext.tsx`).
 
-| Papel           | Acesso                                          |
-|-----------------|------------------------------------------------|
-| `master_admin`  | Plataforma inteira, todas as empresas          |
-| `company_admin` | Empresa específica, colaboradores, relatórios  |
-| `leader`        | Equipe sob sua liderança                       |
-| `user`          | Próprio perfil, histórico, resultados          |
+| Papel (banco)   | Nome exibido     | Acesso                                                        |
+|-----------------|------------------|---------------------------------------------------------------|
+| `master_admin`  | Administrador    | Acesso total — logs, configurações internas, tudo             |
+| `manager`       | Gerente (RH)     | Cadastro, gestão de colaboradores, relatórios, análise        |
+| `user`          | Colaborador      | Próprio perfil, histórico de resultados, chat IA              |
 
-- Auth via Supabase (email/password + JWT)
+- Auth via JWT (FastAPI backend)
 - RLS no banco garante isolamento por empresa
 - Trigger automático cria perfil + papel `user` no signup
+- Sistema single-tenant — uma única empresa (`company_id` fixo por usuário)
 
 ---
 
-## Banco de Dados (Supabase)
+## Banco de Dados
 
 Tabelas principais:
 - `profiles` — perfis de usuário (1:1 com auth.users)
-- `companies` + `departments` — multi-tenancy
-- `user_roles` — papéis por usuário/empresa
+- `companies` + `departments` — estrutura da empresa
+- `user_roles` — papéis por usuário (`master_admin`, `manager`, `user`)
 - `scenario_blocks` — questões do teste psicométrico
 - `test_responses` + `test_results` — respostas e resultados calculados
 - `profile_comparisons` — compatibilidade entre perfis
@@ -104,40 +126,47 @@ Tabelas principais:
 - `hr_conversations` + `hr_messages` — histórico do chat IA
 - `notifications` — sistema de notificações
 
-Migrações ficam em `supabase/migrations/` — sempre criar nova migration, nunca editar as existentes.
+Migrações ficam em `backend/migrations/` — sempre criar nova, nunca editar as existentes.
 
 ---
 
-## Edge Functions (Deno)
+## Endpoints Backend (FastAPI)
 
-| Função               | Responsabilidade                                  |
-|----------------------|---------------------------------------------------|
-| `calculate-results`  | Cálculo DISC + OCEAN a partir das respostas       |
-| `compare-profiles`   | Score de compatibilidade entre usuários           |
-| `create-collaborator`| Criação de novo colaborador na empresa            |
-| `generate-pdf`       | Exportação de resultados em PDF                   |
-| `hr-chat`            | Chat IA contextualizado com perfil do usuário     |
-| `leader-guide`       | Recomendações IA para líderes                     |
-| `register-invite`    | Processamento de tokens de convite                |
-| `reprocess-results`  | Reprocessamento em batch                          |
+| Rota                        | Responsabilidade                              |
+|-----------------------------|-----------------------------------------------|
+| `POST /auth/login`          | Login com email/senha, retorna JWT            |
+| `POST /auth/register`       | Cadastro direto                               |
+| `POST /auth/register-invite`| Cadastro via token de convite                 |
+| `GET  /auth/me`             | Dados do usuário autenticado                  |
+| `GET  /tests/scenarios`     | Cenários do teste psicométrico                |
+| `POST /tests/responses`     | Salva respostas do teste                      |
+| `POST /tests/calculate`     | Calcula DISC + OCEAN + IEM                    |
+| `GET  /tests/results`       | Histórico de resultados do usuário            |
+| `POST /chat/message`        | Chat IA contextualizado com perfil            |
 
 ---
 
 ## Rotas Principais
 
 ```
-/                         HomePage
+/                         → redireciona para /login
 /login                    Login
 /dashboard                Dashboard do colaborador
 /teste                    Introdução ao teste
 /teste/cenarios           Teste psicométrico (cenários)
 /resultado                Resultado do usuário
+/resultado/compartilhado  Resultado público compartilhado
 /meu-perfil               Perfil pessoal
 /meu-historico            Histórico de testes
-/lider/equipe             Visão de equipe (líder)
-/admin/colaboradores      Gestão de colaboradores
-/admin/analise-equipe     Análise de equipe
-/admin/empresas           Gestão de empresas (master_admin)
+/meu-perfil/compatibilidade  Compatibilidade de perfil
+/convite/:token           Cadastro via convite
+/admin/empresa            Dashboard da empresa  (manager, master_admin)
+/admin/colaboradores      Gestão de colaboradores (manager, master_admin)
+/admin/testes             Gestão de testes       (manager, master_admin)
+/admin/analise-equipe     Análise de equipe      (manager, master_admin)
+/comparar-perfis          Comparação de perfis   (manager, master_admin)
+/lider/equipe             Visão de equipe        (manager, master_admin)
+/lider/guia/:userId       Guia de liderança IA   (manager, master_admin)
 ```
 
 ---
@@ -170,13 +199,22 @@ Labels e descrições de perfil ficam em `src/data/`.
 
 ## Variáveis de Ambiente
 
+**Frontend** (`frontend/.env`):
 ```env
-VITE_SUPABASE_URL
-VITE_SUPABASE_PUBLISHABLE_KEY
-VITE_SUPABASE_PROJECT_ID
+VITE_API_URL=http://localhost:8000
 ```
 
-Nunca commitar o `.env`. Usar `.env.example` para documentar.
+**Backend** (`backend/.env`):
+```env
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_HOURS=24
+ANTHROPIC_API_KEY=...
+FRONTEND_URL=http://localhost:8080
+```
+
+Nunca commitar `.env`. Usar `.env.example` para documentar.
 
 ---
 

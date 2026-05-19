@@ -17,12 +17,11 @@ import { useToast } from "@/hooks/use-toast";
 
 const meshGradientStyle: React.CSSProperties = {
   background: `
-    radial-gradient(ellipse at 15% 0%, rgba(222, 26, 17, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 5%, rgba(61, 97, 255, 0.35) 0%, transparent 45%),
-    radial-gradient(ellipse at 75% 85%, rgba(222, 26, 17, 0.3) 0%, transparent 45%),
-    radial-gradient(ellipse at 5% 95%, rgba(61, 97, 255, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(222, 26, 17, 0.1) 0%, transparent 70%),
-    #0A0A0A
+    radial-gradient(ellipse at 15% 0%, rgba(16, 185, 129, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 5%, rgba(5, 150, 105, 0.2) 0%, transparent 45%),
+    radial-gradient(ellipse at 75% 85%, rgba(16, 185, 129, 0.15) 0%, transparent 45%),
+    radial-gradient(ellipse at 5% 95%, rgba(5, 150, 105, 0.2) 0%, transparent 50%),
+    #0f172a
   `,
   overflow: "hidden",
   position: "relative",
@@ -98,12 +97,12 @@ export default function LoginPage() {
           >
             {/* Logo Section — inside card */}
             <div className="mb-8 flex flex-col items-center text-center">
-              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-[hsl(231,100%,62%)]/10">
-                <Brain className="h-10 w-10 text-[hsl(231,100%,62%)]" />
+              <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-emerald-500/10">
+                <Brain className="h-10 w-10 text-emerald-500" />
               </div>
               <Link to="/">
                 <img
-                  src="/logo.svg"
+                  src="/logo.png"
                   alt="Logo"
                   className="h-10 w-auto"
                 />
@@ -131,7 +130,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-10 rounded-[1rem] border-[#333333] bg-[#0A0A0A] px-3 py-2 text-base text-[#FAFAFA] placeholder:text-[#A3A3A3] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3D61FF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                    className="h-10 rounded-[1rem] border-[#334155] bg-[#0A0A0A] px-3 py-2 text-base text-[#FAFAFA] placeholder:text-[#A3A3A3] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                   />
                 </div>
 
@@ -151,7 +150,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="h-10 rounded-[1rem] border-[#333333] bg-[#0A0A0A] px-3 py-2 pr-10 text-base text-[#FAFAFA] placeholder:text-[#A3A3A3] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3D61FF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                      className="h-10 rounded-[1rem] border-[#334155] bg-[#0A0A0A] px-3 py-2 pr-10 text-base text-[#FAFAFA] placeholder:text-[#A3A3A3] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                     />
                     <button
                       type="button"
@@ -173,7 +172,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={openForgotModal}
-                  className="text-sm font-medium text-[#FAFAFA] transition-colors hover:text-[#3D61FF] hover:underline"
+                  className="text-sm font-medium text-[#FAFAFA] transition-colors hover:text-[#10b981] hover:underline"
                 >
                   Esqueci minha senha
                 </button>
@@ -183,7 +182,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="h-10 w-full rounded-[1rem] bg-[#3D61FF] text-sm font-medium text-white transition-colors hover:bg-[#3D61FF]/90 disabled:pointer-events-none disabled:opacity-50"
+                className="h-10 w-full rounded-[1rem] bg-[#10b981] text-sm font-medium text-white transition-colors hover:bg-[#10b981]/90 disabled:pointer-events-none disabled:opacity-50"
               >
                 {isLoading ? (
                   <>
@@ -194,6 +193,27 @@ export default function LoginPage() {
                   "Entrar"
                 )}
               </Button>
+
+              {/* Divider */}
+              <div className="relative flex items-center gap-3">
+                <div className="h-px flex-1 bg-white/10" />
+                <span className="text-xs text-[#A3A3A3]">ou</span>
+                <div className="h-px flex-1 bg-white/10" />
+              </div>
+
+              {/* Microsoft SSO */}
+              <a
+                href={`${import.meta.env.VITE_API_URL ?? "http://localhost:8000"}/auth/microsoft`}
+                className="flex h-10 w-full items-center justify-center gap-3 rounded-[1rem] border border-white/10 bg-white/5 text-sm font-medium text-[#FAFAFA] transition-colors hover:bg-white/10"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" className="h-4 w-4" aria-hidden="true">
+                  <rect x="1" y="1" width="9" height="9" fill="#F25022" />
+                  <rect x="11" y="1" width="9" height="9" fill="#7FBA00" />
+                  <rect x="1" y="11" width="9" height="9" fill="#00A4EF" />
+                  <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                </svg>
+                Entrar com Microsoft
+              </a>
             </form>
           </div>
         </div>
@@ -201,7 +221,7 @@ export default function LoginPage() {
         {/* Forgot Password Modal */}
         <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
           <DialogContent
-            className="max-w-[28rem] border-[#333333] p-6 text-[#FAFAFA]"
+            className="max-w-[28rem] border-[#334155] p-6 text-[#FAFAFA]"
             style={{
               background: "hsl(0 0% 7%)",
               borderRadius: "8px",
@@ -210,8 +230,8 @@ export default function LoginPage() {
           >
             {forgotSent ? (
               <div className="space-y-4 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#3D61FF]/10">
-                  <Mail className="h-8 w-8 text-[#3D61FF]" />
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#10b981]/10">
+                  <Mail className="h-8 w-8 text-[#10b981]" />
                 </div>
                 <DialogHeader className="items-center">
                   <DialogTitle className="text-lg font-semibold text-[#FAFAFA]">
@@ -227,7 +247,7 @@ export default function LoginPage() {
                   <Button
                     variant="outline"
                     onClick={() => setForgotOpen(false)}
-                    className="rounded-[1rem] border-[#333333] text-[#FAFAFA] hover:bg-[#FAFAFA]/10"
+                    className="rounded-[1rem] border-[#334155] text-[#FAFAFA] hover:bg-[#FAFAFA]/10"
                   >
                     Fechar
                   </Button>
@@ -257,7 +277,7 @@ export default function LoginPage() {
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     required
-                    className="h-10 rounded-[1rem] border-[#333333] bg-[#0A0A0A] px-3 py-2 text-base text-[#FAFAFA] placeholder:text-[#A3A3A3] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3D61FF] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                    className="h-10 rounded-[1rem] border-[#334155] bg-[#0A0A0A] px-3 py-2 text-base text-[#FAFAFA] placeholder:text-[#A3A3A3] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                   />
                 </div>
                 <DialogFooter className="mt-6">
@@ -265,14 +285,14 @@ export default function LoginPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setForgotOpen(false)}
-                    className="rounded-[1rem] border-[#333333] text-[#FAFAFA] hover:bg-[#FAFAFA]/10"
+                    className="rounded-[1rem] border-[#334155] text-[#FAFAFA] hover:bg-[#FAFAFA]/10"
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
                     disabled={forgotLoading}
-                    className="rounded-[1rem] bg-[#3D61FF] text-white hover:bg-[#3D61FF]/90"
+                    className="rounded-[1rem] bg-[#10b981] text-white hover:bg-[#10b981]/90"
                   >
                     {forgotLoading ? (
                       <>

@@ -33,8 +33,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/logo-dark.svg" alt="talentIA Logo" className="h-9 w-auto dark:hidden" />
-          <img src="/logo.svg" alt="talentIA Logo" className="hidden h-9 w-auto dark:block" />
+          <img src="/logo.png" alt="TalentHS Logo" className="h-9 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

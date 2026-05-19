@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from typing import AsyncGenerator
 import asyncpg
 
@@ -139,3 +140,46 @@ async def update_password(
 async def logout():
     # JWT é stateless — o cliente descarta o token
     return {"message": "Logout realizado"}
+
+
+@router.get("/microsoft")
+async def microsoft_login():
+    from app.auth.microsoft import microsoft_auth_service
+    from app.config import settings
+    if not settings.MS_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Login Microsoft não configurado")
+    return RedirectResponse(url=microsoft_auth_service.get_authorization_url(), status_code=302)
+
+
+@router.get("/microsoft/callback")
+async def microsoft_callback(code: str = None, error: str = None):
+    from app.auth.microsoft import microsoft_auth_service
+    from app.config import settings
+
+    frontend_url = settings.FRONTEND_URL
+
+    if error or not code:
+        return RedirectResponse(url=f"{frontend_url}/auth/callback?error=microsoft_auth_failed", status_code=302)
+
+    try:
+        token_result = microsoft_auth_service.exchange_code_for_token(code)
+        profile = microsoft_auth_service.get_user_profile(token_result["access_token"])
+    except Exception as e:
+        print(f"[SSO Microsoft] {e}")
+        return RedirectResponse(url=f"{frontend_url}/auth/callback?error=microsoft_auth_failed", status_code=302)
+
+    email = profile.get("email", "")
+    if not email:
+        return RedirectResponse(url=f"{frontend_url}/auth/callback?error=microsoft_auth_failed", status_code=302)
+
+    async with get_pool().acquire() as conn:
+        user = await service.get_user_by_email(conn, email)
+
+    if not user:
+        return RedirectResponse(url=f"{frontend_url}/auth/callback?error=user_not_found", status_code=302)
+
+    access_token = service.create_access_token(str(user["id"]))
+    return RedirectResponse(
+        url=f"{frontend_url}/auth/callback?access_token={access_token}",
+        status_code=302,
+    )

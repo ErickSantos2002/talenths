@@ -16,8 +16,7 @@ export function ResultHeader({ userName, companyName, dominantProfile, completed
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { hasRole } = useAuth();
-  const isAdmin = hasRole("master_admin") || hasRole("company_admin");
-  const isLeader = hasRole("leader");
+  const isAdmin = hasRole("master_admin") || hasRole("manager");
   const fromLeaderTeam = searchParams.get("from") === "lider-equipe";
 
   const formattedDate = new Date(completedAt).toLocaleDateString("pt-BR", {

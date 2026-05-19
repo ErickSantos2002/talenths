@@ -139,9 +139,9 @@ export default function CompareProfiles() {
     setUser2Id("");
   }, [comparisonType, user1Id, searchParams]);
 
-  // Filter leaders (master_admin, company_admin, leader) for leader_member mode
+  // Gerentes e admins para o modo gerente-colaborador
   const leaderOptions = allCollaborators.filter((c) =>
-    ["master_admin", "company_admin", "leader"].includes(c.role)
+    ["master_admin", "manager"].includes(c.role)
   );
 
   // Filter regular collaborators (users without leadership roles) for member field
