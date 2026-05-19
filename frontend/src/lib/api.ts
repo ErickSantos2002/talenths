@@ -257,6 +257,22 @@ export const pdi = {
   deleteAction: (actionId: string) => del(`/pdi/actions/${actionId}`),
 };
 
+// ── Workshops ─────────────────────────────────────────────────────────────────
+
+import type { Workshop, WorkshopRegistration } from "@/types/workshops";
+
+export const workshops = {
+  list: () => get<Workshop[]>("/workshops"),
+  create: (data: object) => post<Workshop>("/workshops", data),
+  update: (id: string, data: object) => put<Workshop>(`/workshops/${id}`, data),
+  delete: (id: string) => del(`/workshops/${id}`),
+  register: (id: string) => post<{ ok: boolean }>(`/workshops/${id}/register`),
+  unregister: (id: string) => del(`/workshops/${id}/register`),
+  registrations: (id: string) => get<WorkshopRegistration[]>(`/workshops/${id}/registrations`),
+  markAttendance: (id: string, attendance: { user_id: string; attended: boolean }[]) =>
+    put<{ ok: boolean; updated: number }>(`/workshops/${id}/attendance`, { attendance }),
+};
+
 // ── Learning ──────────────────────────────────────────────────────────────────
 
 import type { CourseCatalogItem, EmployeeCourse } from "@/types/learning";

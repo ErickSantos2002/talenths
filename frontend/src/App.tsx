@@ -35,6 +35,8 @@ import PdiTeamPage from "./pages/PdiTeamPage";
 import MyPdiPage from "./pages/MyPdiPage";
 import LearningAdminPage from "./pages/LearningAdminPage";
 import MyLearningPage from "./pages/MyLearningPage";
+import WorkshopsAdminPage from "./pages/WorkshopsAdminPage";
+import MyWorkshopsPage from "./pages/MyWorkshopsPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
@@ -247,6 +249,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MyLearningPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/workshops"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <WorkshopsAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/workshops"
+              element={
+                <ProtectedRoute>
+                  <MyWorkshopsPage />
                 </ProtectedRoute>
               }
             />

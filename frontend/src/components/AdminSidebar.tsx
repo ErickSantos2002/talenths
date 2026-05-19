@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap } from "lucide-react";
+import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -38,6 +38,7 @@ const adminCompanyItems = [
   { title: "Trilha de Carreira", url: "/admin/trilhas", icon: GitBranch },
   { title: "PDI da Equipe", url: "/admin/pdi", icon: BookOpen },
   { title: "Universidade", url: "/admin/universidade", icon: GraduationCap },
+  { title: "Workshops", url: "/admin/workshops", icon: CalendarDays },
   { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
   { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
 ];
@@ -48,6 +49,7 @@ const commonItems = [
   { title: "Minha Trilha", url: "/minha-trilha", icon: GitBranch },
   { title: "Meu PDI", url: "/meu-pdi", icon: BookOpen },
   { title: "Minha Universidade", url: "/minha-universidade", icon: GraduationCap },
+  { title: "Workshops", url: "/workshops", icon: CalendarDays },
   { title: "Meu Perfil", url: "/meu-perfil", icon: UserPen },
   { title: "Meu Histórico", url: "/meu-historico", icon: ClipboardList },
   { title: "Compatibilidade", url: "/meu-perfil/compatibilidade", icon: GitCompareArrows },
