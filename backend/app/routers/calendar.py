@@ -144,16 +144,33 @@ async def get_feed(
         company_id,
     )
 
-    absences = await conn.fetch(
-        """SELECT ar.id, ar.start_date, ar.end_date, ar.days,
-                  p.name AS user_name, at.name AS type_name, at.color
-           FROM absence_requests ar
-           JOIN profiles p ON p.user_id = ar.user_id
-           JOIN absence_types at ON at.id = ar.type_id
-           WHERE ar.company_id = $1 AND ar.status = 'approved'
-           ORDER BY ar.start_date""",
-        company_id,
+    is_manager = await conn.fetchrow(
+        "SELECT id FROM public.user_roles WHERE user_id = $1 AND role IN ('manager', 'master_admin')",
+        user_id,
     )
+
+    if is_manager:
+        absences = await conn.fetch(
+            """SELECT ar.id, ar.start_date, ar.end_date, ar.days,
+                      p.name AS user_name, at.name AS type_name, at.color
+               FROM absence_requests ar
+               JOIN profiles p ON p.user_id = ar.user_id
+               JOIN absence_types at ON at.id = ar.type_id
+               WHERE ar.company_id = $1 AND ar.status = 'approved'
+               ORDER BY ar.start_date""",
+            company_id,
+        )
+    else:
+        absences = await conn.fetch(
+            """SELECT ar.id, ar.start_date, ar.end_date, ar.days,
+                      p.name AS user_name, at.name AS type_name, at.color
+               FROM absence_requests ar
+               JOIN profiles p ON p.user_id = ar.user_id
+               JOIN absence_types at ON at.id = ar.type_id
+               WHERE ar.user_id = $1 AND ar.status = 'approved'
+               ORDER BY ar.start_date""",
+            user_id,
+        )
 
     birthdays = await conn.fetch(
         """SELECT p.name, p.birth_date

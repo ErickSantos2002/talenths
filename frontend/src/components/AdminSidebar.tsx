@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck,
   Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
-  Gift, FileDown, Shield, ChevronRight,
+  Gift, FileDown, Shield, ChevronRight, DollarSign,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,6 +82,7 @@ const adminSections: NavSection[] = [
     items: [
       { title: "Ausências", url: "/admin/ausencias", icon: CalendarOff },
       { title: "Benefícios", url: "/admin/beneficios", icon: Gift },
+      { title: "Tabela Salarial", url: "/admin/tabela-salarial", icon: DollarSign },
     ],
   },
   {

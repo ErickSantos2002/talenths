@@ -27,6 +27,7 @@ from app.routers.onboarding import router as onboarding_router
 from app.routers.surveys import router as surveys_router
 from app.routers.absences import router as absences_router
 from app.routers.benefits import router as benefits_router
+from app.routers.salary import router as salary_router
 from app.routers.reports import router as reports_router
 from app.routers.calendar import router as calendar_router
 from app.routers.logs import router as logs_router
@@ -83,6 +84,7 @@ app.include_router(onboarding_router)
 app.include_router(surveys_router)
 app.include_router(absences_router)
 app.include_router(benefits_router)
+app.include_router(salary_router)
 app.include_router(reports_router)
 app.include_router(calendar_router)
 app.include_router(logs_router)

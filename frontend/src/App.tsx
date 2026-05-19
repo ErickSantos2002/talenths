@@ -46,6 +46,7 @@ import MySurveysPage from "./pages/MySurveysPage";
 import AbsencesAdminPage from "./pages/AbsencesAdminPage";
 import MyAbsencesPage from "./pages/MyAbsencesPage";
 import BenefitsAdminPage from "./pages/BenefitsAdminPage";
+import SalaryTablePage from "./pages/SalaryTablePage";
 import MeusBeneficiosPage from "./pages/MeusBeneficiosPage";
 import ReportsAdminPage from "./pages/ReportsAdminPage";
 import CalendarPage from "./pages/CalendarPage";
@@ -350,6 +351,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <BenefitsAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/tabela-salarial"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <SalaryTablePage />
                 </ProtectedRoute>
               }
             />

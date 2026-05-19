@@ -467,6 +467,22 @@ export const benefits = {
   deleteAssignment: (id: string) => del(`/benefits/assignment/${id}`),
 };
 
+// ── Salary ────────────────────────────────────────────────────────────────────
+
+import type { SalaryReference, SalaryTableEntry, SalaryPositioning } from "@/types/salary";
+
+export const salary = {
+  references: () => get<SalaryReference[]>("/salary/references"),
+  createReference: (data: object) => post<SalaryReference>("/salary/references", data),
+  updateReference: (id: string, data: object) => put<SalaryReference>(`/salary/references/${id}`, data),
+  deleteReference: (id: string) => del(`/salary/references/${id}`),
+  table: (referenceId: string) => get<SalaryTableEntry[]>(`/salary/table?reference_id=${referenceId}`),
+  upsertTable: (data: object) => post<SalaryTableEntry[]>("/salary/table", data),
+  updateEntry: (id: string, data: object) => put<SalaryTableEntry>(`/salary/table/${id}`, data),
+  positioning: () => get<SalaryPositioning[]>("/salary/positioning"),
+  updateEmployee: (profileId: string, data: object) => patch<{ ok: boolean }>(`/salary/employee/${profileId}`, data),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {

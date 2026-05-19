@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { absences as absencesApi } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { AbsenceType, AbsenceRequest } from "@/types/absences";
-import { CalendarOff, CheckCircle2, XCircle, Clock, Settings, Calendar } from "lucide-react";
+import { CalendarOff, CheckCircle2, XCircle, Clock, Settings, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -221,72 +221,144 @@ function RequestCard({
 
 // ── Calendar Tab ──────────────────────────────────────────────────────────────
 
+const CAL_MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+const CAL_DOW = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
 function CalendarTab() {
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+
   const { data: approved = [], isLoading } = useQuery({
     queryKey: ["absences-calendar"],
     queryFn: absencesApi.calendar,
   });
 
+  const dayMap = useMemo(() => {
+    const map: Record<string, AbsenceRequest[]> = {};
+    for (const r of approved) {
+      const start = new Date(r.start_date + "T12:00:00");
+      const end = new Date(r.end_date + "T12:00:00");
+      const cur = new Date(start);
+      while (cur <= end) {
+        const key = cur.toISOString().slice(0, 10);
+        if (!map[key]) map[key] = [];
+        map[key].push(r);
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    return map;
+  }, [approved]);
+
+  const cells = useMemo(() => {
+    const firstDow = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const result: (number | null)[] = [
+      ...Array(firstDow).fill(null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ];
+    while (result.length % 7 !== 0) result.push(null);
+    return result;
+  }, [year, month]);
+
+  const prevMonth = () => {
+    if (month === 0) { setMonth(11); setYear((y) => y - 1); }
+    else setMonth((m) => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 11) { setMonth(0); setYear((y) => y + 1); }
+    else setMonth((m) => m + 1);
+  };
+  const goToday = () => { setYear(today.getFullYear()); setMonth(today.getMonth()); };
+
+  const legendTypes = useMemo(
+    () => Array.from(new Map(approved.map((r) => [r.type_id, r])).values()),
+    [approved]
+  );
+
   if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  if (approved.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed p-16 text-center">
-        <Calendar className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-        <p className="text-muted-foreground">Nenhuma ausência aprovada no momento.</p>
-      </div>
-    );
-  }
-
-  const now = new Date();
-
-  const active = approved.filter(
-    (r) => new Date(r.end_date + "T23:59:59") >= now
-  );
-  const past = approved.filter(
-    (r) => new Date(r.end_date + "T23:59:59") < now
-  );
-
   return (
-    <div className="space-y-6">
-      {active.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Próximas e em andamento
-          </h2>
-          {active.map((r) => (
-            <CalendarEntry key={r.id} request={r} />
-          ))}
-        </section>
-      )}
-      {past.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Passadas
-          </h2>
-          {past.map((r) => (
-            <CalendarEntry key={r.id} request={r} />
-          ))}
-        </section>
-      )}
-    </div>
-  );
-}
-
-function CalendarEntry({ request }: { request: AbsenceRequest }) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border p-3">
-      <div
-        className="h-3 w-3 rounded-full shrink-0"
-        style={{ backgroundColor: request.type_color ?? "#6b7280" }}
-      />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{request.user_name}</p>
-        <p className="text-xs text-muted-foreground">
-          {request.type_name} · {new Date(request.start_date + "T12:00:00").toLocaleDateString("pt-BR")} –{" "}
-          {new Date(request.end_date + "T12:00:00").toLocaleDateString("pt-BR")} ({request.days} dias)
-        </p>
+    <div className="space-y-4">
+      {/* Month navigation */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">{CAL_MONTHS[month]} {year}</h2>
+        <div className="flex gap-1">
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={prevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={goToday}>Hoje</Button>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={nextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
+      {/* Calendar grid — mesmo padrão do CalendarPage */}
+      <div>
+        <div className="grid grid-cols-7 mb-1">
+          {CAL_DOW.map((d) => (
+            <div key={d} className="py-2 text-center text-xs font-semibold text-muted-foreground">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} className="bg-muted/20 min-h-[80px]" />;
+
+            const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const dayAbsences = dayMap[key] ?? [];
+            const isToday =
+              today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "bg-background min-h-[80px] p-1.5",
+                  isToday && "bg-primary/5",
+                )}
+              >
+                <div className={cn(
+                  "text-xs font-medium mb-1 h-5 w-5 flex items-center justify-center rounded-full",
+                  isToday ? "bg-primary text-primary-foreground" : "text-foreground",
+                )}>
+                  {day}
+                </div>
+                <div className="space-y-0.5">
+                  {dayAbsences.slice(0, 3).map((r, idx) => (
+                    <div
+                      key={idx}
+                      title={`${r.user_name} — ${r.type_name}`}
+                      className="text-[10px] leading-tight rounded px-1 py-0.5 text-white truncate"
+                      style={{ backgroundColor: r.type_color ?? "#6b7280" }}
+                    >
+                      {r.user_name?.split(" ")[0]} — {r.type_name}
+                    </div>
+                  ))}
+                  {dayAbsences.length > 3 && (
+                    <div className="text-[10px] text-muted-foreground px-1">+{dayAbsences.length - 3} mais</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legend */}
+      {legendTypes.length > 0 && (
+        <div className="flex flex-wrap gap-4 pt-1">
+          {legendTypes.map((r) => (
+            <div key={r.type_id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: r.type_color ?? "#6b7280" }} />
+              {r.type_name}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
