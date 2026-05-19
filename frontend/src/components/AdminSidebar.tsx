@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target } from "lucide-react";
+import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -36,6 +36,7 @@ const adminCompanyItems = [
   { title: "Avaliação", url: "/admin/avaliacao", icon: ClipboardList },
   { title: "Mapa 9Box", url: "/admin/9box", icon: Grid3X3 },
   { title: "Trilha de Carreira", url: "/admin/trilhas", icon: GitBranch },
+  { title: "PDI da Equipe", url: "/admin/pdi", icon: BookOpen },
   { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
   { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
 ];
@@ -44,6 +45,7 @@ const commonItems = [
   { title: "Nossa Cultura", url: "/cultura", icon: HeartHandshake },
   { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
   { title: "Minha Trilha", url: "/minha-trilha", icon: GitBranch },
+  { title: "Meu PDI", url: "/meu-pdi", icon: BookOpen },
   { title: "Meu Perfil", url: "/meu-perfil", icon: UserPen },
   { title: "Meu Histórico", url: "/meu-historico", icon: ClipboardList },
   { title: "Compatibilidade", url: "/meu-perfil/compatibilidade", icon: GitCompareArrows },

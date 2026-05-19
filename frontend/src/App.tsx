@@ -31,6 +31,8 @@ import NineBoxPage from "./pages/NineBoxPage";
 import MyEvaluationPage from "./pages/MyEvaluationPage";
 import CareerTracksPage from "./pages/CareerTracksPage";
 import MyCareerPage from "./pages/MyCareerPage";
+import PdiTeamPage from "./pages/PdiTeamPage";
+import MyPdiPage from "./pages/MyPdiPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
@@ -211,6 +213,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MyCareerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/pdi"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <PdiTeamPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meu-pdi"
+              element={
+                <ProtectedRoute>
+                  <MyPdiPage />
                 </ProtectedRoute>
               }
             />

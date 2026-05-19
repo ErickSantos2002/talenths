@@ -18,6 +18,7 @@ from app.routers.culture import router as culture_router
 from app.routers.goals import router as goals_router
 from app.routers.evaluations import router as evaluations_router
 from app.routers.career import router as career_router
+from app.routers.pdi import router as pdi_router
 
 
 @asynccontextmanager
@@ -56,6 +57,7 @@ app.include_router(culture_router)
 app.include_router(goals_router)
 app.include_router(evaluations_router)
 app.include_router(career_router)
+app.include_router(pdi_router)
 
 
 @app.get("/health")

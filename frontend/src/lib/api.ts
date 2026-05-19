@@ -242,6 +242,21 @@ export const career = {
   setEmployeeCareer: (userId: string, data: object) => put<{ ok: boolean }>(`/career/employee/${userId}`, data),
 };
 
+// ── PDI ───────────────────────────────────────────────────────────────────────
+
+import type { PdiPlan, PdiAction } from "@/types/pdi";
+
+export const pdi = {
+  my: () => get<PdiPlan[]>("/pdi/my"),
+  team: () => get<PdiPlan[]>("/pdi/team"),
+  createPlan: (data: object) => post<PdiPlan>("/pdi/plans", data),
+  updatePlan: (id: string, data: object) => put<PdiPlan>(`/pdi/plans/${id}`, data),
+  deletePlan: (id: string) => del(`/pdi/plans/${id}`),
+  addAction: (planId: string, data: object) => post<PdiAction>(`/pdi/plans/${planId}/actions`, data),
+  updateAction: (actionId: string, data: object) => put<PdiAction>(`/pdi/actions/${actionId}`, data),
+  deleteAction: (actionId: string) => del(`/pdi/actions/${actionId}`),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {
