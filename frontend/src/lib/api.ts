@@ -372,6 +372,47 @@ export const absences = {
   delete: (id: string) => del(`/absences/${id}`),
 };
 
+// ── Calendar ──────────────────────────────────────────────────────────────────
+
+import type { CalendarEvent, FeedEntry } from "@/types/calendar";
+
+export const calendar = {
+  events: () => get<CalendarEvent[]>("/calendar/events"),
+  createEvent: (data: object) => post<CalendarEvent>("/calendar/events", data),
+  updateEvent: (id: string, data: object) => put<CalendarEvent>(`/calendar/events/${id}`, data),
+  deleteEvent: (id: string) => del(`/calendar/events/${id}`),
+  feed: () => get<FeedEntry[]>("/calendar/feed"),
+};
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+
+async function downloadReport(path: string, filename: string): Promise<void> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail ?? "Erro ao gerar relatório");
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export const reports = {
+  collaborators: () => downloadReport("/reports/collaborators", "colaboradores.csv"),
+  testResults: () => downloadReport("/reports/test-results", "resultados-testes.csv"),
+  absences: () => downloadReport("/reports/absences", "ausencias.csv"),
+  benefits: () => downloadReport("/reports/benefits", "beneficios.csv"),
+  pdi: () => downloadReport("/reports/pdi", "pdi.csv"),
+  learning: () => downloadReport("/reports/learning", "treinamentos.csv"),
+};
+
 // ── Benefits ──────────────────────────────────────────────────────────────────
 
 import type { BenefitCatalogItem, EmployeeBenefit, BenefitSummaryItem } from "@/types/benefits";
