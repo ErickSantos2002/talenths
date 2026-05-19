@@ -47,9 +47,15 @@ app = FastAPI(
 )
 
 app.add_middleware(AuditMiddleware)
+_frontend_origin = settings.FRONTEND_URL.rstrip("/")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:8080", "http://localhost:5173"],
+    allow_origins=[
+        _frontend_origin,
+        "https://talenths.healthsafetytech.com",
+        "http://localhost:8080",
+        "http://localhost:5173",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
