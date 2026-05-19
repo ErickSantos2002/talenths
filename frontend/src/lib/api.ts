@@ -372,6 +372,40 @@ export const absences = {
   delete: (id: string) => del(`/absences/${id}`),
 };
 
+// ── Logs ──────────────────────────────────────────────────────────────────────
+
+export interface AuditLog {
+  id: number;
+  user_id?: string;
+  user_name?: string;
+  method: string;
+  path: string;
+  action?: string;
+  status_code?: number;
+  ip_address?: string;
+  created_at: string;
+}
+
+export interface LogsPage {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  items: AuditLog[];
+}
+
+export const logs = {
+  list: (params: { page?: number; limit?: number; q?: string; method?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params.page) qs.set("page", String(params.page));
+    if (params.limit) qs.set("limit", String(params.limit));
+    if (params.q) qs.set("q", params.q);
+    if (params.method) qs.set("method", params.method);
+    if (params.status) qs.set("status", params.status);
+    return get<LogsPage>(`/logs?${qs}`);
+  },
+};
+
 // ── Calendar ──────────────────────────────────────────────────────────────────
 
 import type { CalendarEvent, FeedEntry } from "@/types/calendar";

@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.middleware.audit import AuditMiddleware
 
 from app.config import settings
 from app.database import init_db, close_db
@@ -28,6 +29,7 @@ from app.routers.absences import router as absences_router
 from app.routers.benefits import router as benefits_router
 from app.routers.reports import router as reports_router
 from app.routers.calendar import router as calendar_router
+from app.routers.logs import router as logs_router
 
 
 @asynccontextmanager
@@ -44,6 +46,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(AuditMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL, "http://localhost:8080", "http://localhost:5173"],
@@ -76,6 +79,7 @@ app.include_router(absences_router)
 app.include_router(benefits_router)
 app.include_router(reports_router)
 app.include_router(calendar_router)
+app.include_router(logs_router)
 
 
 @app.get("/health")

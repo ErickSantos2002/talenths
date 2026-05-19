@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff, Gift, FileDown } from "lucide-react";
+import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff, Gift, FileDown, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -45,6 +45,7 @@ const adminCompanyItems = [
   { title: "Ausências", url: "/admin/ausencias", icon: CalendarOff },
   { title: "Benefícios", url: "/admin/beneficios", icon: Gift },
   { title: "Relatórios", url: "/admin/relatorios", icon: FileDown },
+  { title: "Logs", url: "/admin/logs", icon: Shield },
   { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
   { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
 ];

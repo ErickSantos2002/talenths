@@ -49,6 +49,7 @@ import BenefitsAdminPage from "./pages/BenefitsAdminPage";
 import MeusBeneficiosPage from "./pages/MeusBeneficiosPage";
 import ReportsAdminPage from "./pages/ReportsAdminPage";
 import CalendarPage from "./pages/CalendarPage";
+import LogsAdminPage from "./pages/LogsAdminPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
@@ -373,6 +374,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CalendarPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/logs"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <LogsAdminPage />
                 </ProtectedRoute>
               }
             />
