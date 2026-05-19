@@ -372,6 +372,24 @@ export const absences = {
   delete: (id: string) => del(`/absences/${id}`),
 };
 
+// ── Benefits ──────────────────────────────────────────────────────────────────
+
+import type { BenefitCatalogItem, EmployeeBenefit, BenefitSummaryItem } from "@/types/benefits";
+
+export const benefits = {
+  catalog: () => get<BenefitCatalogItem[]>("/benefits/catalog"),
+  createCatalogItem: (data: object) => post<BenefitCatalogItem>("/benefits/catalog", data),
+  updateCatalogItem: (id: string, data: object) => put<BenefitCatalogItem>(`/benefits/catalog/${id}`, data),
+  deleteCatalogItem: (id: string) => del(`/benefits/catalog/${id}`),
+  summary: () => get<BenefitSummaryItem[]>("/benefits/summary"),
+  team: () => get<EmployeeBenefit[]>("/benefits/team"),
+  employee: (userId: string) => get<EmployeeBenefit[]>(`/benefits/employee/${userId}`),
+  my: () => get<EmployeeBenefit[]>("/benefits/my"),
+  assign: (data: object) => post<EmployeeBenefit>("/benefits/assign", data),
+  updateAssignment: (id: string, data: object) => put<EmployeeBenefit>(`/benefits/assignment/${id}`, data),
+  deleteAssignment: (id: string) => del(`/benefits/assignment/${id}`),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {

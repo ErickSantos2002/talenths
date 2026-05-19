@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff } from "lucide-react";
+import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff, Gift } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -43,6 +43,7 @@ const adminCompanyItems = [
   { title: "Onboarding", url: "/admin/onboarding", icon: ListChecks },
   { title: "Pesquisas", url: "/admin/pesquisas", icon: BarChart2 },
   { title: "Ausências", url: "/admin/ausencias", icon: CalendarOff },
+  { title: "Benefícios", url: "/admin/beneficios", icon: Gift },
   { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
   { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
 ];
@@ -52,6 +53,7 @@ const commonItems = [
   { title: "Meu Onboarding", url: "/meu-onboarding", icon: ListChecks },
   { title: "Pesquisas", url: "/pesquisas", icon: BarChart2 },
   { title: "Minhas Ausências", url: "/minhas-ausencias", icon: CalendarOff },
+  { title: "Meus Benefícios", url: "/meus-beneficios", icon: Gift },
   { title: "Nossa Cultura", url: "/cultura", icon: HeartHandshake },
   { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
   { title: "Minha Trilha", url: "/minha-trilha", icon: GitBranch },

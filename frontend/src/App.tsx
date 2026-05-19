@@ -45,6 +45,8 @@ import SurveysAdminPage from "./pages/SurveysAdminPage";
 import MySurveysPage from "./pages/MySurveysPage";
 import AbsencesAdminPage from "./pages/AbsencesAdminPage";
 import MyAbsencesPage from "./pages/MyAbsencesPage";
+import BenefitsAdminPage from "./pages/BenefitsAdminPage";
+import MeusBeneficiosPage from "./pages/MeusBeneficiosPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
@@ -337,6 +339,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MyAbsencesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/beneficios"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <BenefitsAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-beneficios"
+              element={
+                <ProtectedRoute>
+                  <MeusBeneficiosPage />
                 </ProtectedRoute>
               }
             />
