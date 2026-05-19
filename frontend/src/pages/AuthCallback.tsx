@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { setToken } from "@/lib/api";
-import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const TOKEN_KEY = "talenths_token";
+const USER_KEY = "talenths_user";
 
 const ERROR_MESSAGES: Record<string, string> = {
   microsoft_auth_failed: "Falha na autenticação com Microsoft. Tente novamente.",
@@ -13,24 +15,42 @@ const ERROR_MESSAGES: Record<string, string> = {
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { reloadUser } = useAuth();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    const error = searchParams.get("error");
-    if (error) {
-      setErrorMsg(ERROR_MESSAGES[error] ?? "Erro na autenticação. Tente novamente.");
-      return;
-    }
+    const handleCallback = async () => {
+      const error = searchParams.get("error");
+      if (error) {
+        setErrorMsg(ERROR_MESSAGES[error] ?? "Erro na autenticação. Tente novamente.");
+        return;
+      }
 
-    const accessToken = searchParams.get("access_token");
-    if (!accessToken) {
-      setErrorMsg("Token inválido. Tente fazer login novamente.");
-      return;
-    }
+      const accessToken = searchParams.get("access_token");
+      if (!accessToken) {
+        setErrorMsg("Token inválido. Tente fazer login novamente.");
+        return;
+      }
 
-    setToken(accessToken);
-    reloadUser().then(() => navigate("/dashboard", { replace: true }));
+      try {
+        const res = await fetch(`${BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const me = await res.json();
+        localStorage.setItem(TOKEN_KEY, accessToken);
+        localStorage.setItem(USER_KEY, JSON.stringify(me));
+        window.location.href = "/dashboard";
+      } catch (e: any) {
+        setErrorMsg(`Não foi possível autenticar (${e?.message ?? "erro desconhecido"}). Tente novamente.`);
+      }
+    };
+
+    handleCallback();
   }, []);
 
   if (errorMsg) {

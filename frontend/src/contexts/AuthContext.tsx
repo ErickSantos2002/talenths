@@ -1,6 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { auth as authApi, getToken, setToken, clearToken } from "@/lib/api";
 
+const USER_KEY = "talenths_user";
+function getCachedUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY) ?? "null"); } catch { return null; }
+}
+function setCachedUser(me: unknown) {
+  try { localStorage.setItem(USER_KEY, JSON.stringify(me)); } catch {}
+}
+function clearCachedUser() {
+  localStorage.removeItem(USER_KEY);
+}
+
 type AppRole = "master_admin" | "manager" | "user";
 
 interface User {
@@ -31,7 +42,6 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
-  reloadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,18 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
 
+  const applyMe = (me: any) => {
+    setCachedUser(me);
+    setUser({ id: me.id, email: me.email });
+    if (me.profile) {
+      const p = me.profile as unknown as Profile;
+      setProfile(p);
+      if (p.company_id) setSelectedCompanyId(p.company_id);
+    }
+    setRoles((me.roles ?? []).map((r: any) => r.role as AppRole));
+  };
+
   const loadMe = async () => {
     try {
       const me = await authApi.me();
-      setUser({ id: me.id, email: me.email });
-      if (me.profile) {
-        const p = me.profile as unknown as Profile;
-        setProfile(p);
-        if (p.company_id) setSelectedCompanyId(p.company_id);
-      }
-      setRoles(me.roles.map((r) => r.role as AppRole));
+      applyMe(me);
     } catch {
       clearToken();
+      clearCachedUser();
       setUser(null);
       setProfile(null);
       setRoles([]);
@@ -63,7 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (getToken()) {
+    const token = getToken();
+    const cached = getCachedUser();
+    if (token && cached) {
+      applyMe(cached);
+      setLoading(false);
+      // refresh in background without clearing session on failure
+      authApi.me().then(applyMe).catch(() => {});
+    } else if (token) {
       loadMe().finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -97,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await authApi.logout().catch(() => {});
     clearToken();
+    clearCachedUser();
     setUser(null);
     setProfile(null);
     setRoles([]);
@@ -107,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, roles, loading, selectedCompanyId, setSelectedCompanyId, signIn, signUp, signOut, hasRole, reloadUser: loadMe }}
+      value={{ user, profile, roles, loading, selectedCompanyId, setSelectedCompanyId, signIn, signUp, signOut, hasRole }}
     >
       {children}
     </AuthContext.Provider>
