@@ -30,6 +30,47 @@ import type { BenefitCatalogItem, BenefitCategory, BenefitValueType, EmployeeBen
 import { Gift, Users, BookOpen, LayoutDashboard, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// ── Currency input ────────────────────────────────────────────────────────────
+
+function parseCurrency(display: string): string {
+  return display.replace(/\D/g, "");
+}
+
+function formatCurrency(cents: string): string {
+  const n = parseInt(cents || "0", 10);
+  return (n / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function CurrencyInput({
+  value,
+  onChange,
+  placeholder = "0,00",
+}: {
+  value: string;
+  onChange: (raw: string) => void;
+  placeholder?: string;
+}) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cents = parseCurrency(e.target.value);
+    onChange(cents ? String(parseInt(cents, 10) / 100) : "");
+  };
+
+  const displayValue = value ? formatCurrency(String(Math.round(parseFloat(value) * 100))) : "";
+
+  return (
+    <div className="relative">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">R$</span>
+      <Input
+        className="pl-9"
+        value={displayValue}
+        onChange={handleChange}
+        placeholder={placeholder}
+        inputMode="numeric"
+      />
+    </div>
+  );
+}
+
 // ── Category helpers ──────────────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<BenefitCategory, string> = {
@@ -131,37 +172,125 @@ function OverviewTab() {
   );
 }
 
+// ── Vale-Transporte calculator ────────────────────────────────────────────────
+
+function countWorkingDays(year: number, month: number): number {
+  const days = new Date(year, month + 1, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= days; d++) {
+    const dow = new Date(year, month, d).getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function VTCalculator({
+  initialPrice,
+  initialPerDay,
+  onVTChange,
+}: {
+  initialPrice?: number;
+  initialPerDay?: number;
+  onVTChange: (vt: { ticket_price: number; tickets_per_day: number } | null) => void;
+}) {
+  const next = new Date();
+  next.setMonth(next.getMonth() + 1);
+  const workingDays = countWorkingDays(next.getFullYear(), next.getMonth());
+
+  const [ticketPrice, setTicketPrice] = useState(initialPrice != null ? String(initialPrice) : "");
+  const [ticketsPerDay, setTicketsPerDay] = useState(initialPerDay != null ? String(initialPerDay) : "2");
+
+  const price = parseFloat(ticketPrice) || 0;
+  const perDay = parseInt(ticketsPerDay) || 0;
+  const total = price * perDay * workingDays;
+
+  const notify = (p: number, n: number) => {
+    onVTChange(p > 0 && n > 0 ? { ticket_price: p, tickets_per_day: n } : null);
+  };
+
+  const handleTicketChange = (val: string) => {
+    setTicketPrice(val);
+    notify(parseFloat(val) || 0, perDay);
+  };
+
+  const handlePerDayChange = (val: string) => {
+    const n = val.replace(/\D/g, "");
+    setTicketsPerDay(n);
+    notify(price, parseInt(n) || 0);
+  };
+
+  return (
+    <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label className="text-xs">Preço da passagem</Label>
+          <CurrencyInput value={ticketPrice} onChange={handleTicketChange} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Passagens por dia</Label>
+          <Input
+            value={ticketsPerDay}
+            onChange={(e) => handlePerDayChange(e.target.value)}
+            inputMode="numeric"
+            className="text-center"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-sm pt-1 border-t">
+        <span className="text-muted-foreground">{workingDays} dias úteis em {MONTH_NAMES[next.getMonth()]} × {ticketsPerDay} passagens</span>
+        <span className="font-semibold">
+          {total > 0
+            ? total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+            : "—"}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">Sempre exibe o valor do próximo mês — recalculado automaticamente.</p>
+    </div>
+  );
+}
+
 // ── Assign Dialog ─────────────────────────────────────────────────────────────
 
 function AssignDialog({
   targetUserId,
   targetUserName,
   catalog,
+  existingBenefitIds,
   onClose,
 }: {
   targetUserId: string;
   targetUserName: string;
   catalog: BenefitCatalogItem[];
+  existingBenefitIds: string[];
   onClose: () => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [benefitId, setBenefitId] = useState("");
   const [valueOverride, setValueOverride] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [notes, setNotes] = useState("");
+  const [vtData, setVtData] = useState<{ ticket_price: number; tickets_per_day: number } | null>(null);
 
+  const availableCatalog = catalog.filter((c) => c.active && !existingBenefitIds.includes(c.id));
   const selectedBenefit = catalog.find((c) => c.id === benefitId);
-  const showValue = selectedBenefit && selectedBenefit.value_type !== "info";
+  const isVT = selectedBenefit?.name.toLowerCase().includes("transporte");
+  const showValue = selectedBenefit && selectedBenefit.value_type !== "info" && !isVT;
+
+  const canSubmit = benefitId && (isVT ? vtData !== null : true);
 
   const mutation = useMutation({
     mutationFn: () =>
       benefitsApi.assign({
         user_id: targetUserId,
         benefit_id: benefitId,
-        start_date: startDate,
-        value_override: valueOverride ? parseFloat(valueOverride) : undefined,
-        notes: notes || undefined,
+        ...(isVT && vtData
+          ? { ticket_price: vtData.ticket_price, tickets_per_day: vtData.tickets_per_day }
+          : { value_override: valueOverride ? parseFloat(valueOverride) : undefined }),
       }),
     onSuccess: () => {
       toast({ title: "Benefício atribuído!" });
@@ -182,17 +311,24 @@ function AssignDialog({
         <div className="space-y-4 py-2">
           <div className="space-y-1">
             <Label>Benefício</Label>
-            <Select value={benefitId} onValueChange={setBenefitId}>
+            <Select value={benefitId} onValueChange={(v) => { setBenefitId(v); setValueOverride(""); setVtData(null); }}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
+                <SelectValue placeholder={availableCatalog.length === 0 ? "Todos os benefícios já atribuídos" : "Selecione..."} />
               </SelectTrigger>
               <SelectContent>
-                {catalog.filter((c) => c.active).map((c) => (
+                {availableCatalog.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {availableCatalog.length === 0 && (
+              <p className="text-xs text-muted-foreground">Este colaborador já possui todos os benefícios do catálogo.</p>
+            )}
           </div>
+
+          {isVT && (
+            <VTCalculator onVTChange={setVtData} />
+          )}
 
           {showValue && (
             <div className="space-y-1">
@@ -202,37 +338,92 @@ function AssignDialog({
                   (opcional — sobrescreve o valor do catálogo)
                 </span>
               </Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={valueOverride}
-                onChange={(e) => setValueOverride(e.target.value)}
-                placeholder={selectedBenefit?.value?.toString() ?? ""}
-              />
+              <CurrencyInput value={valueOverride} onChange={setValueOverride} />
             </div>
           )}
-
-          <div className="space-y-1">
-            <Label>Data de início</Label>
-            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </div>
-
-          <div className="space-y-1">
-            <Label>Observações (opcional)</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notas sobre a atribuição..."
-              rows={2}
-              className="resize-none"
-            />
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => mutation.mutate()} disabled={!benefitId || mutation.isPending}>
+          <Button onClick={() => mutation.mutate()} disabled={!canSubmit || mutation.isPending || availableCatalog.length === 0}>
             {mutation.isPending ? "Salvando..." : "Atribuir"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Edit Assignment Dialog ─────────────────────────────────────────────────────
+
+function EditAssignmentDialog({
+  benefit,
+  onClose,
+}: {
+  benefit: EmployeeBenefit;
+  onClose: () => void;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const isVT = benefit.benefit_name?.toLowerCase().includes("transporte");
+
+  const [valueOverride, setValueOverride] = useState(
+    benefit.value_override != null ? String(benefit.value_override) : ""
+  );
+  const [vtData, setVtData] = useState<{ ticket_price: number; tickets_per_day: number } | null>(
+    benefit.ticket_price && benefit.tickets_per_day
+      ? { ticket_price: benefit.ticket_price, tickets_per_day: benefit.tickets_per_day }
+      : null
+  );
+
+  const canSubmit = isVT ? vtData !== null : true;
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      benefitsApi.updateAssignment(benefit.id, {
+        ...(isVT && vtData
+          ? { ticket_price: vtData.ticket_price, tickets_per_day: vtData.tickets_per_day }
+          : { value_override: valueOverride ? parseFloat(valueOverride) : undefined }),
+      }),
+    onSuccess: () => {
+      toast({ title: "Benefício atualizado!" });
+      queryClient.invalidateQueries({ queryKey: ["benefits-team"] });
+      onClose();
+    },
+    onError: (e: Error) =>
+      toast({ title: "Erro ao atualizar", description: e.message, variant: "destructive" }),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar — {benefit.benefit_name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {isVT ? (
+            <VTCalculator
+              initialPrice={benefit.ticket_price ?? undefined}
+              initialPerDay={benefit.tickets_per_day ?? undefined}
+              onVTChange={setVtData}
+            />
+          ) : benefit.value_type !== "info" ? (
+            <div className="space-y-1">
+              <Label>
+                Valor{" "}
+                <span className="text-muted-foreground text-xs">
+                  (opcional — sobrescreve o valor do catálogo)
+                </span>
+              </Label>
+              <CurrencyInput value={valueOverride} onChange={setValueOverride} />
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Este benefício é informativo e não possui valor configurável.</p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => mutation.mutate()} disabled={!canSubmit || mutation.isPending}>
+            {mutation.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -246,11 +437,17 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [assigning, setAssigning] = useState<{ userId: string; name: string } | null>(null);
+  const [assigning, setAssigning] = useState<{ userId: string; name: string; existingIds: string[] } | null>(null);
+  const [editing, setEditing] = useState<EmployeeBenefit | null>(null);
 
-  const { data: team = [], isLoading } = useQuery({
+  const { data: team = [], isLoading: loadingTeam } = useQuery({
     queryKey: ["benefits-team"],
     queryFn: benefitsApi.team,
+  });
+
+  const { data: allCollabs = [], isLoading: loadingCollabs } = useQuery({
+    queryKey: ["collaborators"],
+    queryFn: () => collaboratorsApi.list(),
   });
 
   const deleteMutation = useMutation({
@@ -264,17 +461,27 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
       toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  // group assignments by user
-  const byUser = team.reduce<Record<string, { name: string; department?: string; benefits: EmployeeBenefit[] }>>((acc, b) => {
-    if (!acc[b.user_id]) acc[b.user_id] = { name: b.user_name ?? b.user_id, department: b.department ?? undefined, benefits: [] };
-    acc[b.user_id].benefits.push(b);
+  // index benefits by user_id
+  const benefitsByUser = team.reduce<Record<string, EmployeeBenefit[]>>((acc, b) => {
+    if (!acc[b.user_id]) acc[b.user_id] = [];
+    acc[b.user_id].push(b);
     return acc;
   }, {});
 
-  const filtered = Object.entries(byUser).filter(([, u]) =>
+  // build full list from all collaborators
+  const allUsers = (allCollabs as any[]).map((c) => ({
+    userId: c.user_id as string,
+    name: (c.name as string) ?? c.user_id,
+    department: (c.department_name ?? c.departmentName ?? null) as string | null,
+    benefits: benefitsByUser[c.user_id as string] ?? [],
+  }));
+
+  const filtered = allUsers.filter((u) =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     (u.department ?? "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const isLoading = loadingTeam || loadingCollabs;
 
   return (
     <div className="space-y-4">
@@ -283,8 +490,12 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
           targetUserId={assigning.userId}
           targetUserName={assigning.name}
           catalog={catalog}
+          existingBenefitIds={assigning.existingIds}
           onClose={() => setAssigning(null)}
         />
+      )}
+      {editing && (
+        <EditAssignmentDialog benefit={editing} onClose={() => setEditing(null)} />
       )}
 
       <Input
@@ -299,13 +510,12 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center">
           <Users className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-          <p className="text-muted-foreground text-sm">Nenhum colaborador com benefícios ainda.</p>
-          <p className="text-xs text-muted-foreground mt-1">Use o botão "Atribuir" em cada colaborador para adicionar benefícios.</p>
+          <p className="text-muted-foreground text-sm">Nenhum colaborador encontrado.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map(([userId, user]) => (
-            <Card key={userId}>
+          {filtered.map((user) => (
+            <Card key={user.userId}>
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
@@ -317,35 +527,58 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setAssigning({ userId, name: user.name })}
+                    onClick={() => setAssigning({ userId: user.userId, name: user.name, existingIds: user.benefits.map((b) => b.benefit_id) })}
                   >
                     + Atribuir
                   </Button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {user.benefits.map((b) => (
-                    <div
-                      key={b.id}
-                      className="flex items-center gap-1.5 rounded-full border bg-muted/40 px-3 py-1 text-xs"
-                    >
-                      <span>{b.benefit_name}</span>
-                      {b.value !== undefined && (
-                        <span className="text-muted-foreground">
-                          · {formatValue(b.value_type ?? "info", b.value)}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => {
-                          if (confirm(`Remover "${b.benefit_name}" de ${user.name}?`))
-                            deleteMutation.mutate(b.id);
-                        }}
-                        className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                {user.benefits.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {user.benefits.map((b) => {
+                      const next = new Date();
+                      next.setMonth(next.getMonth() + 1);
+                      const vtTotal = b.ticket_price && b.tickets_per_day
+                        ? b.ticket_price * b.tickets_per_day * countWorkingDays(next.getFullYear(), next.getMonth())
+                        : null;
+                      const chipColor = b.benefit_category ? CATEGORY_COLORS[b.benefit_category] : "bg-muted/40 text-foreground";
+                      return (
+                      <div
+                        key={b.id}
+                        className={cn("flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs", chipColor)}
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                        <span className="font-medium">{b.benefit_name}</span>
+                        {vtTotal !== null ? (
+                          <span className="opacity-75">
+                            · {vtTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </span>
+                        ) : b.value !== undefined && (
+                          <span className="opacity-75">
+                            · {formatValue(b.value_type ?? "info", b.value)}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setEditing(b)}
+                          className="ml-0.5 opacity-60 hover:opacity-100 transition-opacity"
+                          title="Editar"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Remover "${b.benefit_name}" de ${user.name}?`))
+                              deleteMutation.mutate(b.id);
+                          }}
+                          className="opacity-60 hover:opacity-100 transition-opacity"
+                          title="Remover"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );})}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">Nenhum benefício atribuído.</p>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -443,14 +676,20 @@ function CatalogDialog({
           {showValue && (
             <div className="space-y-1">
               <Label>Valor padrão {valueType === "percentage" ? "(%)" : "(R$)"}</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="0,00"
-              />
+              {valueType === "percentage" ? (
+                <div className="relative">
+                  <Input
+                    className="pr-9"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value.replace(/[^\d.]/g, ""))}
+                    placeholder="0"
+                    inputMode="decimal"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">%</span>
+                </div>
+              ) : (
+                <CurrencyInput value={value} onChange={setValue} />
+              )}
             </div>
           )}
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from datetime import datetime, timezone, date as date_type
+from datetime import datetime, timezone, date as date_type, time as time_type
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
@@ -56,6 +56,8 @@ def _ser_request(r) -> dict:
         "type_color": r.get("type_color"),
         "start_date": r["start_date"].isoformat() if r["start_date"] else None,
         "end_date": r["end_date"].isoformat() if r["end_date"] else None,
+        "start_time": r["start_time"].strftime("%H:%M") if r.get("start_time") else None,
+        "end_time": r["end_time"].strftime("%H:%M") if r.get("end_time") else None,
         "days": r["days"],
         "reason": r["reason"],
         "status": r["status"],
@@ -198,10 +200,25 @@ async def create_request(
 ):
     company_id = await _get_company_id(user_id, conn)
     start = date_type.fromisoformat(body["start_date"])
-    end = date_type.fromisoformat(body["end_date"])
-    if end < start:
-        raise HTTPException(400, "Data de fim deve ser após a data de início")
-    days = (end - start).days + 1
+
+    start_time_str = body.get("start_time")
+    end_time_str = body.get("end_time")
+    is_partial = bool(start_time_str and end_time_str)
+
+    if is_partial:
+        end = start
+        start_time = time_type.fromisoformat(start_time_str)
+        end_time = time_type.fromisoformat(end_time_str)
+        if end_time <= start_time:
+            raise HTTPException(400, "Horário de fim deve ser após o horário de início")
+        days = 0
+    else:
+        end = date_type.fromisoformat(body["end_date"])
+        start_time = None
+        end_time = None
+        if end < start:
+            raise HTTPException(400, "Data de fim deve ser após a data de início")
+        days = (end - start).days + 1
 
     atype = await conn.fetchrow(
         "SELECT * FROM absence_types WHERE id = $1 AND company_id = $2",
@@ -213,9 +230,9 @@ async def create_request(
     status = "pending" if atype["requires_approval"] else "approved"
     row = await conn.fetchrow(
         """INSERT INTO absence_requests
-               (company_id, user_id, type_id, start_date, end_date, days, reason, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *""",
-        company_id, user_id, body["type_id"], start, end, days,
+               (company_id, user_id, type_id, start_date, end_date, start_time, end_time, days, reason, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *""",
+        company_id, user_id, body["type_id"], start, end, start_time, end_time, days,
         body.get("reason"), status,
     )
     full = await conn.fetchrow(

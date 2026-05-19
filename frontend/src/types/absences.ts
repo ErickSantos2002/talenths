@@ -17,6 +17,8 @@ export interface AbsenceRequest {
   type_color?: string;
   start_date: string;
   end_date: string;
+  start_time?: string | null;
+  end_time?: string | null;
   days: number;
   reason?: string;
   status: "pending" | "approved" | "rejected";

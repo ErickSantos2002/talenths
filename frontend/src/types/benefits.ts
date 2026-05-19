@@ -26,6 +26,8 @@ export interface EmployeeBenefit {
   value_type?: BenefitValueType;
   value?: number;
   value_override?: number;
+  ticket_price?: number | null;
+  tickets_per_day?: number | null;
   start_date: string;
   end_date?: string;
   notes?: string;

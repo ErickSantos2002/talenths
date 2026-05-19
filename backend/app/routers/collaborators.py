@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import date
 import asyncpg
 
-from app.auth.service import create_user
+from app.auth.service import create_user, update_user_password
 from app.dependencies import get_db, get_current_user_id, require_manager, require_master_admin
 
 router = APIRouter(prefix="/collaborators", tags=["collaborators"])
@@ -19,7 +19,12 @@ class CollaboratorCreate(BaseModel):
     phone: Optional[str] = None
     birth_date: Optional[date] = None
     hire_date: Optional[date] = None
+    password: Optional[str] = None
     role: str = "user"
+
+
+class PasswordUpdate(BaseModel):
+    password: str
 
 
 class CollaboratorUpdate(BaseModel):
@@ -78,8 +83,8 @@ async def create_collaborator(
 
     async with conn.transaction():
         import secrets
-        temp_password = secrets.token_urlsafe(16)
-        user = await create_user(conn, body.email, temp_password, body.name)
+        password = body.password or secrets.token_urlsafe(16)
+        user = await create_user(conn, body.email, password, body.name)
         new_user_id = str(user["id"])
 
         await conn.execute(
@@ -144,6 +149,22 @@ async def update_collaborator_role(
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Papel não encontrado")
     return dict(row)
+
+
+@router.patch("/{profile_id}/password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_collaborator_password(
+    profile_id: str,
+    body: PasswordUpdate,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_manager(user_id, conn)
+    profile = await conn.fetchrow(
+        "SELECT user_id FROM public.profiles WHERE id = $1", profile_id
+    )
+    if not profile:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Colaborador não encontrado")
+    await update_user_password(conn, str(profile["user_id"]), body.password)
 
 
 @router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)

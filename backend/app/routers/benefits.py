@@ -90,6 +90,8 @@ def _ser_assignment(a) -> dict:
         "value_type": a.get("value_type"),
         "value": value_override if value_override is not None else catalog_value,
         "value_override": value_override,
+        "ticket_price": float(a["ticket_price"]) if a.get("ticket_price") is not None else None,
+        "tickets_per_day": a.get("tickets_per_day"),
         "start_date": a["start_date"].isoformat() if a["start_date"] else None,
         "end_date": a["end_date"].isoformat() if a["end_date"] else None,
         "notes": a["notes"],
@@ -263,10 +265,11 @@ async def assign_benefit(
 
     row = await conn.fetchrow(
         """INSERT INTO employee_benefits
-               (company_id, user_id, benefit_id, value_override, start_date, end_date, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *""",
+               (company_id, user_id, benefit_id, value_override, start_date, end_date, notes, ticket_price, tickets_per_day)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *""",
         company_id, body["user_id"], body["benefit_id"],
         body.get("value_override"), start, end, body.get("notes"),
+        body.get("ticket_price"), body.get("tickets_per_day"),
     )
     full = await conn.fetchrow(BENEFIT_JOIN + " WHERE eb.id = $1", row["id"])
     return _ser_assignment(full)
@@ -284,9 +287,12 @@ async def update_assignment(
         """UPDATE employee_benefits
            SET value_override = COALESCE($1, value_override),
                end_date = $2,
-               notes = COALESCE($3, notes)
+               notes = COALESCE($3, notes),
+               ticket_price = COALESCE($5, ticket_price),
+               tickets_per_day = COALESCE($6, tickets_per_day)
            WHERE id = $4 RETURNING *""",
         body.get("value_override"), end, body.get("notes"), assignment_id,
+        body.get("ticket_price"), body.get("tickets_per_day"),
     )
     if not row:
         raise HTTPException(404, "Atribuição não encontrada")

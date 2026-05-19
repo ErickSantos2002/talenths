@@ -118,6 +118,8 @@ export const collaborators = {
     patch<Record<string, unknown>>(`/collaborators/${profileId}`, data),
   updateRole: (roleId: string, role: string) =>
     patch<Record<string, unknown>>(`/collaborators/${roleId}/role`, { role }),
+  resetPassword: (profileId: string, password: string) =>
+    patch<void>(`/collaborators/${profileId}/password`, { password }),
   delete: (profileId: string) => del(`/collaborators/${profileId}`),
 };
 

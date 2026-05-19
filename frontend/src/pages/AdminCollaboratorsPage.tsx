@@ -23,7 +23,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Building2, Pencil, Trash2, Search, Plus } from "lucide-react";
+import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound } from "lucide-react";
 
 type AppRole = "master_admin" | "manager" | "user";
 
@@ -110,9 +110,15 @@ export default function AdminCollaboratorsPage() {
   const [addPhone, setAddPhone] = useState("");
   const [addBirthDate, setAddBirthDate] = useState("");
   const [addHireDate, setAddHireDate] = useState("");
+  const [addPassword, setAddPassword] = useState("");
   const [addDeptId, setAddDeptId] = useState("");
   const [addRole, setAddRole] = useState<AppRole>("user");
   const [adding, setAdding] = useState(false);
+
+  // Reset password dialog
+  const [resetTarget, setResetTarget] = useState<Collaborator | null>(null);
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   // Delete collaborator dialog
   const [deleteTarget, setDeleteTarget] = useState<Collaborator | null>(null);
@@ -261,8 +267,12 @@ export default function AdminCollaboratorsPage() {
         hire_date: editHireDate || null,
         company_id: editTarget.company_id,
         department_id: editDeptId || null,
-        role: editRole,
       });
+
+      if (isMasterAdmin && editRole !== editTarget.role && editTarget.roleId) {
+        await collaboratorsApi.updateRole(editTarget.roleId, editRole);
+      }
+
       toast({ title: "Colaborador atualizado com sucesso" });
       setSaving(false);
       setEditOpen(false);
@@ -281,6 +291,7 @@ export default function AdminCollaboratorsPage() {
     setAddPhone("");
     setAddBirthDate("");
     setAddHireDate("");
+    setAddPassword("");
     setAddDeptId("");
     setAddRole("user");
     setAddOpen(true);
@@ -312,10 +323,11 @@ export default function AdminCollaboratorsPage() {
         phone: addPhone.replace(/\D/g, "") || null,
         birth_date: addBirthDate || null,
         hire_date: addHireDate || null,
+        password: addPassword.trim() || null,
         role: addRole,
         origin: window.location.origin,
       });
-      toast({ title: "Colaborador criado com sucesso", description: "Um email de convite foi enviado para o colaborador definir sua senha." });
+      toast({ title: "Colaborador criado com sucesso", description: addPassword.trim() ? "O colaborador pode fazer login com a senha definida." : "Um email de convite foi enviado para o colaborador definir sua senha." });
       setAdding(false);
       setAddOpen(false);
       fetchData();
@@ -323,6 +335,26 @@ export default function AdminCollaboratorsPage() {
       toast({ title: "Erro ao criar colaborador", description: err.message, variant: "destructive" });
       setAdding(false);
     }
+  };
+
+  // --- Reset Password ---
+  const openResetPassword = (collab: Collaborator) => {
+    setResetTarget(collab);
+    setResetPassword("");
+    setResetting(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget || !resetPassword.trim()) return;
+    setResetting(true);
+    try {
+      await collaboratorsApi.resetPassword(resetTarget.id, resetPassword.trim());
+      toast({ title: "Senha redefinida com sucesso" });
+      setResetTarget(null);
+    } catch (err: any) {
+      toast({ title: "Erro ao redefinir senha", description: err.message, variant: "destructive" });
+    }
+    setResetting(false);
   };
 
   // --- Delete ---
@@ -450,6 +482,9 @@ export default function AdminCollaboratorsPage() {
                               <Button variant="ghost" size="icon" onClick={() => openEdit(collab)} title="Editar">
                                 <Pencil className="h-4 w-4" />
                               </Button>
+                              <Button variant="ghost" size="icon" onClick={() => openResetPassword(collab)} title="Redefinir senha">
+                                <KeyRound className="h-4 w-4" />
+                              </Button>
                               {isMasterAdmin && (
                                 <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(collab)} title="Excluir" className="text-destructive hover:text-destructive">
                                   <Trash2 className="h-4 w-4" />
@@ -574,6 +609,15 @@ export default function AdminCollaboratorsPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                value={addPassword}
+                onChange={(e) => setAddPassword(e.target.value)}
+                placeholder="Deixe em branco para enviar convite por email"
+              />
             </div>
             <div className="space-y-2">
               <Label>Cargo *</Label>
@@ -720,6 +764,34 @@ export default function AdminCollaboratorsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetTarget} onOpenChange={(open) => !open && setResetTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redefinir Senha</DialogTitle>
+            <DialogDescription>
+              Defina uma nova senha para <strong>{resetTarget?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nova senha *</Label>
+            <Input
+              type="password"
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              placeholder="Digite a nova senha"
+              onKeyDown={(e) => e.key === "Enter" && handleResetPassword()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTarget(null)}>Cancelar</Button>
+            <Button onClick={handleResetPassword} disabled={!resetPassword.trim() || resetting}>
+              {resetting ? "Salvando..." : "Redefinir Senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Collaborator Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

@@ -48,13 +48,22 @@ function RequestDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [typeId, setTypeId] = useState("");
+  const [isPartial, setIsPartial] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [reason, setReason] = useState("");
 
   const mutation = useMutation({
     mutationFn: () =>
-      absencesApi.request({ type_id: typeId, start_date: startDate, end_date: endDate, reason: reason || undefined }),
+      absencesApi.request({
+        type_id: typeId,
+        start_date: startDate,
+        end_date: isPartial ? startDate : endDate,
+        reason: reason || undefined,
+        ...(isPartial ? { start_time: startTime, end_time: endTime } : {}),
+      }),
     onSuccess: () => {
       toast({ title: "Solicitação enviada!" });
       queryClient.invalidateQueries({ queryKey: ["absences-my"] });
@@ -66,11 +75,13 @@ function RequestDialog({
 
   const selectedType = types.find((t) => t.id === typeId);
   const days =
-    startDate && endDate
+    !isPartial && startDate && endDate
       ? Math.max(0, Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
       : 0;
 
-  const canSubmit = typeId && startDate && endDate && days > 0;
+  const canSubmit = isPartial
+    ? typeId && startDate && startTime && endTime && endTime > startTime
+    : typeId && startDate && endDate && days > 0;
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -101,21 +112,58 @@ function RequestDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label>Data de início</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label>Data de fim</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} />
-            </div>
+          <div className="flex rounded-lg border overflow-hidden text-sm">
+            <button
+              type="button"
+              onClick={() => setIsPartial(false)}
+              className={`flex-1 py-2 transition-colors ${!isPartial ? "bg-primary text-primary-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted"}`}
+            >
+              Dia inteiro
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsPartial(true)}
+              className={`flex-1 py-2 transition-colors ${isPartial ? "bg-primary text-primary-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted"}`}
+            >
+              Horário específico
+            </button>
           </div>
 
-          {days > 0 && (
-            <p className="text-sm text-muted-foreground">
-              Total: <strong>{days} dia{days !== 1 ? "s" : ""}</strong>
-            </p>
+          {isPartial ? (
+            <>
+              <div className="space-y-1">
+                <Label>Data</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Horário de início</Label>
+                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Horário de fim</Label>
+                  <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>Data de início</Label>
+                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Data de fim</Label>
+                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} min={startDate} />
+                </div>
+              </div>
+              {days > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Total: <strong>{days} dia{days !== 1 ? "s" : ""}</strong>
+                </p>
+              )}
+            </>
           )}
 
           <div className="space-y-1">
@@ -211,9 +259,18 @@ export default function MyAbsencesPage() {
                         <StatusBadge status={r.status} />
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(r.start_date + "T12:00:00").toLocaleDateString("pt-BR")} até{" "}
-                        {new Date(r.end_date + "T12:00:00").toLocaleDateString("pt-BR")}{" "}
-                        <span className="font-medium">({r.days} dias)</span>
+                        {r.start_time ? (
+                          <>
+                            {new Date(r.start_date + "T12:00:00").toLocaleDateString("pt-BR")}{" "}
+                            <span className="font-medium">{r.start_time} às {r.end_time}</span>
+                          </>
+                        ) : (
+                          <>
+                            {new Date(r.start_date + "T12:00:00").toLocaleDateString("pt-BR")} até{" "}
+                            {new Date(r.end_date + "T12:00:00").toLocaleDateString("pt-BR")}{" "}
+                            <span className="font-medium">({r.days} dia{r.days !== 1 ? "s" : ""})</span>
+                          </>
+                        )}
                       </p>
                       {r.reason && (
                         <p className="text-xs text-muted-foreground italic">"{r.reason}"</p>
