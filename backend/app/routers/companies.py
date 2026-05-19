@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 import asyncpg
 
-from app.dependencies import get_db, get_current_user_id
+from app.dependencies import get_db, get_current_user_id, require_master_admin
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -41,8 +41,10 @@ async def create_company(body: CompanyCreate, conn: asyncpg.Connection = Depends
 async def update_company(
     company_id: str,
     body: CompanyUpdate,
+    user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    await require_master_admin(user_id, conn)
     fields = {k: v for k, v in body.model_dump().items() if v is not None}
     if not fields:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo para atualizar")

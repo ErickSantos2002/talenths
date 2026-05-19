@@ -612,16 +612,23 @@ export default function AdminCollaboratorsPage() {
             </div>
             <div className="space-y-2">
               <Label>Cargo *</Label>
-              <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((r) => (
-                    <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {isMasterAdmin ? (
+                <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map((r) => (
+                      <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="flex items-center gap-2 rounded-md border px-3 py-2 bg-muted/40">
+                  <span className="text-sm">{ROLE_LABELS[editRole]}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">Apenas administradores podem alterar</span>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

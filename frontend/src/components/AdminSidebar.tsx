@@ -75,7 +75,10 @@ export function AdminSidebar() {
   const effectiveTheme = theme === "system" ? systemTheme : theme;
   const navigate = useNavigate();
   const isAdmin = hasRole("master_admin") || hasRole("manager");
-  const companyItems = isAdmin ? adminCompanyItems : [];
+  const isMasterAdmin = hasRole("master_admin");
+  const companyItems = isAdmin
+    ? adminCompanyItems.filter((item) => item.url !== "/admin/logs" || isMasterAdmin)
+    : [];
 
   const ThemeIcon = effectiveTheme === "dark" ? Moon : Sun;
   const themeLabel = theme === "dark" ? "Escuro" : theme === "light" ? "Claro" : "Sistema";

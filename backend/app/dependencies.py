@@ -35,6 +35,24 @@ async def get_db(
             yield conn
 
 
+async def require_manager(user_id: str, conn: asyncpg.Connection) -> None:
+    row = await conn.fetchrow(
+        "SELECT id FROM public.user_roles WHERE user_id = $1 AND role IN ('manager', 'master_admin')",
+        user_id,
+    )
+    if not row:
+        raise HTTPException(status_code=403, detail="Acesso restrito a gestores")
+
+
+async def require_master_admin(user_id: str, conn: asyncpg.Connection) -> None:
+    row = await conn.fetchrow(
+        "SELECT id FROM public.user_roles WHERE user_id = $1 AND role = 'master_admin'",
+        user_id,
+    )
+    if not row:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores")
+
+
 async def get_db_public() -> AsyncGenerator[asyncpg.Connection, None]:
     """Conexão sem autenticação — para rotas públicas (convites, resultados compartilhados)."""
     async with get_pool().acquire() as conn:

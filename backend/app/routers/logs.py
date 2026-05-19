@@ -8,11 +8,11 @@ router = APIRouter(prefix="/logs", tags=["logs"])
 
 async def _require_admin(user_id: str, conn: asyncpg.Connection):
     row = await conn.fetchrow(
-        "SELECT id FROM public.user_roles WHERE user_id = $1 AND role IN ('master_admin', 'manager')",
+        "SELECT id FROM public.user_roles WHERE user_id = $1 AND role = 'master_admin'",
         user_id,
     )
     if not row:
-        raise HTTPException(status_code=403, detail="Acesso restrito")
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores")
 
 
 async def _get_company_id(user_id: str, conn: asyncpg.Connection) -> str:

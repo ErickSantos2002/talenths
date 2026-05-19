@@ -4,7 +4,7 @@ from typing import Optional
 import asyncpg
 
 from app.auth.service import create_user
-from app.dependencies import get_db
+from app.dependencies import get_db, get_current_user_id, require_manager, require_master_admin
 
 router = APIRouter(prefix="/collaborators", tags=["collaborators"])
 
@@ -34,8 +34,10 @@ class RoleUpdate(BaseModel):
 @router.get("")
 async def list_collaborators(
     company_id: Optional[str] = None,
+    user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    await require_manager(user_id, conn)
     if company_id:
         rows = await conn.fetch(
             "SELECT * FROM public.profiles WHERE company_id = $1", company_id
@@ -57,7 +59,12 @@ async def list_collaborators(
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_collaborator(body: CollaboratorCreate, conn: asyncpg.Connection = Depends(get_db)):
+async def create_collaborator(
+    body: CollaboratorCreate,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_manager(user_id, conn)
     existing = await conn.fetchrow(
         "SELECT id FROM auth.users WHERE email = $1", body.email
     )
@@ -65,24 +72,21 @@ async def create_collaborator(body: CollaboratorCreate, conn: asyncpg.Connection
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado")
 
     async with conn.transaction():
-        # Cria usuário com senha temporária (deve redefinir via convite)
         import secrets
         temp_password = secrets.token_urlsafe(16)
         user = await create_user(conn, body.email, temp_password, body.name)
-        user_id = str(user["id"])
+        new_user_id = str(user["id"])
 
         await conn.execute(
-            """
-            UPDATE public.profiles
-            SET company_id = $1, department_id = $2, cpf = $3, phone = $4
-            WHERE user_id = $5
-            """,
-            body.company_id, body.department_id, body.cpf, body.phone, user_id,
+            """UPDATE public.profiles
+               SET company_id = $1, department_id = $2, cpf = $3, phone = $4
+               WHERE user_id = $5""",
+            body.company_id, body.department_id, body.cpf, body.phone, new_user_id,
         )
 
         if body.role != "user":
             role_row = await conn.fetchrow(
-                "SELECT id FROM public.user_roles WHERE user_id = $1 AND role = 'user'", user_id
+                "SELECT id FROM public.user_roles WHERE user_id = $1 AND role = 'user'", new_user_id
             )
             if role_row:
                 await conn.execute(
@@ -92,18 +96,20 @@ async def create_collaborator(body: CollaboratorCreate, conn: asyncpg.Connection
             else:
                 await conn.execute(
                     "INSERT INTO public.user_roles (user_id, role, company_id) VALUES ($1, $2, $3)",
-                    user_id, body.role, body.company_id,
+                    new_user_id, body.role, body.company_id,
                 )
 
-    return {"id": user_id, "email": body.email, "name": body.name}
+    return {"id": new_user_id, "email": body.email, "name": body.name}
 
 
 @router.patch("/{profile_id}")
 async def update_collaborator(
     profile_id: str,
     body: CollaboratorUpdate,
+    user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    await require_manager(user_id, conn)
     fields = {k: v for k, v in body.model_dump().items() if v is not None}
     if not fields:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo para atualizar")
@@ -122,19 +128,26 @@ async def update_collaborator(
 async def update_collaborator_role(
     role_id: str,
     body: RoleUpdate,
+    user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    await require_master_admin(user_id, conn)
     row = await conn.fetchrow(
         "UPDATE public.user_roles SET role = $1 WHERE id = $2 RETURNING *",
         body.role, role_id,
     )
     if not row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role não encontrada")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Papel não encontrado")
     return dict(row)
 
 
 @router.delete("/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_collaborator(profile_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def delete_collaborator(
+    profile_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_master_admin(user_id, conn)
     profile = await conn.fetchrow(
         "SELECT user_id FROM public.profiles WHERE id = $1", profile_id
     )
