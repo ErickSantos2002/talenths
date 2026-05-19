@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
@@ -8,9 +8,15 @@ from app.dependencies import get_db, get_current_user_id
 router = APIRouter(prefix="/culture", tags=["culture"])
 
 
+class ValueInline(BaseModel):
+    title: str
+    description: Optional[str] = None
+
+
 class CultureUpdate(BaseModel):
     purpose: Optional[str] = None
     manifesto: Optional[str] = None
+    values: Optional[List[ValueInline]] = None
 
 
 class ValueCreate(BaseModel):
@@ -98,10 +104,27 @@ async def update_culture(
             company_id, body.purpose, body.manifesto, user_id,
         )
 
+    if body.values is not None:
+        await conn.execute(
+            "DELETE FROM public.culture_values WHERE company_id = $1", company_id
+        )
+        for i, v in enumerate(body.values):
+            await conn.execute(
+                """INSERT INTO public.culture_values (company_id, title, description, position)
+                   VALUES ($1, $2, $3, $4)""",
+                company_id, v.title, v.description, i,
+            )
+
+    values_rows = await conn.fetch(
+        "SELECT id, title, description, position FROM public.culture_values WHERE company_id = $1 ORDER BY position, created_at",
+        company_id,
+    )
+
     return {
         "purpose": row["purpose"],
         "manifesto": row["manifesto"],
         "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+        "values": [dict(r) for r in values_rows],
     }
 
 
