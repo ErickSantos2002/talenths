@@ -257,6 +257,23 @@ export const pdi = {
   deleteAction: (actionId: string) => del(`/pdi/actions/${actionId}`),
 };
 
+// ── Surveys ───────────────────────────────────────────────────────────────────
+
+import type { Survey, SurveyAnswer, SurveyResults } from "@/types/surveys";
+
+export const surveys = {
+  list: () => get<Survey[]>("/surveys"),
+  create: (data: object) => post<Survey>("/surveys", data),
+  update: (id: string, data: object) => put<Survey>(`/surveys/${id}`, data),
+  delete: (id: string) => del(`/surveys/${id}`),
+  addQuestion: (surveyId: string, data: object) => post<Survey>(`/surveys/${surveyId}/questions`, data),
+  updateQuestion: (questionId: string, data: object) => put<Survey>(`/surveys/questions/${questionId}`, data),
+  deleteQuestion: (questionId: string) => del(`/surveys/questions/${questionId}`),
+  respond: (surveyId: string, answers: SurveyAnswer[]) =>
+    post<{ ok: boolean }>(`/surveys/${surveyId}/respond`, { answers }),
+  results: (surveyId: string) => get<SurveyResults>(`/surveys/${surveyId}/results`),
+};
+
 // ── Onboarding ────────────────────────────────────────────────────────────────
 
 import type { OnboardingTemplate, OnboardingTemplateTask, OnboardingChecklist, OnboardingChecklistTask } from "@/types/onboarding";

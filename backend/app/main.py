@@ -23,6 +23,7 @@ from app.routers.learning import router as learning_router
 from app.routers.workshops import router as workshops_router
 from app.routers.communications import router as communications_router
 from app.routers.onboarding import router as onboarding_router
+from app.routers.surveys import router as surveys_router
 
 
 @asynccontextmanager
@@ -66,6 +67,7 @@ app.include_router(learning_router)
 app.include_router(workshops_router)
 app.include_router(communications_router)
 app.include_router(onboarding_router)
+app.include_router(surveys_router)
 
 
 @app.get("/health")
