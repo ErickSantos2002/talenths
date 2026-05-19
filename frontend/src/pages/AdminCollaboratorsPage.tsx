@@ -34,6 +34,8 @@ interface Collaborator {
   email: string;
   cpf: string | null;
   phone: string | null;
+  birth_date: string | null;
+  hire_date: string | null;
   company_id: string | null;
   department_id: string | null;
   departmentName: string | null;
@@ -94,6 +96,8 @@ export default function AdminCollaboratorsPage() {
   const [editName, setEditName] = useState("");
   const [editCpf, setEditCpf] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editBirthDate, setEditBirthDate] = useState("");
+  const [editHireDate, setEditHireDate] = useState("");
   const [editDeptId, setEditDeptId] = useState<string>("");
   const [editRole, setEditRole] = useState<AppRole>("user");
   const [saving, setSaving] = useState(false);
@@ -104,6 +108,8 @@ export default function AdminCollaboratorsPage() {
   const [addCpf, setAddCpf] = useState("");
   const [addEmail, setAddEmail] = useState("");
   const [addPhone, setAddPhone] = useState("");
+  const [addBirthDate, setAddBirthDate] = useState("");
+  const [addHireDate, setAddHireDate] = useState("");
   const [addDeptId, setAddDeptId] = useState("");
   const [addRole, setAddRole] = useState<AppRole>("user");
   const [adding, setAdding] = useState(false);
@@ -188,6 +194,8 @@ export default function AdminCollaboratorsPage() {
           email: p.email,
           cpf: p.cpf,
           phone: p.phone ?? null,
+          birth_date: p.birth_date ?? null,
+          hire_date: p.hire_date ?? null,
           company_id: p.company_id,
           department_id: p.department_id,
           departmentName: p.department_id ? deptMap.get(p.department_id) ?? null : null,
@@ -226,6 +234,8 @@ export default function AdminCollaboratorsPage() {
     setEditName(collab.name);
     setEditCpf(collab.cpf ? formatCpf(collab.cpf) : "");
     setEditPhone(collab.phone ? formatPhone(collab.phone) : "");
+    setEditBirthDate(collab.birth_date ? collab.birth_date.slice(0, 10) : "");
+    setEditHireDate(collab.hire_date ? collab.hire_date.slice(0, 10) : "");
     setEditDeptId(collab.department_id ?? "");
     setEditRole(collab.role);
     setEditOpen(true);
@@ -247,6 +257,8 @@ export default function AdminCollaboratorsPage() {
         name: editName,
         cpf: editCpf.replace(/\D/g, "") || null,
         phone: editPhone.replace(/\D/g, "") || null,
+        birth_date: editBirthDate || null,
+        hire_date: editHireDate || null,
         company_id: editTarget.company_id,
         department_id: editDeptId || null,
         role: editRole,
@@ -267,6 +279,8 @@ export default function AdminCollaboratorsPage() {
     setAddCpf("");
     setAddEmail("");
     setAddPhone("");
+    setAddBirthDate("");
+    setAddHireDate("");
     setAddDeptId("");
     setAddRole("user");
     setAddOpen(true);
@@ -296,6 +310,8 @@ export default function AdminCollaboratorsPage() {
         department_id: addDeptId || null,
         cpf: addCpf.replace(/\D/g, "") || null,
         phone: addPhone.replace(/\D/g, "") || null,
+        birth_date: addBirthDate || null,
+        hire_date: addHireDate || null,
         role: addRole,
         origin: window.location.origin,
       });
@@ -535,6 +551,16 @@ export default function AdminCollaboratorsPage() {
                 <Input value={addPhone} onChange={(e) => setAddPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data de Nascimento</Label>
+                <Input type="date" value={addBirthDate} onChange={(e) => setAddBirthDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Data de Admissão</Label>
+                <Input type="date" value={addHireDate} onChange={(e) => setAddHireDate(e.target.value)} />
+              </div>
+            </div>
             <div className="space-y-2">
               <Label>Departamento</Label>
               <Select value={addDeptId || "none"} onValueChange={(v) => setAddDeptId(v === "none" ? "" : v)}>
@@ -594,6 +620,16 @@ export default function AdminCollaboratorsPage() {
               <div className="space-y-2">
                 <Label>Telefone</Label>
                 <Input value={editPhone} onChange={(e) => setEditPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data de Nascimento</Label>
+                <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Data de Admissão</Label>
+                <Input type="date" value={editHireDate} onChange={(e) => setEditHireDate(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">

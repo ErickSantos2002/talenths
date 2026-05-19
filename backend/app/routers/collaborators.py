@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import date
 import asyncpg
 
 from app.auth.service import create_user
@@ -16,6 +17,8 @@ class CollaboratorCreate(BaseModel):
     department_id: Optional[str] = None
     cpf: Optional[str] = None
     phone: Optional[str] = None
+    birth_date: Optional[date] = None
+    hire_date: Optional[date] = None
     role: str = "user"
 
 
@@ -23,6 +26,8 @@ class CollaboratorUpdate(BaseModel):
     name: Optional[str] = None
     cpf: Optional[str] = None
     phone: Optional[str] = None
+    birth_date: Optional[date] = None
+    hire_date: Optional[date] = None
     company_id: Optional[str] = None
     department_id: Optional[str] = None
 
@@ -79,9 +84,9 @@ async def create_collaborator(
 
         await conn.execute(
             """UPDATE public.profiles
-               SET company_id = $1, department_id = $2, cpf = $3, phone = $4
-               WHERE user_id = $5""",
-            body.company_id, body.department_id, body.cpf, body.phone, new_user_id,
+               SET company_id = $1, department_id = $2, cpf = $3, phone = $4, birth_date = $5, hire_date = $6
+               WHERE user_id = $7""",
+            body.company_id, body.department_id, body.cpf, body.phone, body.birth_date, body.hire_date, new_user_id,
         )
 
         if body.role != "user":
