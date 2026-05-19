@@ -258,8 +258,12 @@ async def update_action(
 
     row = await conn.fetchrow(
         """UPDATE pdi_actions
-           SET title = $1, description = $2, how = $3, due_date = $4,
-               status = $5, completed_at = COALESCE($6, completed_at),
+           SET title = COALESCE($1, title),
+               description = COALESCE($2, description),
+               how = COALESCE($3, how),
+               due_date = COALESCE($4, due_date),
+               status = COALESCE($5, status),
+               completed_at = COALESCE($6, completed_at),
                updated_by = $7, updated_at = $8
            WHERE id = $9
            RETURNING *""",

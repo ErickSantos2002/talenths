@@ -292,7 +292,7 @@ function CreatePlanDialog({ open, onOpenChange, onSaved }: {
   const mutation = useMutation({
     mutationFn: () => pdiApi.createPlan({
       user_id: userId,
-      eval_cycle_id: evalCycleId || undefined,
+      eval_cycle_id: evalCycleId && evalCycleId !== "none" ? evalCycleId : undefined,
       title,
       description: description || undefined,
     }),
@@ -328,7 +328,7 @@ function CreatePlanDialog({ open, onOpenChange, onSaved }: {
             <Select value={evalCycleId} onValueChange={setEvalCycleId}>
               <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Nenhum</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {(cycles ?? []).map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}

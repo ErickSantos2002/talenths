@@ -8,6 +8,17 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/.env
-    volumes:
-      - ./backend:/app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: talenths-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     restart: unless-stopped
