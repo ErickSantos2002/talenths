@@ -43,6 +43,8 @@ import OnboardingAdminPage from "./pages/OnboardingAdminPage";
 import MyOnboardingPage from "./pages/MyOnboardingPage";
 import SurveysAdminPage from "./pages/SurveysAdminPage";
 import MySurveysPage from "./pages/MySurveysPage";
+import AbsencesAdminPage from "./pages/AbsencesAdminPage";
+import MyAbsencesPage from "./pages/MyAbsencesPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
@@ -319,6 +321,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MySurveysPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/ausencias"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AbsencesAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/minhas-ausencias"
+              element={
+                <ProtectedRoute>
+                  <MyAbsencesPage />
                 </ProtectedRoute>
               }
             />

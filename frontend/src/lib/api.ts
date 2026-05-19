@@ -354,6 +354,24 @@ export const learning = {
   },
 };
 
+// ── Absences ──────────────────────────────────────────────────────────────────
+
+import type { AbsenceType, AbsenceRequest } from "@/types/absences";
+
+export const absences = {
+  types: () => get<AbsenceType[]>("/absences/types"),
+  createType: (data: object) => post<AbsenceType>("/absences/types", data),
+  updateType: (id: string, data: object) => put<AbsenceType>(`/absences/types/${id}`, data),
+  deleteType: (id: string) => del(`/absences/types/${id}`),
+  my: () => get<AbsenceRequest[]>("/absences/my"),
+  team: () => get<AbsenceRequest[]>("/absences/team"),
+  calendar: () => get<AbsenceRequest[]>("/absences/calendar"),
+  request: (data: object) => post<AbsenceRequest>("/absences/request", data),
+  approve: (id: string, note?: string) => put<AbsenceRequest>(`/absences/${id}/approve`, { note }),
+  reject: (id: string, note?: string) => put<AbsenceRequest>(`/absences/${id}/reject`, { note }),
+  delete: (id: string) => del(`/absences/${id}`),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {
