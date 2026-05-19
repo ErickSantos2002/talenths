@@ -257,6 +257,21 @@ export const pdi = {
   deleteAction: (actionId: string) => del(`/pdi/actions/${actionId}`),
 };
 
+// ── Communications ────────────────────────────────────────────────────────────
+
+import type { Announcement, BirthdayEntry, MilestoneEntry } from "@/types/communications";
+
+export const communications = {
+  listAnnouncements: () => get<Announcement[]>("/communications/announcements"),
+  createAnnouncement: (data: { title: string; content: string; category: string; status: string }) =>
+    post<Announcement>("/communications/announcements", data),
+  updateAnnouncement: (id: string, data: { title: string; content: string; category: string; status: string }) =>
+    put<Announcement>(`/communications/announcements/${id}`, data),
+  deleteAnnouncement: (id: string) => del(`/communications/announcements/${id}`),
+  birthdays: () => get<BirthdayEntry[]>("/communications/birthdays"),
+  milestones: () => get<MilestoneEntry[]>("/communications/milestones"),
+};
+
 // ── Workshops ─────────────────────────────────────────────────────────────────
 
 import type { Workshop, WorkshopRegistration } from "@/types/workshops";

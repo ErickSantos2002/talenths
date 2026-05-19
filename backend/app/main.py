@@ -21,6 +21,7 @@ from app.routers.career import router as career_router
 from app.routers.pdi import router as pdi_router
 from app.routers.learning import router as learning_router
 from app.routers.workshops import router as workshops_router
+from app.routers.communications import router as communications_router
 
 
 @asynccontextmanager
@@ -62,6 +63,7 @@ app.include_router(career_router)
 app.include_router(pdi_router)
 app.include_router(learning_router)
 app.include_router(workshops_router)
+app.include_router(communications_router)
 
 
 @app.get("/health")

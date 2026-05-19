@@ -1,4 +1,4 @@
-import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays } from "lucide-react";
+import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target, BookOpen, GraduationCap, CalendarDays, Megaphone } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -39,11 +39,13 @@ const adminCompanyItems = [
   { title: "PDI da Equipe", url: "/admin/pdi", icon: BookOpen },
   { title: "Universidade", url: "/admin/universidade", icon: GraduationCap },
   { title: "Workshops", url: "/admin/workshops", icon: CalendarDays },
+  { title: "Comunicação", url: "/admin/comunicados", icon: Megaphone },
   { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
   { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
 ];
 
 const commonItems = [
+  { title: "Comunicados", url: "/comunicados", icon: Megaphone },
   { title: "Nossa Cultura", url: "/cultura", icon: HeartHandshake },
   { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
   { title: "Minha Trilha", url: "/minha-trilha", icon: GitBranch },
