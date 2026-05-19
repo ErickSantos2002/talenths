@@ -1,11 +1,9 @@
-import { LayoutDashboard, Building2, Settings, Users, GitCompareArrows, UsersRound, ClipboardList, Grid3X3, LogOut, Sun, Moon, Monitor, UserPen } from "lucide-react";
+import { LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck, Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useSystemTheme } from "@/hooks/use-system-theme";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { companies as companiesApi } from "@/lib/api";
 import {
   Sidebar,
   SidebarContent,
@@ -24,72 +22,41 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-const adminMainItems = [
+const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Empresas", url: "/admin/empresas", icon: Building2 },
 ];
 
 const adminCompanyItems = [
-  { title: "Gestão Empresa", url: "/admin/empresa", icon: Building2 },
-  { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
-  { title: "Testes", url: "/admin/testes", icon: ClipboardList },
-  { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
-  { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
-  { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
-];
-
-const companyMainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-];
-
-const companyCompanyItems = [
   { title: "Minha Empresa", url: "/admin/empresa", icon: Building2 },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
   { title: "Testes", url: "/admin/testes", icon: ClipboardList },
+  { title: "Metas", url: "/admin/metas", icon: Target },
+  { title: "Avaliação", url: "/admin/avaliacao", icon: ClipboardList },
+  { title: "Mapa 9Box", url: "/admin/9box", icon: Grid3X3 },
+  { title: "Trilha de Carreira", url: "/admin/trilhas", icon: GitBranch },
   { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
   { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
 ];
 
-const leaderItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Minha Equipe", url: "/lider/equipe", icon: UsersRound },
-];
-
 const commonItems = [
+  { title: "Nossa Cultura", url: "/cultura", icon: HeartHandshake },
+  { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
+  { title: "Minha Trilha", url: "/minha-trilha", icon: GitBranch },
   { title: "Meu Perfil", url: "/meu-perfil", icon: UserPen },
   { title: "Meu Histórico", url: "/meu-historico", icon: ClipboardList },
   { title: "Compatibilidade", url: "/meu-perfil/compatibilidade", icon: GitCompareArrows },
 ];
 
 export function AdminSidebar() {
-  const { hasRole, signOut, selectedCompanyId, setSelectedCompanyId } = useAuth();
+  const { hasRole, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const systemTheme = useSystemTheme();
   const effectiveTheme = theme === "system" ? systemTheme : theme;
   const navigate = useNavigate();
-  const isMasterAdmin = hasRole("master_admin");
-  const isCompanyAdmin = hasRole("company_admin");
-  const isLeader = hasRole("leader");
-  const mainItems = isMasterAdmin ? adminMainItems : isCompanyAdmin ? companyMainItems : isLeader ? leaderItems : [];
-  const companyItems = isMasterAdmin ? adminCompanyItems : isCompanyAdmin ? companyCompanyItems : [];
-
-  const { data: companies } = useQuery({
-    queryKey: ["companies-selector"],
-    queryFn: async () => {
-      const data = await companiesApi.list();
-      return (data as any[]).sort((a, b) => (a.name as string).localeCompare(b.name as string));
-    },
-    enabled: isMasterAdmin,
-  });
+  const isAdmin = hasRole("master_admin") || hasRole("manager");
+  const companyItems = isAdmin ? adminCompanyItems : [];
 
   const ThemeIcon = effectiveTheme === "dark" ? Moon : Sun;
   const themeLabel = theme === "dark" ? "Escuro" : theme === "light" ? "Claro" : "Sistema";
@@ -103,19 +70,14 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <div className="flex flex-col items-center gap-2 border-b border-sidebar-border px-4 py-3 group-data-[collapsible=icon]:px-2">
         <img
-          src="/logo-dark.svg"
-          alt="talentIA Logo"
-          className="h-8 w-auto group-data-[collapsible=icon]:hidden dark:hidden"
+          src="/logo.png"
+          alt="TalentHS Logo"
+          className="h-8 w-auto group-data-[collapsible=icon]:hidden"
         />
         <img
-          src="/logo.svg"
-          alt="talentIA Logo"
-          className="hidden h-8 w-auto group-data-[collapsible=icon]:hidden dark:block"
-        />
-        <img
-          src={effectiveTheme === "dark" ? "/icone_branco.svg" : "/icone_preto.svg"}
-          alt="talentIA"
-          className="hidden h-6 w-6 group-data-[collapsible=icon]:block"
+          src="/logo.png"
+          alt="TalentHS"
+          className="hidden h-6 w-auto group-data-[collapsible=icon]:block"
         />
         <SidebarTrigger />
       </div>
@@ -151,25 +113,6 @@ export function AdminSidebar() {
             <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Empresa
             </SidebarGroupLabel>
-            {isMasterAdmin && (
-              <div className="px-3 pb-2 group-data-[collapsible=icon]:hidden">
-                <Select
-                  value={selectedCompanyId ?? "all"}
-                  onValueChange={(v) => setSelectedCompanyId(v === "all" ? null : v)}
-                >
-                  <SelectTrigger className="w-full bg-background">
-                    <Building2 className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
-                    <SelectValue placeholder="Todas as empresas" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-popover">
-                    <SelectItem value="all">Todas as empresas</SelectItem>
-                    {companies?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             <SidebarGroupContent>
               <SidebarMenu>
                 {companyItems.map((item) => (

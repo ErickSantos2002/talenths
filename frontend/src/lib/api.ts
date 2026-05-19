@@ -51,6 +51,7 @@ async function request<T>(
 const get = <T>(path: string, opts?: { public?: boolean }) => request<T>("GET", path, undefined, opts);
 const post = <T>(path: string, body?: unknown, opts?: { public?: boolean }) => request<T>("POST", path, body, opts);
 const patch = <T>(path: string, body?: unknown) => request<T>("PATCH", path, body);
+const put = <T>(path: string, body?: unknown) => request<T>("PUT", path, body);
 const del = (path: string) => request<void>("DELETE", path);
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -169,6 +170,76 @@ export const chat = {
     get<Record<string, unknown>[]>(`/chat/conversations/${conversationId}/messages`),
   sendMessage: (conversationId: string, content: string) =>
     post<Record<string, unknown>>(`/chat/conversations/${conversationId}/messages`, { content }),
+};
+
+// ── Culture ───────────────────────────────────────────────────────────────────
+
+export const culture = {
+  get: () => get<{ purpose: string | null; manifesto: string | null; updated_at: string | null; values: { id: string; title: string; description: string | null; position: number }[] }>("/culture"),
+  update: (data: { purpose?: string; manifesto?: string }) => put<{ purpose: string | null; manifesto: string | null; updated_at: string | null }>("/culture", data),
+  createValue: (data: { title: string; description?: string }) => post<{ id: string; title: string; description: string | null; position: number }>("/culture/values", data),
+  updateValue: (id: string, data: { title?: string; description?: string }) => put<{ id: string; title: string; description: string | null; position: number }>(`/culture/values/${id}`, data),
+  deleteValue: (id: string) => del(`/culture/values/${id}`),
+};
+
+// ── Evaluations ───────────────────────────────────────────────────────────────
+
+import type { EvalCycle, TeamMemberStatus, ScoreItem, NineBoxEntry } from "@/types/evaluations";
+
+export const evaluations = {
+  listCycles: () => get<EvalCycle[]>("/evaluations/cycles"),
+  createCycle: (data: Partial<EvalCycle> & { name: string }) => post<EvalCycle>("/evaluations/cycles", data),
+  updateCycle: (id: string, data: Partial<EvalCycle>) => put<EvalCycle>(`/evaluations/cycles/${id}`, data),
+  submitEvaluation: (data: { eval_cycle_id: string; evaluated_user_id: string; eval_type: string; scores: ScoreItem[] }) =>
+    post<{ ok: boolean; evaluation_id: string }>("/evaluations/submit", data),
+  myEvaluation: (cycleId: string) =>
+    get<{ submitted: boolean; submitted_at: string | null; scores: ScoreItem[] }>(`/evaluations/my?cycle_id=${cycleId}`),
+  teamStatus: (cycleId: string) => get<TeamMemberStatus[]>(`/evaluations/team-status?cycle_id=${cycleId}`),
+  scores: (cycleId: string, evaluatedUserId: string) =>
+    get<{ eval_type: string; submitted_at: string | null; scores: ScoreItem[] }[]>(`/evaluations/scores?cycle_id=${cycleId}&evaluated_user_id=${evaluatedUserId}`),
+  consolidate: (cycleId: string) => post<{ ok: boolean; updated: number }>(`/evaluations/cycles/${cycleId}/consolidate`),
+  calibrate: (cycleId: string, data: { user_id: string; nine_box_x: number; nine_box_y: number; calibration_note?: string }) =>
+    put<{ ok: boolean; quadrant: string }>(`/evaluations/cycles/${cycleId}/calibrate`, data),
+  nineBox: (cycleId: string) =>
+    get<{ grid: Record<string, NineBoxEntry[]>; total: number }>(`/evaluations/9box?cycle_id=${cycleId}`),
+};
+
+// ── Goals ─────────────────────────────────────────────────────────────────────
+
+import type { Cycle, Goal, GoalDetail, GoalCreate, DepartmentOverview, MonthlyPlan } from "@/types/goals";
+
+export const goals = {
+  listCycles: () => get<Cycle[]>("/goals/cycles"),
+  createCycle: (data: { name: string; start_date: string; end_date: string; min_curve_value?: number; max_progress_value?: number; status?: string }) =>
+    post<Cycle>("/goals/cycles", data),
+  updateCycle: (id: string, data: Partial<{ name: string; start_date: string; end_date: string; min_curve_value: number; max_progress_value: number; status: string }>) =>
+    put<Cycle>(`/goals/cycles/${id}`, data),
+  overview: (cycleId: string) => get<DepartmentOverview[]>(`/goals/overview?cycle_id=${cycleId}`),
+  create: (data: GoalCreate) => post<Goal & { weight_warning: boolean }>("/goals", data),
+  get: (id: string) => get<GoalDetail>(`/goals/${id}`),
+  update: (id: string, data: Partial<GoalCreate>) => put<Goal>(`/goals/${id}`, data),
+  delete: (id: string) => del(`/goals/${id}`),
+  updatePlans: (goalId: string, plans: MonthlyPlan[]) => put<MonthlyPlan[]>(`/goals/${goalId}/plans`, { plans }),
+  updateActual: (goalId: string, month: number, data: { actual_value: number; comment?: string }) =>
+    put<{ ok: boolean }>(`/goals/${goalId}/actuals/${month}`, data),
+  closeMonth: (goalId: string, month: number) => post<{ ok: boolean }>(`/goals/${goalId}/close/${month}`),
+};
+
+// ── Career ────────────────────────────────────────────────────────────────────
+
+import type { CareerTrack, TeamCareerEntry, MyCareer } from "@/types/career";
+
+export const career = {
+  listTracks: () => get<CareerTrack[]>("/career/tracks"),
+  createTrack: (data: { name: string; description?: string }) => post<CareerTrack>("/career/tracks", data),
+  updateTrack: (id: string, data: { name: string; description?: string }) => put<CareerTrack>(`/career/tracks/${id}`, data),
+  deleteTrack: (id: string) => del(`/career/tracks/${id}`),
+  createLevel: (trackId: string, data: object) => post<object>(`/career/tracks/${trackId}/levels`, data),
+  updateLevel: (levelId: string, data: object) => put<object>(`/career/levels/${levelId}`, data),
+  deleteLevel: (levelId: string) => del(`/career/levels/${levelId}`),
+  team: () => get<TeamCareerEntry[]>("/career/team"),
+  my: () => get<MyCareer | null>("/career/my"),
+  setEmployeeCareer: (userId: string, data: object) => put<{ ok: boolean }>(`/career/employee/${userId}`, data),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────

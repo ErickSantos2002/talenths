@@ -2,11 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import TestIntro from "./pages/TestIntro";
@@ -15,9 +14,7 @@ import ResultPage from "./pages/ResultPage";
 import CompareProfiles from "./pages/CompareProfiles";
 import LeaderTeamPage from "./pages/LeaderTeamPage";
 import LeaderGuidePage from "./pages/LeaderGuidePage";
-import AdminCompaniesPage from "./pages/AdminCompaniesPage";
 import AdminCollaboratorsPage from "./pages/AdminCollaboratorsPage";
-import AdminSettingsPage from "./pages/AdminSettingsPage";
 import InvitePage from "./pages/InvitePage";
 import CompanyDashboardPage from "./pages/CompanyDashboardPage";
 import TestHistoryPage from "./pages/TestHistoryPage";
@@ -27,7 +24,15 @@ import AdminTestsPage from "./pages/AdminTestsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MyProfilePage from "./pages/MyProfilePage";
+import CulturePage from "./pages/CulturePage";
+import GoalsPage from "./pages/GoalsPage";
+import EvaluationPage from "./pages/EvaluationPage";
+import NineBoxPage from "./pages/NineBoxPage";
+import MyEvaluationPage from "./pages/MyEvaluationPage";
+import CareerTracksPage from "./pages/CareerTracksPage";
+import MyCareerPage from "./pages/MyCareerPage";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
 
 const queryClient = new QueryClient();
@@ -41,8 +46,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/convite/:token" element={<InvitePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -75,7 +81,7 @@ const App = () => (
             <Route
               path="/comparar-perfis"
               element={
-                <ProtectedRoute requiredRoles={["master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <CompareProfiles />
                 </ProtectedRoute>
               }
@@ -83,7 +89,7 @@ const App = () => (
             <Route
               path="/lider/equipe"
               element={
-                <ProtectedRoute requiredRoles={["leader", "master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <LeaderTeamPage />
                 </ProtectedRoute>
               }
@@ -91,23 +97,15 @@ const App = () => (
             <Route
               path="/lider/guia/:userId"
               element={
-                <ProtectedRoute requiredRoles={["leader", "master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <LeaderGuidePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/empresas"
-              element={
-                <ProtectedRoute requiredRoles={["master_admin"]}>
-                  <AdminCompaniesPage />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/admin/empresa"
               element={
-                <ProtectedRoute requiredRoles={["master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <CompanyDashboardPage />
                 </ProtectedRoute>
               }
@@ -115,7 +113,7 @@ const App = () => (
             <Route
               path="/admin/colaboradores"
               element={
-                <ProtectedRoute requiredRoles={["master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <AdminCollaboratorsPage />
                 </ProtectedRoute>
               }
@@ -123,23 +121,39 @@ const App = () => (
             <Route
               path="/admin/testes"
               element={
-                <ProtectedRoute requiredRoles={["master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <AdminTestsPage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/admin/configuracoes"
+              path="/admin/metas"
               element={
-                <ProtectedRoute requiredRoles={["master_admin"]}>
-                  <AdminSettingsPage />
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <GoalsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/avaliacao"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <EvaluationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/9box"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <NineBoxPage />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/admin/analise-equipe"
               element={
-                <ProtectedRoute requiredRoles={["master_admin", "company_admin"]}>
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <TeamAnalysisPage />
                 </ProtectedRoute>
               }
@@ -165,6 +179,38 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <LeaderCompatibilityPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cultura"
+              element={
+                <ProtectedRoute>
+                  <CulturePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/minha-avaliacao"
+              element={
+                <ProtectedRoute>
+                  <MyEvaluationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/trilhas"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <CareerTracksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/minha-trilha"
+              element={
+                <ProtectedRoute>
+                  <MyCareerPage />
                 </ProtectedRoute>
               }
             />

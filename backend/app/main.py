@@ -14,6 +14,10 @@ from app.routers.invitations import router as invitations_router
 from app.routers.comparisons import router as comparisons_router
 from app.routers.chat import router as chat_router
 from app.routers.notifications import router as notifications_router
+from app.routers.culture import router as culture_router
+from app.routers.goals import router as goals_router
+from app.routers.evaluations import router as evaluations_router
+from app.routers.career import router as career_router
 
 
 @asynccontextmanager
@@ -48,6 +52,10 @@ app.include_router(invitations_router)
 app.include_router(comparisons_router)
 app.include_router(chat_router)
 app.include_router(notifications_router)
+app.include_router(culture_router)
+app.include_router(goals_router)
+app.include_router(evaluations_router)
+app.include_router(career_router)
 
 
 @app.get("/health")
