@@ -257,6 +257,34 @@ export const pdi = {
   deleteAction: (actionId: string) => del(`/pdi/actions/${actionId}`),
 };
 
+// ── Learning ──────────────────────────────────────────────────────────────────
+
+import type { CourseCatalogItem, EmployeeCourse } from "@/types/learning";
+
+export const learning = {
+  catalog: () => get<CourseCatalogItem[]>("/learning/catalog"),
+  createCatalogItem: (data: { title: string; area: string; description?: string; duration_hours?: number }) =>
+    post<CourseCatalogItem>("/learning/catalog", data),
+  updateCatalogItem: (id: string, data: { title: string; area: string; description?: string; duration_hours?: number }) =>
+    put<CourseCatalogItem>(`/learning/catalog/${id}`, data),
+  deleteCatalogItem: (id: string) => del(`/learning/catalog/${id}`),
+  my: () => get<EmployeeCourse[]>("/learning/my"),
+  team: () => get<EmployeeCourse[]>("/learning/team"),
+  addEmployeeCourse: (userId: string, data: { course_title: string; area: string; hours: number; completed_at: string; catalog_id?: string }) =>
+    post<EmployeeCourse>(`/learning/employee/${userId}`, data),
+  deleteEmployeeCourse: (courseId: string) => del(`/learning/employee/course/${courseId}`),
+  importCsv: (file: File) => {
+    const token = getToken();
+    const form = new FormData();
+    form.append("file", file);
+    return fetch(`${BASE_URL}/learning/import-csv`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    }).then(r => r.json()) as Promise<{ inserted: number; errors: string[] }>;
+  },
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {

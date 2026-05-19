@@ -33,6 +33,8 @@ import CareerTracksPage from "./pages/CareerTracksPage";
 import MyCareerPage from "./pages/MyCareerPage";
 import PdiTeamPage from "./pages/PdiTeamPage";
 import MyPdiPage from "./pages/MyPdiPage";
+import LearningAdminPage from "./pages/LearningAdminPage";
+import MyLearningPage from "./pages/MyLearningPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 import { ChatWidget } from "./components/chat/ChatWidget";
@@ -229,6 +231,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MyPdiPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/universidade"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <LearningAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/minha-universidade"
+              element={
+                <ProtectedRoute>
+                  <MyLearningPage />
                 </ProtectedRoute>
               }
             />
