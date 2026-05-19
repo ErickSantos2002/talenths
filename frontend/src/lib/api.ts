@@ -257,6 +257,27 @@ export const pdi = {
   deleteAction: (actionId: string) => del(`/pdi/actions/${actionId}`),
 };
 
+// ── Onboarding ────────────────────────────────────────────────────────────────
+
+import type { OnboardingTemplate, OnboardingTemplateTask, OnboardingChecklist, OnboardingChecklistTask } from "@/types/onboarding";
+
+export const onboarding = {
+  listTemplates: () => get<OnboardingTemplate[]>("/onboarding/templates"),
+  createTemplate: (data: object) => post<OnboardingTemplate>("/onboarding/templates", data),
+  updateTemplate: (id: string, data: object) => put<OnboardingTemplate>(`/onboarding/templates/${id}`, data),
+  deleteTemplate: (id: string) => del(`/onboarding/templates/${id}`),
+  addTemplateTask: (templateId: string, data: object) => post<OnboardingTemplateTask>(`/onboarding/templates/${templateId}/tasks`, data),
+  updateTemplateTask: (taskId: string, data: object) => put<OnboardingTemplateTask>(`/onboarding/template-tasks/${taskId}`, data),
+  deleteTemplateTask: (taskId: string) => del(`/onboarding/template-tasks/${taskId}`),
+  team: () => get<OnboardingChecklist[]>("/onboarding/team"),
+  my: () => get<OnboardingChecklist | null>("/onboarding/my"),
+  assign: (data: { user_id: string; template_id?: string; started_at?: string }) =>
+    post<OnboardingChecklist>("/onboarding/assign", data),
+  deleteChecklist: (id: string) => del(`/onboarding/checklists/${id}`),
+  completeTask: (taskId: string) => put<OnboardingChecklistTask>(`/onboarding/checklist-tasks/${taskId}/complete`),
+  addChecklistTask: (data: object) => post<OnboardingChecklistTask>("/onboarding/checklist-tasks", data),
+};
+
 // ── Communications ────────────────────────────────────────────────────────────
 
 import type { Announcement, BirthdayEntry, MilestoneEntry } from "@/types/communications";
