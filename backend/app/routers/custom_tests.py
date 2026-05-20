@@ -260,7 +260,7 @@ async def get_my_attempt_detail(
 ):
     attempt = await conn.fetchrow(
         """
-        SELECT a.*, t.title AS test_title, t.scoring_mode, t.pass_score
+        SELECT a.*, t.title AS test_title, t.scoring_mode, t.pass_score, t.total_points
         FROM public.test_attempts a
         JOIN public.custom_tests t ON t.id = a.test_id
         WHERE a.id = $1 AND a.user_id = $2

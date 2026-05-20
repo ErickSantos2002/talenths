@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { customTests } from "@/lib/api";
@@ -120,6 +120,21 @@ export default function RealizarTestePage() {
   if (!test || !attempt?.id) return null;
 
   const questions = test.questions;
+
+  // Embaralha as opções de cada questão uma única vez ao montar
+  const shuffledOptions = useMemo(() => {
+    const map: Record<string, typeof questions[0]["options"]> = {};
+    for (const q of questions) {
+      const opts = [...q.options];
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      map[q.id] = opts;
+    }
+    return map;
+  }, [test.id]);
+
   const q = questions[currentIdx];
   const resp = responses[q.id] ?? {};
   const progress = ((currentIdx + 1) / questions.length) * 100;
@@ -154,7 +169,7 @@ export default function RealizarTestePage() {
             {/* single_choice / true_false */}
             {(q.question_type === "single_choice" || q.question_type === "true_false") && (
               <div className="space-y-2">
-                {q.options.map((opt) => {
+                {(shuffledOptions[q.id] ?? q.options).map((opt) => {
                   const selected = resp.selected_option_ids?.includes(opt.id);
                   return (
                     <button
@@ -177,7 +192,7 @@ export default function RealizarTestePage() {
             {/* multiple_choice / checklist */}
             {(q.question_type === "multiple_choice" || q.question_type === "checklist") && (
               <div className="space-y-2">
-                {q.options.map((opt) => {
+                {(shuffledOptions[q.id] ?? q.options).map((opt) => {
                   const selected = resp.selected_option_ids?.includes(opt.id) ?? false;
                   return (
                     <button
