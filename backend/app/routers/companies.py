@@ -21,6 +21,30 @@ class CompanyUpdate(BaseModel):
     status: Optional[str] = None
 
 
+class PresentationValue(BaseModel):
+    title: str
+    description: str
+
+
+class PresentationUpdate(BaseModel):
+    mission: Optional[str] = None
+    vision: Optional[str] = None
+    history: Optional[str] = None
+    values: Optional[List[PresentationValue]] = None
+    cover_url: Optional[str] = None
+
+
+class InternalRule(BaseModel):
+    title: str
+    content: str
+
+
+class InternalRulesUpdate(BaseModel):
+    rules: List[InternalRule]
+
+
+# ── Static routes first (must come before /{company_id}) ──────────────────────
+
 @router.get("")
 async def list_companies(conn: asyncpg.Connection = Depends(get_db)):
     rows = await conn.fetch(
@@ -36,50 +60,6 @@ async def create_company(body: CompanyCreate, conn: asyncpg.Connection = Depends
         body.name, body.cnpj, body.status,
     )
     return dict(row)
-
-
-@router.patch("/{company_id}")
-async def update_company(
-    company_id: str,
-    body: CompanyUpdate,
-    user_id: str = Depends(get_current_user_id),
-    conn: asyncpg.Connection = Depends(get_db),
-):
-    await require_master_admin(user_id, conn)
-    fields = {k: v for k, v in body.model_dump().items() if v is not None}
-    if not fields:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo para atualizar")
-
-    set_clause = ", ".join(f"{k} = ${i + 2}" for i, k in enumerate(fields))
-    values = list(fields.values())
-
-    row = await conn.fetchrow(
-        f"UPDATE public.companies SET {set_clause} WHERE id = $1 RETURNING *",
-        company_id, *values,
-    )
-    if not row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
-    return dict(row)
-
-
-@router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_company(company_id: str, conn: asyncpg.Connection = Depends(get_db)):
-    await conn.execute("SELECT public.delete_company_cascade($1)", company_id)
-
-
-# ── Company Presentation ──────────────────────────────────────────────────────
-
-class PresentationValue(BaseModel):
-    title: str
-    description: str
-
-
-class PresentationUpdate(BaseModel):
-    mission: Optional[str] = None
-    vision: Optional[str] = None
-    history: Optional[str] = None
-    values: Optional[List[PresentationValue]] = None
-    cover_url: Optional[str] = None
 
 
 @router.get("/presentation")
@@ -104,11 +84,8 @@ async def get_presentation(
         raise HTTPException(status_code=404, detail="Empresa não encontrada")
 
     result = dict(row)
-    if result["presentation_values"]:
-        vals = result["presentation_values"]
-        result["presentation_values"] = json.loads(vals) if isinstance(vals, str) else vals
-    else:
-        result["presentation_values"] = []
+    vals = result["presentation_values"]
+    result["presentation_values"] = json.loads(vals) if isinstance(vals, str) else (vals or [])
     return result
 
 
@@ -155,17 +132,6 @@ async def update_presentation(
     return await get_presentation(user_id=user_id, conn=conn)
 
 
-# ── Internal Rules ────────────────────────────────────────────────────────────
-
-class InternalRule(BaseModel):
-    title: str
-    content: str
-
-
-class InternalRulesUpdate(BaseModel):
-    rules: List[InternalRule]
-
-
 @router.get("/internal-rules")
 async def get_internal_rules(
     user_id: str = Depends(get_current_user_id),
@@ -208,3 +174,34 @@ async def update_internal_rules(
         profile["company_id"],
     )
     return {"rules": [r.model_dump() for r in body.rules]}
+
+
+# ── Parameterized routes last ─────────────────────────────────────────────────
+
+@router.patch("/{company_id}")
+async def update_company(
+    company_id: str,
+    body: CompanyUpdate,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_master_admin(user_id, conn)
+    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    if not fields:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nenhum campo para atualizar")
+
+    set_clause = ", ".join(f"{k} = ${i + 2}" for i, k in enumerate(fields))
+    values = list(fields.values())
+
+    row = await conn.fetchrow(
+        f"UPDATE public.companies SET {set_clause} WHERE id = $1 RETURNING *",
+        company_id, *values,
+    )
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
+    return dict(row)
+
+
+@router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_company(company_id: str, conn: asyncpg.Connection = Depends(get_db)):
+    await conn.execute("SELECT public.delete_company_cascade($1)", company_id)
