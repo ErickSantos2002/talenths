@@ -125,11 +125,6 @@ export default function MeusFeedbacksPage() {
                       Responder
                     </Button>
                   )}
-                  {item.has_responded && (
-                    <Button size="sm" variant="outline" onClick={() => openRespond(item)}>
-                      Editar
-                    </Button>
-                  )}
                 </div>
 
                 {item.has_responded && item.my_rating != null && (
