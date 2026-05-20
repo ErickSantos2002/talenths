@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, field_validator
+from typing import Optional, List, Union
 import asyncpg
 import json
 
@@ -23,15 +23,22 @@ class CompanyUpdate(BaseModel):
 
 class PresentationValue(BaseModel):
     title: str
-    description: str
+    description: str = ""
 
 
 class PresentationUpdate(BaseModel):
-    mission: Optional[str] = None
-    vision: Optional[str] = None
-    history: Optional[str] = None
-    values: Optional[List[PresentationValue]] = None
-    cover_url: Optional[str] = None
+    presentation_mission: Optional[str] = None
+    presentation_vision: Optional[str] = None
+    presentation_history: Optional[str] = None
+    presentation_cover_url: Optional[str] = None
+    presentation_values: Optional[List[Union[PresentationValue, str]]] = None
+
+    @field_validator("presentation_values", mode="before")
+    @classmethod
+    def coerce_values(cls, v):
+        if not v:
+            return v
+        return [{"title": item, "description": ""} if isinstance(item, str) else item for item in v]
 
 
 class InternalRule(BaseModel):
@@ -105,18 +112,18 @@ async def update_presentation(
 
     await conn.execute(
         """UPDATE public.companies SET
-            presentation_mission  = $2,
-            presentation_vision   = $3,
-            presentation_history  = $4,
+            presentation_mission   = $2,
+            presentation_vision    = $3,
+            presentation_history   = $4,
             presentation_cover_url = $5,
-            presentation_values   = $6::jsonb
+            presentation_values    = $6::jsonb
            WHERE id = $1""",
         profile["company_id"],
-        body.mission,
-        body.vision,
-        body.history,
-        body.cover_url,
-        json.dumps([v.model_dump() for v in body.values] if body.values else []),
+        body.presentation_mission,
+        body.presentation_vision,
+        body.presentation_history,
+        body.presentation_cover_url,
+        json.dumps([v.model_dump() for v in body.presentation_values] if body.presentation_values else []),
     )
     return await get_presentation(user_id=user_id, conn=conn)
 

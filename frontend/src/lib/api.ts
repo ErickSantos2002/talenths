@@ -106,11 +106,11 @@ export const companies = {
   delete: (id: string) => del(`/companies/${id}`),
   getPresentation: () => get<CompanyPresentation>("/companies/presentation"),
   updatePresentation: (data: {
-    mission?: string | null;
-    vision?: string | null;
-    history?: string | null;
-    values?: PresentationValue[];
-    cover_url?: string | null;
+    presentation_mission?: string | null;
+    presentation_vision?: string | null;
+    presentation_history?: string | null;
+    presentation_cover_url?: string | null;
+    presentation_values?: PresentationValue[];
   }) => patch<CompanyPresentation>("/companies/presentation", data),
   getInternalRules: () => get<{ rules: InternalRule[] }>("/companies/internal-rules"),
   updateInternalRules: (rules: InternalRule[]) =>

@@ -74,11 +74,11 @@ export default function ApresentacaoEmpresaPage() {
   const mut = useMutation({
     mutationFn: () =>
       companies.updatePresentation({
-        mission: mission || null,
-        vision: vision || null,
-        history: history || null,
-        cover_url: coverUrl || null,
-        values,
+        presentation_mission: mission || null,
+        presentation_vision: vision || null,
+        presentation_history: history || null,
+        presentation_cover_url: coverUrl || null,
+        presentation_values: values,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company-presentation"] });
