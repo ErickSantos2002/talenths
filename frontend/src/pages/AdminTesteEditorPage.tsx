@@ -58,11 +58,29 @@ export default function AdminTesteEditorPage() {
   const [qForm, setQForm] = useState<QuestionForm>(emptyQ);
   const [expandedQ, setExpandedQ] = useState<string | null>(null);
   const [optionText, setOptionText] = useState<Record<string, string>>({});
+  const [settings, setSettings] = useState<{
+    max_attempts: string;
+    time_limit_min: string;
+    pass_score: string;
+    is_public: boolean;
+  } | null>(null);
 
   const { data: test, isLoading } = useQuery<CustomTestDetail>({
     queryKey: ["test-detail", testId],
     queryFn: () => customTests.get(testId!),
     enabled: !!testId,
+    select: (data) => {
+      // Sync settings state when test loads for the first time
+      if (!settings) {
+        setSettings({
+          max_attempts: data.max_attempts !== null ? String(data.max_attempts) : "",
+          time_limit_min: data.time_limit_min !== null ? String(data.time_limit_min) : "",
+          pass_score: data.pass_score !== null ? String(data.pass_score) : "",
+          is_public: data.is_public,
+        });
+      }
+      return data;
+    },
   });
 
   const isDraft = test?.status === "draft";
@@ -127,6 +145,26 @@ export default function AdminTesteEditorPage() {
     onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
+  const saveSettingsMut = useMutation({
+    mutationFn: (data: object) => customTests.update(testId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["test-detail", testId] });
+      qc.invalidateQueries({ queryKey: ["admin-tests"] });
+      toast({ title: "Configurações salvas" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const handleSaveSettings = () => {
+    if (!settings) return;
+    saveSettingsMut.mutate({
+      max_attempts: settings.max_attempts !== "" ? parseInt(settings.max_attempts) : null,
+      time_limit_min: settings.time_limit_min !== "" ? parseInt(settings.time_limit_min) : null,
+      pass_score: settings.pass_score !== "" ? parseFloat(settings.pass_score) : null,
+      is_public: settings.is_public,
+    });
+  };
+
   const moveQ = async (idx: number, dir: -1 | 1) => {
     if (!test) return;
     const qs = [...test.questions];
@@ -186,6 +224,81 @@ export default function AdminTesteEditorPage() {
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
             Testes publicados ou arquivados não podem ser editados. Para modificar, duplique o teste.
           </div>
+        )}
+
+        {/* Configurações */}
+        {settings && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold">Configurações</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Limite de tentativas</Label>
+                  <Input
+                    type="number" min="1" step="1"
+                    placeholder="Ilimitado"
+                    value={settings.max_attempts}
+                    onChange={(e) => setSettings({ ...settings, max_attempts: e.target.value })}
+                    disabled={!isDraft}
+                    className="h-8 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Deixe em branco para ilimitado</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Tempo limite (min)</Label>
+                  <Input
+                    type="number" min="1" step="1"
+                    placeholder="Sem limite"
+                    value={settings.time_limit_min}
+                    onChange={(e) => setSettings({ ...settings, time_limit_min: e.target.value })}
+                    disabled={!isDraft}
+                    className="h-8 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Deixe em branco para sem limite</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Nota mínima para aprovação</Label>
+                  <Input
+                    type="number" min="0" step="0.5"
+                    placeholder="Sem corte"
+                    value={settings.pass_score}
+                    onChange={(e) => setSettings({ ...settings, pass_score: e.target.value })}
+                    disabled={!isDraft}
+                    className="h-8 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">Deixe em branco sem corte de aprovação</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={settings.is_public}
+                    onCheckedChange={(v) => setSettings({ ...settings, is_public: v })}
+                    disabled={!isDraft}
+                  />
+                  <div>
+                    <p className="text-sm font-medium">Acesso público</p>
+                    <p className="text-xs text-muted-foreground">
+                      {settings.is_public
+                        ? "Todos os colaboradores podem fazer o teste"
+                        : "Apenas colaboradores atribuídos podem fazer o teste"}
+                    </p>
+                  </div>
+                </div>
+                {isDraft && (
+                  <Button
+                    size="sm" variant="outline"
+                    onClick={handleSaveSettings}
+                    disabled={saveSettingsMut.isPending}
+                  >
+                    Salvar
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Perguntas */}

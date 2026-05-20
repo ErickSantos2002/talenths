@@ -596,20 +596,12 @@ async def update_test(
     if test["status"] != "draft":
         raise HTTPException(status_code=400, detail="Apenas testes em rascunho podem ser editados")
 
-    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    # exclude_unset=True: inclui campos explicitamente enviados, mesmo que null
+    fields = body.model_dump(exclude_unset=True)
     if not fields:
         return test
 
-    fields["updated_at"] = "now()"
-    set_clause = ", ".join(
-        f"{k} = now()" if v == "now()" else f"{k} = ${i + 2}"
-        for i, (k, v) in enumerate(fields.items())
-        if v != "now()"
-    )
-    values = [v for v in fields.values() if v != "now()"]
-
-    # Rebuild properly
-    cols = [k for k in fields if k != "updated_at"]
+    cols = list(fields.keys())
     set_parts = [f"{k} = ${i + 2}" for i, k in enumerate(cols)]
     set_parts.append("updated_at = now()")
     set_clause = ", ".join(set_parts)
