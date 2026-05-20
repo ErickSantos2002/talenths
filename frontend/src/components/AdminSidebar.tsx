@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
-  Gift, FileDown, Shield, ChevronRight, DollarSign,
+  Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,6 +104,7 @@ const personalSections: NavSection[] = [
     items: [
       { title: "Meu Perfil", url: "/meu-perfil", icon: UserPen },
       { title: "Nossa Cultura", url: "/cultura", icon: HeartHandshake },
+      { title: "Regras Internas", url: "/regras-internas", icon: ScrollText },
       { title: "Calendário", url: "/calendario", icon: CalendarDays },
     ],
   },
@@ -309,6 +310,7 @@ export function AdminSidebar() {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
+              <NavItem item={{ title: "Apresentação", url: "/apresentacao", icon: Presentation }} />
               <NavItem item={{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }} />
             </SidebarMenu>
           </SidebarGroupContent>

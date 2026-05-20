@@ -86,6 +86,17 @@ export const profiles = {
 
 // ── Companies ─────────────────────────────────────────────────────────────────
 
+export type PresentationValue = { title: string; description: string };
+export type CompanyPresentation = {
+  name: string;
+  cnpj?: string;
+  presentation_mission?: string;
+  presentation_vision?: string;
+  presentation_history?: string;
+  presentation_values: PresentationValue[];
+  presentation_cover_url?: string;
+};
+
 export const companies = {
   list: () => get<Record<string, unknown>[]>("/companies"),
   create: (data: { name: string; cnpj?: string; status?: string }) =>
@@ -93,7 +104,20 @@ export const companies = {
   update: (id: string, data: Record<string, unknown>) =>
     patch<Record<string, unknown>>(`/companies/${id}`, data),
   delete: (id: string) => del(`/companies/${id}`),
+  getPresentation: () => get<CompanyPresentation>("/companies/presentation"),
+  updatePresentation: (data: {
+    mission?: string | null;
+    vision?: string | null;
+    history?: string | null;
+    values?: PresentationValue[];
+    cover_url?: string | null;
+  }) => patch<CompanyPresentation>("/companies/presentation", data),
+  getInternalRules: () => get<{ rules: InternalRule[] }>("/companies/internal-rules"),
+  updateInternalRules: (rules: InternalRule[]) =>
+    patch<{ rules: InternalRule[] }>("/companies/internal-rules", { rules }),
 };
+
+export type InternalRule = { title: string; content: string };
 
 // ── Departments ───────────────────────────────────────────────────────────────
 

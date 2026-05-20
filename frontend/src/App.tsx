@@ -41,6 +41,8 @@ import MeusBeneficiosPage from "./pages/MeusBeneficiosPage";
 import ReportsAdminPage from "./pages/ReportsAdminPage";
 import CalendarPage from "./pages/CalendarPage";
 import LogsAdminPage from "./pages/LogsAdminPage";
+import ApresentacaoEmpresaPage from "./pages/ApresentacaoEmpresaPage";
+import RegrasInternasPage from "./pages/RegrasInternasPage";
 import AdminTestesPage from "./pages/AdminTestesPage";
 import AdminTesteEditorPage from "./pages/AdminTesteEditorPage";
 import AdminTesteTentativasPage from "./pages/AdminTesteTentativasPage";
@@ -72,7 +74,23 @@ const App = () => (
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <DashboardPage />
+                  <Navigate to="/apresentacao" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/apresentacao"
+              element={
+                <ProtectedRoute>
+                  <ApresentacaoEmpresaPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/regras-internas"
+              element={
+                <ProtectedRoute>
+                  <RegrasInternasPage />
                 </ProtectedRoute>
               }
             />

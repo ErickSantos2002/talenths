@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import asyncpg
+import json
 
-from app.dependencies import get_db, get_current_user_id, require_master_admin
+from app.dependencies import get_db, get_current_user_id, require_master_admin, require_manager
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -64,3 +65,146 @@ async def update_company(
 @router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_company(company_id: str, conn: asyncpg.Connection = Depends(get_db)):
     await conn.execute("SELECT public.delete_company_cascade($1)", company_id)
+
+
+# ── Company Presentation ──────────────────────────────────────────────────────
+
+class PresentationValue(BaseModel):
+    title: str
+    description: str
+
+
+class PresentationUpdate(BaseModel):
+    mission: Optional[str] = None
+    vision: Optional[str] = None
+    history: Optional[str] = None
+    values: Optional[List[PresentationValue]] = None
+    cover_url: Optional[str] = None
+
+
+@router.get("/presentation")
+async def get_presentation(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    profile = await conn.fetchrow(
+        "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
+    )
+    if not profile or not profile["company_id"]:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    row = await conn.fetchrow(
+        """SELECT name, cnpj,
+                  presentation_mission, presentation_vision, presentation_history,
+                  presentation_values, presentation_cover_url
+           FROM public.companies WHERE id = $1""",
+        profile["company_id"],
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    result = dict(row)
+    if result["presentation_values"]:
+        vals = result["presentation_values"]
+        result["presentation_values"] = json.loads(vals) if isinstance(vals, str) else vals
+    else:
+        result["presentation_values"] = []
+    return result
+
+
+@router.patch("/presentation")
+async def update_presentation(
+    body: PresentationUpdate,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_manager(user_id, conn)
+
+    profile = await conn.fetchrow(
+        "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
+    )
+    if not profile or not profile["company_id"]:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    company_id = profile["company_id"]
+    data = body.model_dump(exclude_unset=True)
+
+    sets, vals = [], [company_id]
+    mapping = {
+        "mission": "presentation_mission",
+        "vision": "presentation_vision",
+        "history": "presentation_history",
+        "cover_url": "presentation_cover_url",
+    }
+    for field, col in mapping.items():
+        if field in data:
+            vals.append(data[field])
+            sets.append(f"{col} = ${len(vals)}")
+
+    if "values" in data:
+        vals.append(json.dumps([v.model_dump() for v in body.values] if body.values else []))
+        sets.append(f"presentation_values = ${len(vals)}::jsonb")
+
+    if not sets:
+        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+
+    await conn.execute(
+        f"UPDATE public.companies SET {', '.join(sets)} WHERE id = $1",
+        *vals,
+    )
+    return await get_presentation(user_id=user_id, conn=conn)
+
+
+# ── Internal Rules ────────────────────────────────────────────────────────────
+
+class InternalRule(BaseModel):
+    title: str
+    content: str
+
+
+class InternalRulesUpdate(BaseModel):
+    rules: List[InternalRule]
+
+
+@router.get("/internal-rules")
+async def get_internal_rules(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    profile = await conn.fetchrow(
+        "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
+    )
+    if not profile or not profile["company_id"]:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    row = await conn.fetchrow(
+        "SELECT internal_rules FROM public.companies WHERE id = $1",
+        profile["company_id"],
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    rules = row["internal_rules"]
+    return {"rules": json.loads(rules) if isinstance(rules, str) else (rules or [])}
+
+
+@router.patch("/internal-rules")
+async def update_internal_rules(
+    body: InternalRulesUpdate,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_manager(user_id, conn)
+
+    profile = await conn.fetchrow(
+        "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
+    )
+    if not profile or not profile["company_id"]:
+        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+
+    await conn.execute(
+        "UPDATE public.companies SET internal_rules = $1::jsonb WHERE id = $2",
+        json.dumps([r.model_dump() for r in body.rules]),
+        profile["company_id"],
+    )
+    return {"rules": [r.model_dump() for r in body.rules]}
