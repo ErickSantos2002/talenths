@@ -52,6 +52,7 @@ const adminSections: NavSection[] = [
       { title: "Metas", url: "/admin/metas", icon: Target },
       { title: "Avaliação", url: "/admin/avaliacao", icon: ClipboardList },
       { title: "Mapa 9Box", url: "/admin/9box", icon: Grid3X3 },
+      { title: "Testes", url: "/admin/testes", icon: ClipboardCheck },
     ],
   },
   {
@@ -111,6 +112,7 @@ const personalSections: NavSection[] = [
     label: "Desempenho",
     items: [
       { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
+      { title: "Meus Testes", url: "/meus-testes", icon: ClipboardList },
     ],
   },
   {

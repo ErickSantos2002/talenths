@@ -446,6 +446,160 @@ export const salary = {
   updateEmployee: (profileId: string, data: object) => patch<{ ok: boolean }>(`/salary/employee/${profileId}`, data),
 };
 
+// ── Custom Tests ──────────────────────────────────────────────────────────────
+
+export const customTests = {
+  // Gestão (RH)
+  list: () => get<CustomTest[]>("/tests"),
+  create: (data: object) => post<CustomTest>("/tests", data),
+  get: (id: string) => get<CustomTestDetail>(`/tests/${id}`),
+  update: (id: string, data: object) => put<CustomTest>(`/tests/${id}`, data),
+  delete: (id: string) => del(`/tests/${id}`),
+  publish: (id: string) => post<CustomTest>(`/tests/${id}/publish`),
+  archive: (id: string) => post<CustomTest>(`/tests/${id}/archive`),
+  duplicate: (id: string) => post<CustomTest>(`/tests/${id}/duplicate`),
+  stats: (id: string) => get<TestStats>(`/tests/${id}/stats`),
+  attempts: (testId: string) => get<TestAttempt[]>(`/tests/${testId}/attempts`),
+  getAttempt: (attemptId: string) => get<TestAttemptDetail>(`/tests/attempts/${attemptId}`),
+  evaluate: (attemptId: string, data: object) => post<TestAttempt>(`/tests/attempts/${attemptId}/evaluate`, data),
+  assignments: (testId: string) => get<TestAssignment[]>(`/tests/${testId}/assignments`),
+  assign: (testId: string, data: object) => post<TestAssignment>(`/tests/${testId}/assignments`, data),
+  deleteAssignment: (testId: string, assignmentId: string) => del(`/tests/${testId}/assignments/${assignmentId}`),
+  // Perguntas
+  addQuestion: (testId: string, data: object) => post<TestQuestion>(`/tests/${testId}/questions`, data),
+  reorderQuestions: (testId: string, question_ids: string[]) =>
+    put<{ reordered: number }>(`/tests/${testId}/questions/reorder`, { question_ids }),
+  updateQuestion: (questionId: string, data: object) => put<TestQuestion>(`/tests/questions/${questionId}`, data),
+  deleteQuestion: (questionId: string) => del(`/tests/questions/${questionId}`),
+  // Opções
+  addOption: (questionId: string, data: object) => post<TestOption>(`/tests/questions/${questionId}/options`, data),
+  updateOption: (optionId: string, data: object) => put<TestOption>(`/tests/options/${optionId}`, data),
+  deleteOption: (optionId: string) => del(`/tests/options/${optionId}`),
+  // Colaborador
+  available: () => get<CustomTest[]>("/tests/available"),
+  start: (testId: string) => post<TestAttempt>(`/tests/${testId}/start`),
+  myAttempts: () => get<TestAttempt[]>("/tests/my-attempts"),
+  myAttemptDetail: (attemptId: string) => get<TestAttemptDetail>(`/tests/my-attempts/${attemptId}`),
+  respond: (attemptId: string, responses: object[]) =>
+    post<{ saved: number }>(`/tests/attempts/${attemptId}/respond`, { responses }),
+  submit: (attemptId: string) => post<TestAttempt>(`/tests/attempts/${attemptId}/submit`),
+};
+
+export interface CustomTest {
+  id: string;
+  company_id: string;
+  created_by: string;
+  title: string;
+  description: string | null;
+  instructions: string | null;
+  scoring_mode: "auto" | "manual" | "mixed";
+  is_public: boolean;
+  max_attempts: number | null;
+  time_limit_min: number | null;
+  pass_score: number | null;
+  total_points: number;
+  status: "draft" | "published" | "archived";
+  created_at: string;
+  updated_at: string;
+  question_count?: number;
+  attempt_count?: number;
+}
+
+export interface TestOption {
+  id: string;
+  question_id: string;
+  order_index: number;
+  text: string;
+  is_correct: boolean;
+  point_value: number;
+  created_at: string;
+}
+
+export interface TestQuestion {
+  id: string;
+  test_id: string;
+  order_index: number;
+  question_type: "single_choice" | "multiple_choice" | "true_false" | "checklist" | "scale" | "open_text";
+  text: string;
+  explanation: string | null;
+  is_required: boolean;
+  points: number;
+  scale_min: number | null;
+  scale_max: number | null;
+  scale_labels: Record<string, string> | null;
+  created_at: string;
+  options: TestOption[];
+}
+
+export interface CustomTestDetail extends CustomTest {
+  questions: TestQuestion[];
+}
+
+export interface TestAttempt {
+  id: string;
+  test_id: string;
+  user_id: string;
+  attempt_number: number;
+  status: "in_progress" | "submitted" | "evaluated";
+  started_at: string;
+  submitted_at: string | null;
+  evaluated_at: string | null;
+  auto_score: number | null;
+  manual_score: number | null;
+  final_score: number | null;
+  passed: boolean | null;
+  hr_feedback: string | null;
+  test_title?: string;
+  scoring_mode?: string;
+  pass_score?: number | null;
+  collaborator_name?: string;
+}
+
+export interface TestResponse {
+  id: string;
+  attempt_id: string;
+  question_id: string;
+  selected_option_ids: string[] | null;
+  text_response: string | null;
+  scale_value: number | null;
+  boolean_response: boolean | null;
+  auto_points: number | null;
+  manual_points: number | null;
+  hr_comment: string | null;
+  question_text: string;
+  question_type: string;
+  points: number;
+  order_index: number;
+  options?: TestOption[];
+}
+
+export interface TestAttemptDetail extends TestAttempt {
+  responses: TestResponse[];
+  total_points?: number;
+  collaborator_name?: string;
+}
+
+export interface TestStats {
+  total_attempts: number;
+  in_progress: number;
+  submitted: number;
+  evaluated: number;
+  approved: number;
+  avg_score: number | null;
+  min_score: number | null;
+  max_score: number | null;
+}
+
+export interface TestAssignment {
+  id: string;
+  test_id: string;
+  user_id: string | null;
+  department_id: string | null;
+  user_name: string | null;
+  department_name: string | null;
+  created_at: string;
+}
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {

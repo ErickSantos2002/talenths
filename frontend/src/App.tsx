@@ -41,6 +41,12 @@ import MeusBeneficiosPage from "./pages/MeusBeneficiosPage";
 import ReportsAdminPage from "./pages/ReportsAdminPage";
 import CalendarPage from "./pages/CalendarPage";
 import LogsAdminPage from "./pages/LogsAdminPage";
+import AdminTestesPage from "./pages/AdminTestesPage";
+import AdminTesteEditorPage from "./pages/AdminTesteEditorPage";
+import AdminTesteTentativasPage from "./pages/AdminTesteTentativasPage";
+import MeusTestesPage from "./pages/MeusTestesPage";
+import RealizarTestePage from "./pages/RealizarTestePage";
+import ResultadoTestePage from "./pages/ResultadoTestePage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 
@@ -239,6 +245,30 @@ const App = () => (
               }
             />
             <Route
+              path="/admin/testes"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AdminTestesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/testes/:testId/editar"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AdminTesteEditorPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/testes/:testId/tentativas"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AdminTesteTentativasPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/pesquisas"
               element={
                 <ProtectedRoute>
@@ -283,6 +313,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MeusBeneficiosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-testes"
+              element={
+                <ProtectedRoute>
+                  <MeusTestesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-testes/:testId/realizar"
+              element={
+                <ProtectedRoute>
+                  <RealizarTestePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-testes/tentativas/:attemptId"
+              element={
+                <ProtectedRoute>
+                  <ResultadoTestePage />
                 </ProtectedRoute>
               }
             />

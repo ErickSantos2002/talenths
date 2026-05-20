@@ -28,6 +28,7 @@ from app.routers.salary import router as salary_router
 from app.routers.reports import router as reports_router
 from app.routers.calendar import router as calendar_router
 from app.routers.logs import router as logs_router
+from app.routers.custom_tests import router as custom_tests_router
 
 
 @asynccontextmanager
@@ -82,6 +83,7 @@ app.include_router(salary_router)
 app.include_router(reports_router)
 app.include_router(calendar_router)
 app.include_router(logs_router)
+app.include_router(custom_tests_router)
 
 
 @app.get("/health")
