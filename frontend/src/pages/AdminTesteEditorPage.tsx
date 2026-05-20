@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { customTests } from "@/lib/api";
-import type { CustomTestDetail, TestQuestion, TestOption } from "@/lib/api";
+import { customTests, collaborators as collaboratorsApi, departments as departmentsApi } from "@/lib/api";
+import type { CustomTestDetail, TestQuestion, TestOption, TestAssignment } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown,
   CheckSquare, Circle, ToggleLeft, List, SlidersHorizontal, FileText,
-  Send, Archive
+  Send, Archive, UserPlus, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +58,8 @@ export default function AdminTesteEditorPage() {
   const [qForm, setQForm] = useState<QuestionForm>(emptyQ);
   const [expandedQ, setExpandedQ] = useState<string | null>(null);
   const [optionText, setOptionText] = useState<Record<string, string>>({});
+  const [assignType, setAssignType] = useState<"user" | "department">("user");
+  const [assignTarget, setAssignTarget] = useState("");
   const [settings, setSettings] = useState<{
     max_attempts: string;
     time_limit_min: string;
@@ -163,6 +165,45 @@ export default function AdminTesteEditorPage() {
       pass_score: settings.pass_score !== "" ? parseFloat(settings.pass_score) : null,
       is_public: settings.is_public,
     });
+  };
+
+  const { data: assignments = [] } = useQuery<TestAssignment[]>({
+    queryKey: ["test-assignments", testId],
+    queryFn: () => customTests.assignments(testId!),
+    enabled: !!testId,
+  });
+
+  const { data: collabList = [] } = useQuery<Record<string, unknown>[]>({
+    queryKey: ["collaborators-list"],
+    queryFn: () => collaboratorsApi.list(),
+  });
+
+  const { data: deptList = [] } = useQuery<Record<string, unknown>[]>({
+    queryKey: ["departments-list"],
+    queryFn: () => departmentsApi.list(),
+  });
+
+  const addAssignMut = useMutation({
+    mutationFn: (data: object) => customTests.assign(testId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["test-assignments", testId] });
+      setAssignTarget("");
+      toast({ title: "Atribuição adicionada" });
+    },
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const removeAssignMut = useMutation({
+    mutationFn: (assignmentId: string) => customTests.deleteAssignment(testId!, assignmentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["test-assignments", testId] }),
+    onError: (e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const handleAddAssignment = () => {
+    if (!assignTarget) return;
+    addAssignMut.mutate(
+      assignType === "user" ? { user_id: assignTarget } : { department_id: assignTarget }
+    );
   };
 
   const moveQ = async (idx: number, dir: -1 | 1) => {
@@ -300,6 +341,85 @@ export default function AdminTesteEditorPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Atribuições */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold">Atribuições</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {settings?.is_public && (
+              <p className="text-xs text-muted-foreground bg-muted/40 rounded px-3 py-2">
+                O acesso público está ativo — as atribuições abaixo são ignoradas. Desative o acesso público nas configurações para restringir por colaborador ou departamento.
+              </p>
+            )}
+
+            {/* Adicionar atribuição */}
+            <div className="flex gap-2 flex-wrap">
+              <Select value={assignType} onValueChange={(v) => { setAssignType(v as "user" | "department"); setAssignTarget(""); }}>
+                <SelectTrigger className="w-36 h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Colaborador</SelectItem>
+                  <SelectItem value="department">Departamento</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={assignTarget} onValueChange={setAssignTarget}>
+                <SelectTrigger className="flex-1 min-w-40 h-8 text-sm">
+                  <SelectValue placeholder={assignType === "user" ? "Selecione o colaborador..." : "Selecione o departamento..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {assignType === "user"
+                    ? collabList.map((c) => (
+                        <SelectItem key={String(c.user_id)} value={String(c.user_id)}>
+                          {String(c.name)}
+                        </SelectItem>
+                      ))
+                    : deptList.map((d) => (
+                        <SelectItem key={String(d.id)} value={String(d.id)}>
+                          {String(d.name)}
+                        </SelectItem>
+                      ))
+                  }
+                </SelectContent>
+              </Select>
+
+              <Button
+                size="sm" className="h-8"
+                onClick={handleAddAssignment}
+                disabled={!assignTarget || addAssignMut.isPending}
+              >
+                <UserPlus className="h-3 w-3 mr-1" /> Atribuir
+              </Button>
+            </div>
+
+            {/* Lista de atribuições */}
+            {assignments.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nenhuma atribuição ainda.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {assignments.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+                    <span>
+                      {a.user_name
+                        ? <><span className="text-muted-foreground text-xs mr-1">Colaborador</span>{a.user_name}</>
+                        : <><span className="text-muted-foreground text-xs mr-1">Departamento</span>{a.department_name}</>
+                      }
+                    </span>
+                    <button
+                      onClick={() => removeAssignMut.mutate(a.id)}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Perguntas */}
         <div className="space-y-3">
