@@ -103,31 +103,20 @@ async def update_presentation(
     if not profile or not profile["company_id"]:
         raise HTTPException(status_code=404, detail="Empresa não encontrada")
 
-    company_id = profile["company_id"]
-    data = body.model_dump(exclude_unset=True)
-
-    sets, vals = [], [company_id]
-    mapping = {
-        "mission": "presentation_mission",
-        "vision": "presentation_vision",
-        "history": "presentation_history",
-        "cover_url": "presentation_cover_url",
-    }
-    for field, col in mapping.items():
-        if field in data:
-            vals.append(data[field])
-            sets.append(f"{col} = ${len(vals)}")
-
-    if "values" in data:
-        vals.append(json.dumps([v.model_dump() for v in body.values] if body.values else []))
-        sets.append(f"presentation_values = ${len(vals)}::jsonb")
-
-    if not sets:
-        raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
-
     await conn.execute(
-        f"UPDATE public.companies SET {', '.join(sets)} WHERE id = $1",
-        *vals,
+        """UPDATE public.companies SET
+            presentation_mission  = $2,
+            presentation_vision   = $3,
+            presentation_history  = $4,
+            presentation_cover_url = $5,
+            presentation_values   = $6::jsonb
+           WHERE id = $1""",
+        profile["company_id"],
+        body.mission,
+        body.vision,
+        body.history,
+        body.cover_url,
+        json.dumps([v.model_dump() for v in body.values] if body.values else []),
     )
     return await get_presentation(user_id=user_id, conn=conn)
 
