@@ -21,6 +21,7 @@ class CollaboratorCreate(BaseModel):
     hire_date: Optional[date] = None
     password: Optional[str] = None
     role: str = "user"
+    job_title: Optional[str] = None
 
 
 class PasswordUpdate(BaseModel):
@@ -35,6 +36,7 @@ class CollaboratorUpdate(BaseModel):
     hire_date: Optional[date] = None
     company_id: Optional[str] = None
     department_id: Optional[str] = None
+    job_title: Optional[str] = None
 
 
 class RoleUpdate(BaseModel):
@@ -60,10 +62,7 @@ async def list_collaborators(
         roles = await conn.fetch(
             "SELECT id, role FROM public.user_roles WHERE user_id = $1", p["user_id"]
         )
-        has_result = await conn.fetchval(
-            "SELECT EXISTS(SELECT 1 FROM public.test_results WHERE user_id = $1)", p["user_id"]
-        )
-        result.append({**dict(p), "roles": [dict(r) for r in roles], "has_result": has_result})
+        result.append({**dict(p), "roles": [dict(r) for r in roles]})
 
     return result
 
@@ -89,9 +88,9 @@ async def create_collaborator(
 
         await conn.execute(
             """UPDATE public.profiles
-               SET company_id = $1, department_id = $2, cpf = $3, phone = $4, birth_date = $5, hire_date = $6
-               WHERE user_id = $7""",
-            body.company_id, body.department_id, body.cpf, body.phone, body.birth_date, body.hire_date, new_user_id,
+               SET company_id = $1, department_id = $2, cpf = $3, phone = $4, birth_date = $5, hire_date = $6, job_title = $7
+               WHERE user_id = $8""",
+            body.company_id, body.department_id, body.cpf, body.phone, body.birth_date, body.hire_date, body.job_title, new_user_id,
         )
 
         if body.role != "user":
@@ -182,11 +181,6 @@ async def delete_collaborator(
 
     uid = profile["user_id"]
     async with conn.transaction():
-        await conn.execute("DELETE FROM public.test_responses WHERE user_id = $1", uid)
-        await conn.execute("DELETE FROM public.test_results WHERE user_id = $1", uid)
-        await conn.execute(
-            "DELETE FROM public.profile_comparisons WHERE user1_id = $1 OR user2_id = $1", uid
-        )
         await conn.execute(
             "DELETE FROM public.user_managers WHERE user_id = $1 OR manager_id = $1", uid
         )

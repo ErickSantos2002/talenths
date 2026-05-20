@@ -39,6 +39,7 @@ interface Collaborator {
   company_id: string | null;
   department_id: string | null;
   departmentName: string | null;
+  job_title: string | null;
   role: AppRole;
   roleId: string | null;
 }
@@ -98,6 +99,7 @@ export default function AdminCollaboratorsPage() {
   const [editHireDate, setEditHireDate] = useState("");
   const [editDeptId, setEditDeptId] = useState<string>("");
   const [editRole, setEditRole] = useState<AppRole>("user");
+  const [editJobTitle, setEditJobTitle] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Add dialog
@@ -111,6 +113,7 @@ export default function AdminCollaboratorsPage() {
   const [addPassword, setAddPassword] = useState("");
   const [addDeptId, setAddDeptId] = useState("");
   const [addRole, setAddRole] = useState<AppRole>("user");
+  const [addJobTitle, setAddJobTitle] = useState("");
   const [adding, setAdding] = useState(false);
 
   // Reset password dialog
@@ -203,6 +206,7 @@ export default function AdminCollaboratorsPage() {
           company_id: p.company_id,
           department_id: p.department_id,
           departmentName: p.department_id ? deptMap.get(p.department_id) ?? null : null,
+          job_title: p.job_title ?? null,
           role: primaryRole,
           roleId: primaryRoleId,
         };
@@ -235,6 +239,7 @@ export default function AdminCollaboratorsPage() {
     setEditHireDate(collab.hire_date ? collab.hire_date.slice(0, 10) : "");
     setEditDeptId(collab.department_id ?? "");
     setEditRole(collab.role);
+    setEditJobTitle(collab.job_title ?? "");
     setEditOpen(true);
   };
 
@@ -258,6 +263,7 @@ export default function AdminCollaboratorsPage() {
         hire_date: editHireDate || null,
         company_id: editTarget.company_id,
         department_id: editDeptId || null,
+        job_title: editJobTitle.trim() || null,
       });
 
       if (isMasterAdmin && editRole !== editTarget.role && editTarget.roleId) {
@@ -285,6 +291,7 @@ export default function AdminCollaboratorsPage() {
     setAddPassword("");
     setAddDeptId("");
     setAddRole("user");
+    setAddJobTitle("");
     setAddOpen(true);
   };
 
@@ -316,6 +323,7 @@ export default function AdminCollaboratorsPage() {
         hire_date: addHireDate || null,
         password: addPassword.trim() || null,
         role: addRole,
+        job_title: addJobTitle.trim() || null,
         origin: window.location.origin,
       });
       toast({ title: "Colaborador criado com sucesso", description: addPassword.trim() ? "O colaborador pode fazer login com a senha definida." : "Um email de convite foi enviado para o colaborador definir sua senha." });
@@ -430,7 +438,8 @@ export default function AdminCollaboratorsPage() {
                         <TableHead className="hidden sm:table-cell">Email</TableHead>
                         <TableHead className="hidden lg:table-cell">Telefone</TableHead>
                         <TableHead className="hidden lg:table-cell">Departamento</TableHead>
-                        <TableHead>Cargo</TableHead>
+                        <TableHead className="hidden lg:table-cell">Cargo</TableHead>
+                        <TableHead>Função</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -441,6 +450,7 @@ export default function AdminCollaboratorsPage() {
                           <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{collab.email}</TableCell>
                           <TableCell className="hidden lg:table-cell text-sm">{collab.phone ? formatPhone(collab.phone) : "—"}</TableCell>
                           <TableCell className="hidden lg:table-cell text-sm">{collab.departmentName ?? "—"}</TableCell>
+                          <TableCell className="hidden lg:table-cell text-sm">{collab.job_title ?? "—"}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={ROLE_COLORS[collab.role]}>
                               {ROLE_LABELS[collab.role]}
@@ -580,6 +590,10 @@ export default function AdminCollaboratorsPage() {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Input value={addJobTitle} onChange={(e) => setAddJobTitle(e.target.value)} placeholder="Ex: Analista de RH Pleno" />
+            </div>
+            <div className="space-y-2">
               <Label>Senha</Label>
               <Input
                 type="password"
@@ -589,7 +603,7 @@ export default function AdminCollaboratorsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Cargo *</Label>
+              <Label>Função *</Label>
               <Select value={addRole} onValueChange={(v) => setAddRole(v as AppRole)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -660,7 +674,11 @@ export default function AdminCollaboratorsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Cargo *</Label>
+              <Label>Cargo</Label>
+              <Input value={editJobTitle} onChange={(e) => setEditJobTitle(e.target.value)} placeholder="Ex: Analista de RH Pleno" />
+            </div>
+            <div className="space-y-2">
+              <Label>Função *</Label>
               {isMasterAdmin ? (
                 <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
                   <SelectTrigger>
