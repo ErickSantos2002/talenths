@@ -44,7 +44,7 @@ export default function AuthCallback() {
         const me = await res.json();
         localStorage.setItem(TOKEN_KEY, accessToken);
         localStorage.setItem(USER_KEY, JSON.stringify(me));
-        window.location.href = "/dashboard";
+        window.location.href = "/apresentacao";
       } catch (e: any) {
         setErrorMsg(`Não foi possível autenticar (${e?.message ?? "erro desconhecido"}). Tente novamente.`);
       }

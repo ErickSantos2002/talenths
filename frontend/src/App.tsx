@@ -74,7 +74,7 @@ const App = () => (
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Navigate to="/apresentacao" replace />
+                  <DashboardPage />
                 </ProtectedRoute>
               }
             />

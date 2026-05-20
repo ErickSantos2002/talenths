@@ -55,7 +55,7 @@ export default function LoginPage() {
         description: "Email ou senha incorretos. Verifique suas credenciais.",
       });
     } else {
-      navigate("/dashboard");
+      navigate("/apresentacao");
     }
     setIsLoading(false);
   };
