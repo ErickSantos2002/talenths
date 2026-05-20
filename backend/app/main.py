@@ -10,10 +10,7 @@ from app.routers.companies import router as companies_router
 from app.routers.departments import router as departments_router
 from app.routers.profiles import router as profiles_router
 from app.routers.collaborators import router as collaborators_router
-from app.routers.tests import router as tests_router
 from app.routers.invitations import router as invitations_router
-from app.routers.comparisons import router as comparisons_router
-from app.routers.chat import router as chat_router
 from app.routers.notifications import router as notifications_router
 from app.routers.culture import router as culture_router
 from app.routers.goals import router as goals_router
@@ -67,10 +64,7 @@ app.include_router(companies_router)
 app.include_router(departments_router)
 app.include_router(profiles_router)
 app.include_router(collaborators_router)
-app.include_router(tests_router)
 app.include_router(invitations_router)
-app.include_router(comparisons_router)
-app.include_router(chat_router)
 app.include_router(notifications_router)
 app.include_router(culture_router)
 app.include_router(goals_router)

@@ -93,51 +93,6 @@ async def report_collaborators(
     return _csv_response(data, headers, "colaboradores.csv")
 
 
-# ── Test Results ──────────────────────────────────────────────────────────────
-
-@router.get("/test-results")
-async def report_test_results(
-    user_id: str = Depends(get_current_user_id),
-    conn: asyncpg.Connection = Depends(get_db),
-):
-    await _require_manager(user_id, conn)
-    company_id = await _get_company_id(user_id, conn)
-    rows = await conn.fetch(
-        """SELECT DISTINCT ON (tr.user_id)
-                  p.name, p.email, d.name AS department,
-                  tr.disc_natural, tr.disc_adapted, tr.big_five, tr.iem, tr.completed_at
-           FROM test_results tr
-           JOIN profiles p ON p.user_id = tr.user_id
-           LEFT JOIN departments d ON d.id = p.department_id
-           WHERE p.company_id = $1
-           ORDER BY tr.user_id, tr.completed_at DESC""",
-        company_id,
-    )
-    data = []
-    for r in rows:
-        dn = json.loads(r["disc_natural"]) if r["disc_natural"] else {}
-        da = json.loads(r["disc_adapted"]) if r["disc_adapted"] else {}
-        bf = json.loads(r["big_five"]) if r["big_five"] else {}
-        data.append([
-            r["name"] or "",
-            r["email"] or "",
-            r["department"] or "",
-            _fmt_date(r["completed_at"]),
-            dn.get("D", ""), dn.get("I", ""), dn.get("S", ""), dn.get("C", ""),
-            da.get("D", ""), da.get("I", ""), da.get("S", ""), da.get("C", ""),
-            bf.get("O", ""), bf.get("C", ""), bf.get("E", ""), bf.get("A", ""), bf.get("N", ""),
-            r["iem"] or "",
-        ])
-    headers = [
-        "Nome", "E-mail", "Departamento", "Data do Teste",
-        "DISC Natural D", "DISC Natural I", "DISC Natural S", "DISC Natural C",
-        "DISC Adaptado D", "DISC Adaptado I", "DISC Adaptado S", "DISC Adaptado C",
-        "OCEAN O", "OCEAN C", "OCEAN E", "OCEAN A", "OCEAN N",
-        "IEM",
-    ]
-    return _csv_response(data, headers, "resultados-testes.csv")
-
-
 # ── Absences ──────────────────────────────────────────────────────────────────
 
 @router.get("/absences")

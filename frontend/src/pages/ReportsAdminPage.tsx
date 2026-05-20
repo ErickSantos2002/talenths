@@ -23,13 +23,6 @@ const REPORTS: ReportCard[] = [
     fn: reportsApi.collaborators,
   },
   {
-    title: "Resultados de Testes",
-    description: "Perfis DISC Natural e Adaptado, OCEAN e IEM — último resultado por colaborador.",
-    filename: "resultados-testes.csv",
-    icon: ClipboardList,
-    fn: reportsApi.testResults,
-  },
-  {
     title: "Ausências",
     description: "Todas as solicitações de ausência com tipo, período, status e notas do gestor.",
     filename: "ausencias.csv",

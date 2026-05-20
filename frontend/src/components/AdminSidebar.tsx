@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
-  LayoutDashboard, Building2, Users, GitCompareArrows, ClipboardList, ClipboardCheck,
-  Grid3X3, GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
+  LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck,
+  GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
   Gift, FileDown, Shield, ChevronRight, DollarSign,
 } from "lucide-react";
@@ -43,15 +43,12 @@ const adminSections: NavSection[] = [
     label: "Pessoas",
     items: [
       { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
-      { title: "Comparar Perfis", url: "/comparar-perfis", icon: GitCompareArrows },
-      { title: "Análise de Equipe", url: "/admin/analise-equipe", icon: Grid3X3 },
     ],
   },
   {
     key: "desempenho",
     label: "Desempenho",
     items: [
-      { title: "Testes", url: "/admin/testes", icon: ClipboardList },
       { title: "Metas", url: "/admin/metas", icon: Target },
       { title: "Avaliação", url: "/admin/avaliacao", icon: ClipboardList },
       { title: "Mapa 9Box", url: "/admin/9box", icon: Grid3X3 },
@@ -114,8 +111,6 @@ const personalSections: NavSection[] = [
     label: "Desempenho",
     items: [
       { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
-      { title: "Compatibilidade", url: "/meu-perfil/compatibilidade", icon: GitCompareArrows },
-      { title: "Meu Histórico", url: "/meu-historico", icon: ClipboardList },
     ],
   },
   {

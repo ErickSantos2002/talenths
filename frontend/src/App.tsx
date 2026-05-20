@@ -8,19 +8,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
-import TestIntro from "./pages/TestIntro";
-import ScenarioTest from "./pages/ScenarioTest";
-import ResultPage from "./pages/ResultPage";
-import CompareProfiles from "./pages/CompareProfiles";
-import LeaderTeamPage from "./pages/LeaderTeamPage";
-import LeaderGuidePage from "./pages/LeaderGuidePage";
 import AdminCollaboratorsPage from "./pages/AdminCollaboratorsPage";
 import InvitePage from "./pages/InvitePage";
 import CompanyDashboardPage from "./pages/CompanyDashboardPage";
-import TestHistoryPage from "./pages/TestHistoryPage";
-import TeamAnalysisPage from "./pages/TeamAnalysisPage";
-import LeaderCompatibilityPage from "./pages/LeaderCompatibilityPage";
-import AdminTestsPage from "./pages/AdminTestsPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MyProfilePage from "./pages/MyProfilePage";
@@ -53,7 +43,6 @@ import CalendarPage from "./pages/CalendarPage";
 import LogsAdminPage from "./pages/LogsAdminPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
-import { ChatWidget } from "./components/chat/ChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -72,53 +61,12 @@ const App = () => (
             <Route path="/convite/:token" element={<InvitePage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/teste" element={<TestIntro />} />
-            <Route
-              path="/teste/cenarios"
-              element={
-                <ProtectedRoute>
-                  <ScenarioTest />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/resultado"
-              element={
-                <ProtectedRoute>
-                  <ResultPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/resultado/compartilhado" element={<ResultPage />} />
-            <Route
-              path="/comparar-perfis"
-              element={
-                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
-                  <CompareProfiles />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/lider/equipe"
-              element={
-                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
-                  <LeaderTeamPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/lider/guia/:userId"
-              element={
-                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
-                  <LeaderGuidePage />
                 </ProtectedRoute>
               }
             />
@@ -135,14 +83,6 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <AdminCollaboratorsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/testes"
-              element={
-                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
-                  <AdminTestsPage />
                 </ProtectedRoute>
               }
             />
@@ -171,34 +111,10 @@ const App = () => (
               }
             />
             <Route
-              path="/admin/analise-equipe"
-              element={
-                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
-                  <TeamAnalysisPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/meu-perfil"
               element={
                 <ProtectedRoute>
                   <MyProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/meu-historico"
-              element={
-                <ProtectedRoute>
-                  <TestHistoryPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/meu-perfil/compatibilidade"
-              element={
-                <ProtectedRoute>
-                  <LeaderCompatibilityPage />
                 </ProtectedRoute>
               }
             />
@@ -397,7 +313,6 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-          <ChatWidget />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

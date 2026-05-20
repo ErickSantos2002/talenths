@@ -125,20 +125,6 @@ export const collaborators = {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-export const tests = {
-  scenarios: () =>
-    get<Record<string, unknown>[]>("/tests/scenarios", { public: true }),
-  submitResponses: (responses: { block_number: number; most_option: string; least_option: string }[]) =>
-    post("/tests/responses", { responses }),
-  calculate: () => post<Record<string, unknown>>("/tests/calculate"),
-  results: () => get<Record<string, unknown>[]>("/tests/results"),
-  result: (id: string) => get<Record<string, unknown>>(`/tests/results/${id}`),
-  sharedResult: (shareToken: string) =>
-    get<Record<string, unknown>>(`/tests/results/shared/${shareToken}`, { public: true }),
-  deleteResult: (id: string) => del(`/tests/results/${id}`),
-  reprocess: (id: string) => post<Record<string, unknown>>(`/tests/results/${id}/reprocess`),
-};
-
 // ── Invitations ───────────────────────────────────────────────────────────────
 
 export const invitations = {
@@ -150,28 +136,6 @@ export const invitations = {
     post<Record<string, unknown>>("/invitations", data),
   update: (id: string, data: Record<string, unknown>) =>
     patch<Record<string, unknown>>(`/invitations/${id}`, data),
-};
-
-// ── Comparisons ───────────────────────────────────────────────────────────────
-
-export const comparisons = {
-  list: () => get<Record<string, unknown>[]>("/comparisons"),
-  create: (user1_id: string, user2_id: string, comparison_type = "peer_to_peer") =>
-    post<Record<string, unknown>>("/comparisons", { user1_id, user2_id, comparison_type }),
-  delete: (id: string) => del(`/comparisons/${id}`),
-};
-
-// ── Chat ──────────────────────────────────────────────────────────────────────
-
-export const chat = {
-  conversations: () => get<Record<string, unknown>[]>("/chat/conversations"),
-  createConversation: (title?: string) =>
-    post<Record<string, unknown>>("/chat/conversations", { title }),
-  deleteConversation: (id: string) => del(`/chat/conversations/${id}`),
-  messages: (conversationId: string) =>
-    get<Record<string, unknown>[]>(`/chat/conversations/${conversationId}/messages`),
-  sendMessage: (conversationId: string, content: string) =>
-    post<Record<string, unknown>>(`/chat/conversations/${conversationId}/messages`, { content }),
 };
 
 // ── Culture ───────────────────────────────────────────────────────────────────
@@ -442,7 +406,6 @@ async function downloadReport(path: string, filename: string): Promise<void> {
 
 export const reports = {
   collaborators: () => downloadReport("/reports/collaborators", "colaboradores.csv"),
-  testResults: () => downloadReport("/reports/test-results", "resultados-testes.csv"),
   absences: () => downloadReport("/reports/absences", "ausencias.csv"),
   benefits: () => downloadReport("/reports/benefits", "beneficios.csv"),
   pdi: () => downloadReport("/reports/pdi", "pdi.csv"),
