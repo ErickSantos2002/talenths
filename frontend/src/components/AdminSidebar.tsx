@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
-  Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare,
+  Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,6 +73,7 @@ const adminSections: NavSection[] = [
       { title: "Onboarding", url: "/admin/onboarding", icon: ListChecks },
       { title: "Pesquisas", url: "/admin/pesquisas", icon: BarChart2 },
       { title: "Feedbacks", url: "/admin/feedbacks", icon: MessageSquare },
+      { title: "Documentos", url: "/admin/documentos", icon: FileText },
     ],
   },
   {
@@ -134,6 +135,7 @@ const personalSections: NavSection[] = [
       { title: "Comunicados", url: "/comunicados", icon: Megaphone },
       { title: "Pesquisas", url: "/pesquisas", icon: BarChart2 },
       { title: "Feedbacks", url: "/meus-feedbacks", icon: MessageSquare },
+      { title: "Documentos", url: "/meus-documentos", icon: FileText },
     ],
   },
   {

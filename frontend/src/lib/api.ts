@@ -661,6 +661,45 @@ export const feedbacks = {
     post<void>(`/feedbacks/${id}/respond`, data),
 };
 
+// ── Documents ─────────────────────────────────────────────────────────────────
+
+export type Document = {
+  id: string;
+  title: string;
+  original_name: string;
+  file_size: number;
+  mime_type: string;
+  target_type: 'general' | 'department' | 'individual';
+  target_department_id?: string;
+  target_user_id?: string;
+  target_name?: string;
+  uploaded_by_name?: string;
+  created_at: string;
+};
+
+export const documents = {
+  list: () => get<Document[]>("/documents"),
+  listMy: () => get<Document[]>("/documents/my"),
+  upload: async (formData: FormData): Promise<Document> => {
+    const token = localStorage.getItem("talenths_token");
+    const res = await fetch(`${BASE_URL}/documents/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { detail?: string }).detail ?? `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+  downloadUrl: (id: string) => {
+    const token = localStorage.getItem("talenths_token");
+    return { url: `${BASE_URL}/documents/${id}/download`, token };
+  },
+  delete: (id: string) => del(`/documents/${id}`),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {

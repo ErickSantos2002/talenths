@@ -47,6 +47,8 @@ import AdminTestesPage from "./pages/AdminTestesPage";
 import AdminTesteEditorPage from "./pages/AdminTesteEditorPage";
 import AdminFeedbacksPage from "./pages/AdminFeedbacksPage";
 import MeusFeedbacksPage from "./pages/MeusFeedbacksPage";
+import AdminDocumentosPage from "./pages/AdminDocumentosPage";
+import MeusDocumentosPage from "./pages/MeusDocumentosPage";
 import AdminTesteTentativasPage from "./pages/AdminTesteTentativasPage";
 import MeusTestesPage from "./pages/MeusTestesPage";
 import RealizarTestePage from "./pages/RealizarTestePage";
@@ -397,6 +399,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MeusFeedbacksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/documentos"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AdminDocumentosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-documentos"
+              element={
+                <ProtectedRoute>
+                  <MeusDocumentosPage />
                 </ProtectedRoute>
               }
             />
