@@ -41,7 +41,6 @@ interface Collaborator {
   departmentName: string | null;
   role: AppRole;
   roleId: string | null;
-  hasTest: boolean;
 }
 
 interface Department {
@@ -88,7 +87,6 @@ export default function AdminCollaboratorsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filterTestStatus, setFilterTestStatus] = useState<string>("all");
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -207,7 +205,6 @@ export default function AdminCollaboratorsPage() {
           departmentName: p.department_id ? deptMap.get(p.department_id) ?? null : null,
           role: primaryRole,
           roleId: primaryRoleId,
-          hasTest: p.has_result ?? false,
         };
       });
 
@@ -222,16 +219,10 @@ export default function AdminCollaboratorsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const filtered = collaborators
-    .filter((c) => {
-      const matchesSearch =
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.email.toLowerCase().includes(search.toLowerCase());
-      const matchesTestStatus =
-        filterTestStatus === "all" ||
-        (filterTestStatus === "done" && c.hasTest) ||
-        (filterTestStatus === "pending" && !c.hasTest);
-      return matchesSearch && matchesTestStatus;
-    })
+    .filter((c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      c.email.toLowerCase().includes(search.toLowerCase())
+    )
     .sort((a, b) => ROLE_PRIORITY.indexOf(a.role) - ROLE_PRIORITY.indexOf(b.role));
 
   // --- Edit ---
@@ -410,16 +401,6 @@ export default function AdminCollaboratorsPage() {
                     className="pl-9"
                   />
                 </div>
-                <Select value={filterTestStatus} onValueChange={setFilterTestStatus}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Status do teste" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="done">Realizados</SelectItem>
-                    <SelectItem value="pending">Pendentes</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <Button onClick={openAdd} className="gap-2 shrink-0">
                 <Plus className="h-4 w-4" /> Adicionar Colaborador
@@ -450,7 +431,6 @@ export default function AdminCollaboratorsPage() {
                         <TableHead className="hidden lg:table-cell">Telefone</TableHead>
                         <TableHead className="hidden lg:table-cell">Departamento</TableHead>
                         <TableHead>Cargo</TableHead>
-                        <TableHead className="hidden sm:table-cell">Teste</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -465,17 +445,6 @@ export default function AdminCollaboratorsPage() {
                             <Badge variant="outline" className={ROLE_COLORS[collab.role]}>
                               {ROLE_LABELS[collab.role]}
                             </Badge>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            {collab.hasTest ? (
-                              <Badge variant="outline" className="bg-chart-4/15 text-chart-4 border-chart-4/30">
-                                Realizado
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-yellow-500/15 text-yellow-600 border-yellow-500/30">
-                                Pendente
-                              </Badge>
-                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
