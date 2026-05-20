@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck,
+  LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
   Gift, FileDown, Shield, ChevronRight, DollarSign,

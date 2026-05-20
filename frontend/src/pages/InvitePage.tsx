@@ -59,7 +59,7 @@ export default function InvitePage() {
       });
       setToken(res.access_token);
       toast({ title: "Conta criada com sucesso!" });
-      navigate("/teste");
+      navigate("/dashboard");
     } catch (err) {
       const msg = (err as Error).message;
       if (msg.includes("já cadastrado") || msg.includes("conflict")) {

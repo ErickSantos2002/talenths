@@ -4,7 +4,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { FileDown, Users, ClipboardList, CalendarOff, Gift, BookOpen, Target } from "lucide-react";
+import { FileDown, Users, CalendarOff, Gift, BookOpen, Target } from "lucide-react";
 
 interface ReportCard {
   title: string;
