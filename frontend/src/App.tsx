@@ -45,6 +45,8 @@ import ApresentacaoEmpresaPage from "./pages/ApresentacaoEmpresaPage";
 import RegrasInternasPage from "./pages/RegrasInternasPage";
 import AdminTestesPage from "./pages/AdminTestesPage";
 import AdminTesteEditorPage from "./pages/AdminTesteEditorPage";
+import AdminFeedbacksPage from "./pages/AdminFeedbacksPage";
+import MeusFeedbacksPage from "./pages/MeusFeedbacksPage";
 import AdminTesteTentativasPage from "./pages/AdminTesteTentativasPage";
 import MeusTestesPage from "./pages/MeusTestesPage";
 import RealizarTestePage from "./pages/RealizarTestePage";
@@ -379,6 +381,22 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={["master_admin"]}>
                   <LogsAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/feedbacks"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AdminFeedbacksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-feedbacks"
+              element={
+                <ProtectedRoute>
+                  <MeusFeedbacksPage />
                 </ProtectedRoute>
               }
             />

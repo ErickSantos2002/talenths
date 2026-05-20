@@ -624,6 +624,43 @@ export interface TestAssignment {
   created_at: string;
 }
 
+// ── Feedbacks ─────────────────────────────────────────────────────────────────
+
+export type FeedbackRequest = {
+  id: string;
+  title: string;
+  question: string;
+  target_type: 'all' | 'department' | 'individual';
+  target_department_id?: string;
+  target_user_id?: string;
+  target_name?: string;
+  created_at: string;
+  created_by_name?: string;
+  response_count?: number;
+  has_responded?: boolean;
+  my_rating?: number;
+  my_comment?: string;
+};
+
+export type FeedbackResponse = {
+  id: string;
+  user_id: string;
+  user_name: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+};
+
+export const feedbacks = {
+  list: () => get<FeedbackRequest[]>("/feedbacks"),
+  create: (data: { title: string; question: string; target_type: string; target_department_id?: string; target_user_id?: string }) =>
+    post<FeedbackRequest>("/feedbacks", data),
+  getResponses: (id: string) => get<FeedbackResponse[]>(`/feedbacks/${id}/responses`),
+  listMy: () => get<FeedbackRequest[]>("/feedbacks/my"),
+  respond: (id: string, data: { rating: number; comment?: string }) =>
+    post<void>(`/feedbacks/${id}/respond`, data),
+};
+
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 export const notifications = {
