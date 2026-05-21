@@ -9,12 +9,12 @@ import { GraduationCap, Clock, CalendarDays, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const AREA_COLORS = [
-  "bg-blue-500/10 text-blue-600",
-  "bg-emerald-500/10 text-emerald-600",
-  "bg-amber-500/10 text-amber-600",
-  "bg-purple-500/10 text-purple-600",
-  "bg-rose-500/10 text-rose-600",
-  "bg-cyan-500/10 text-cyan-600",
+  "bg-blue-500/15 text-blue-400",
+  "bg-emerald-500/15 text-emerald-400",
+  "bg-amber-500/15 text-amber-400",
+  "bg-purple-500/15 text-purple-400",
+  "bg-rose-500/15 text-rose-400",
+  "bg-cyan-500/15 text-cyan-400",
 ];
 
 function areaBreakdown(courses: EmployeeCourse[]) {
@@ -38,35 +38,49 @@ export default function MyLearningPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <GraduationCap className="h-6 w-6" /> Minha Universidade
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Seu histórico de aprendizado e desenvolvimento
-          </p>
+        <div className="flex items-center gap-3">
+          <GraduationCap className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">Minha Universidade</h1>
+            <p className="text-sm text-muted-foreground">Seu histórico de aprendizado e desenvolvimento</p>
+          </div>
         </div>
 
         {!isLoading && courses.length > 0 && (
           <>
             {/* Summary */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <p className="text-3xl font-bold">{courses.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Cursos concluídos</p>
+              <Card className="hover:shadow-md hover:border-primary/20 transition-all">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-muted-foreground font-medium">Cursos concluídos</p>
+                    <div className="rounded-lg p-2 bg-primary/10">
+                      <GraduationCap className="h-4 w-4 text-primary" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold tracking-tight">{courses.length}</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <p className="text-3xl font-bold text-primary">{totalHours.toFixed(0)}h</p>
-                  <p className="text-sm text-muted-foreground mt-1">Total de horas</p>
+              <Card className="hover:shadow-md hover:border-blue-500/20 transition-all">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-muted-foreground font-medium">Total de horas</p>
+                    <div className="rounded-lg p-2 bg-blue-500/10">
+                      <Clock className="h-4 w-4 text-blue-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold tracking-tight text-primary">{totalHours.toFixed(0)}h</p>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="pt-6 text-center">
-                  <p className="text-3xl font-bold text-emerald-500">{areas.length}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Áreas de conhecimento</p>
+              <Card className="hover:shadow-md hover:border-emerald-500/20 transition-all">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-muted-foreground font-medium">Áreas de conhecimento</p>
+                    <div className="rounded-lg p-2 bg-emerald-500/10">
+                      <BookOpen className="h-4 w-4 text-emerald-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold tracking-tight text-emerald-400">{areas.length}</p>
                 </CardContent>
               </Card>
             </div>
@@ -74,7 +88,7 @@ export default function MyLearningPage() {
             {/* Areas breakdown */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
                   Horas por área
                 </CardTitle>
               </CardHeader>
@@ -99,23 +113,19 @@ export default function MyLearningPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
         ) : courses.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Nenhum curso registrado ainda.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Seu gestor irá registrar seus cursos concluídos aqui.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-dashed p-16 text-center">
+            <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground">Nenhum curso registrado ainda.</p>
+            <p className="text-sm text-muted-foreground mt-1">Seu gestor irá registrar seus cursos concluídos aqui.</p>
+          </div>
         ) : (
           <div>
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">
               Histórico de cursos
             </h2>
             <div className="space-y-2">
               {courses.map((c, i) => (
-                <div key={c.id} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3">
+                <div key={c.id} className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{c.course_title}</p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">

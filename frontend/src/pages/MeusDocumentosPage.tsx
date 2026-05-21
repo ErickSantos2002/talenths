@@ -42,20 +42,23 @@ export default function MeusDocumentosPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <FileText className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-semibold">Documentos</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Documentos</h1>
         </div>
 
         {isLoading && <p className="text-muted-foreground text-sm">Carregando...</p>}
 
         {!isLoading && list.length === 0 && (
-          <p className="text-muted-foreground text-sm">Nenhum documento disponível para você.</p>
+          <div className="rounded-xl border border-dashed p-16 text-center">
+            <FileText className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground">Nenhum documento disponível para você.</p>
+          </div>
         )}
 
         <div className="space-y-3">
           {list.map((doc) => (
-            <Card key={doc.id}>
+            <Card key={doc.id} className="hover:shadow-md hover:border-primary/20 transition-all">
               <CardContent className="p-4 flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">

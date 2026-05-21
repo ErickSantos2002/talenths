@@ -438,12 +438,12 @@ export default function OnboardingAdminPage() {
         </div>
 
         <Tabs defaultValue="team">
-          <TabsList>
-            <TabsTrigger value="team">
-              <Users className="h-4 w-4 mr-2" /> Equipe
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="team" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+              <Users className="h-4 w-4" /> Equipe
             </TabsTrigger>
-            <TabsTrigger value="templates">
-              <ClipboardCheck className="h-4 w-4 mr-2" /> Templates
+            <TabsTrigger value="templates" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+              <ClipboardCheck className="h-4 w-4" /> Templates
             </TabsTrigger>
           </TabsList>
 

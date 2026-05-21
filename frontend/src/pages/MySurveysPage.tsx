@@ -153,7 +153,7 @@ export default function MySurveysPage() {
   if (activeSurvey) {
     return (
       <AdminLayout>
-        <div className="max-w-2xl space-y-6">
+        <div className="space-y-6">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => setActiveSurvey(null)}>← Voltar</Button>
           </div>
@@ -188,9 +188,9 @@ export default function MySurveysPage() {
           <div className="space-y-6">
             {pending.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Aguardando sua resposta</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Aguardando sua resposta</h2>
                 {pending.map(s => (
-                  <Card key={s.id} className="border-primary/30">
+                  <Card key={s.id} className="border-primary/30 hover:shadow-md hover:border-primary/50 transition-all">
                     <CardContent className="p-4 flex items-center gap-4">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm">{s.title}</p>
@@ -210,7 +210,7 @@ export default function MySurveysPage() {
 
             {answered.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Respondidas</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Respondidas</h2>
                 {answered.map(s => (
                   <Card key={s.id} className="opacity-70">
                     <CardContent className="p-4 flex items-center gap-3">

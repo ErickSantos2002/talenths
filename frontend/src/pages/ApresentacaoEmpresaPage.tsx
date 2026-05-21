@@ -97,7 +97,7 @@ export default function ApresentacaoEmpresaPage() {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="p-6 max-w-3xl mx-auto space-y-4">
+        <div className="space-y-4">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-40 w-full" />
           <Skeleton className="h-40 w-full" />
@@ -110,7 +110,7 @@ export default function ApresentacaoEmpresaPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">

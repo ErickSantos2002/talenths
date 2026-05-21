@@ -84,13 +84,13 @@ const CATEGORY_LABELS: Record<BenefitCategory, string> = {
 };
 
 const CATEGORY_COLORS: Record<BenefitCategory, string> = {
-  saude: "bg-blue-100 text-blue-700",
-  alimentacao: "bg-orange-100 text-orange-700",
-  transporte: "bg-green-100 text-green-700",
-  financeiro: "bg-purple-100 text-purple-700",
-  educacao: "bg-indigo-100 text-indigo-700",
-  bem_estar: "bg-pink-100 text-pink-700",
-  outro: "bg-gray-100 text-gray-700",
+  saude: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  alimentacao: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  transporte: "bg-green-500/15 text-green-400 border-green-500/20",
+  financeiro: "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  educacao: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  bem_estar: "bg-pink-500/15 text-pink-400 border-pink-500/20",
+  outro: "bg-muted text-muted-foreground border-border",
 };
 
 function CategoryBadge({ category }: { category: BenefitCategory }) {
@@ -128,41 +128,56 @@ function OverviewTab() {
   if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Benefícios no catálogo</p>
-            <p className="text-3xl font-bold mt-1">{summary.length}</p>
+        <Card className="hover:shadow-md hover:border-primary/20 transition-all">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-muted-foreground font-medium">No catálogo</p>
+              <div className="rounded-lg p-2 bg-primary/10">
+                <BookOpen className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold tracking-tight">{summary.length}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Atribuições ativas</p>
-            <p className="text-3xl font-bold mt-1">{totalActive}</p>
+        <Card className="hover:shadow-md hover:border-blue-500/20 transition-all">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-muted-foreground font-medium">Atribuições ativas</p>
+              <div className="rounded-lg p-2 bg-blue-500/10">
+                <Gift className="h-4 w-4 text-blue-400" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold tracking-tight">{totalActive}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Colaboradores contemplados</p>
-            <p className="text-3xl font-bold mt-1">{employeesWithBenefits}</p>
+        <Card className="hover:shadow-md hover:border-violet-500/20 transition-all">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm text-muted-foreground font-medium">Colaboradores contemplados</p>
+              <div className="rounded-lg p-2 bg-violet-500/10">
+                <Users className="h-4 w-4 text-violet-400" />
+              </div>
+            </div>
+            <p className="text-3xl font-bold tracking-tight">{employeesWithBenefits}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Benefícios por adesão
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+          Adesão por benefício
         </h2>
         {summary.map((s) => (
-          <div key={s.benefit_id} className="flex items-center gap-3 rounded-lg border p-3">
+          <div key={s.benefit_id} className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3 hover:bg-muted/30 transition-colors">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">{s.benefit_name}</span>
                 <CategoryBadge category={s.benefit_category} />
               </div>
             </div>
-            <span className="text-sm font-semibold shrink-0">
+            <span className="text-sm font-semibold shrink-0 tabular-nums">
               {s.employee_count} colaborador{s.employee_count !== 1 ? "es" : ""}
             </span>
           </div>
@@ -502,7 +517,6 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
         placeholder="Buscar colaborador ou departamento..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
       />
 
       {isLoading ? (
@@ -815,17 +829,26 @@ export default function BenefitsAdminPage() {
         </div>
 
         <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">
-              <LayoutDashboard className="h-4 w-4 mr-2" />
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="overview"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
+            >
+              <LayoutDashboard className="h-4 w-4" />
               Visão Geral
             </TabsTrigger>
-            <TabsTrigger value="collaborators">
-              <Users className="h-4 w-4 mr-2" />
+            <TabsTrigger
+              value="collaborators"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
+            >
+              <Users className="h-4 w-4" />
               Colaboradores
             </TabsTrigger>
-            <TabsTrigger value="catalog">
-              <BookOpen className="h-4 w-4 mr-2" />
+            <TabsTrigger
+              value="catalog"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
+            >
+              <BookOpen className="h-4 w-4" />
               Catálogo
             </TabsTrigger>
           </TabsList>

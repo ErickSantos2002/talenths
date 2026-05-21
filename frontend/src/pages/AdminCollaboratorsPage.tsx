@@ -387,33 +387,38 @@ export default function AdminCollaboratorsPage() {
         </div>
 
         <Tabs defaultValue="colaboradores">
-          <TabsList>
-            <TabsTrigger value="colaboradores" className="gap-2">
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="colaboradores" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
               <Users className="h-4 w-4" /> Colaboradores
             </TabsTrigger>
-            <TabsTrigger value="departamentos" className="gap-2">
+            <TabsTrigger value="departamentos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
               <Building2 className="h-4 w-4" /> Departamentos
             </TabsTrigger>
           </TabsList>
 
           {/* ── Aba Colaboradores ─────────────────────────────────────────── */}
           <TabsContent value="colaboradores" className="space-y-4 mt-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="relative max-w-sm">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por nome ou email..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 w-full"
+                />
               </div>
               <Button onClick={openAdd} className="gap-2 shrink-0">
                 <Plus className="h-4 w-4" /> Adicionar Colaborador
               </Button>
             </div>
+            {!loading && (
+              <p className="text-xs text-muted-foreground">
+                {filtered.length === collaborators.length
+                  ? `${collaborators.length} colaborador${collaborators.length !== 1 ? "es" : ""}`
+                  : `${filtered.length} de ${collaborators.length} colaborador${collaborators.length !== 1 ? "es" : ""}`}
+              </p>
+            )}
 
             <Card>
               <CardContent className="p-0">
@@ -445,7 +450,7 @@ export default function AdminCollaboratorsPage() {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((collab) => (
-                        <TableRow key={collab.id}>
+                        <TableRow key={collab.id} className="hover:bg-muted/40 transition-colors">
                           <TableCell className="font-medium">{collab.name}</TableCell>
                           <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{collab.email}</TableCell>
                           <TableCell className="hidden lg:table-cell text-sm">{collab.phone ? formatPhone(collab.phone) : "—"}</TableCell>
@@ -627,7 +632,7 @@ export default function AdminCollaboratorsPage() {
 
       {/* Edit Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Colaborador</DialogTitle>
             <DialogDescription>

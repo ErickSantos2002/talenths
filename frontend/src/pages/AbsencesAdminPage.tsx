@@ -18,17 +18,17 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { AbsenceType, AbsenceRequest } from "@/types/absences";
-import { CalendarOff, CheckCircle2, XCircle, Clock, Settings, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarOff, CheckCircle2, XCircle, Clock, Settings, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
   if (status === "approved")
-    return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Aprovada</Badge>;
+    return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20">Aprovada</Badge>;
   if (status === "rejected")
-    return <Badge className="bg-red-100 text-red-700 border-red-200">Recusada</Badge>;
-  return <Badge className="bg-amber-100 text-amber-700 border-amber-200">Pendente</Badge>;
+    return <Badge className="bg-red-500/15 text-red-400 border-red-500/20">Recusada</Badge>;
+  return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20">Pendente</Badge>;
 }
 
 // ── Review Dialog ─────────────────────────────────────────────────────────────
@@ -137,7 +137,7 @@ function RequestsTab() {
 
       {pending.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
             Pendentes ({pending.length})
           </h2>
           {pending.map((r) => (
@@ -153,7 +153,7 @@ function RequestsTab() {
 
       {decided.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
             Histórico
           </h2>
           {decided.map((r) => (
@@ -175,7 +175,7 @@ function RequestCard({
   onReject?: () => void;
 }) {
   return (
-    <Card>
+    <Card className="hover:shadow-md hover:border-primary/20 transition-all">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div
@@ -205,7 +205,7 @@ function RequestCard({
           </div>
           {request.status === "pending" && onApprove && onReject && (
             <div className="flex gap-2 shrink-0">
-              <Button size="sm" variant="outline" onClick={onReject} className="text-red-600 border-red-200 hover:bg-red-50">
+              <Button size="sm" variant="outline" onClick={onReject} className="text-red-400 border-red-500/20 hover:bg-red-500/10">
                 <XCircle className="h-4 w-4 mr-1" /> Recusar
               </Button>
               <Button size="sm" onClick={onApprove}>
@@ -463,39 +463,51 @@ function TypesTab() {
         <TypeDialog type={dialog.type} onClose={() => setDialog({ open: false })} />
       )}
 
-      <div className="flex justify-end">
-        <Button onClick={() => setDialog({ open: true })}>+ Novo tipo</Button>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+          Tipos de ausência
+        </h2>
+        <Button size="sm" onClick={() => setDialog({ open: true })}>
+          <Plus className="h-4 w-4 mr-2" /> Novo tipo
+        </Button>
       </div>
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
+      ) : types.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-16 text-center">
+          <Settings className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+          <p className="text-muted-foreground">Nenhum tipo de ausência cadastrado.</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {types.map((t) => (
-            <div key={t.id} className="flex items-center gap-3 rounded-lg border p-3">
-              <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{t.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t.requires_approval ? "Requer aprovação" : "Aprovação automática"}
-                </p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Button variant="ghost" size="sm" onClick={() => setDialog({ open: true, type: t })}>
-                  Editar
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    if (confirm(`Remover tipo "${t.name}"?`)) deleteMutation.mutate(t.id);
-                  }}
-                >
-                  Remover
-                </Button>
-              </div>
-            </div>
+            <Card key={t.id} className="hover:shadow-md hover:border-primary/20 transition-all">
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.requires_approval ? "Requer aprovação" : "Aprovação automática"}
+                  </p>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDialog({ open: true, type: t })}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-red-500/10"
+                    onClick={() => {
+                      if (confirm(`Remover tipo "${t.name}"?`)) deleteMutation.mutate(t.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
@@ -515,17 +527,26 @@ export default function AbsencesAdminPage() {
         </div>
 
         <Tabs defaultValue="requests">
-          <TabsList>
-            <TabsTrigger value="requests">
-              <Clock className="h-4 w-4 mr-2" />
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="requests"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
+            >
+              <Clock className="h-4 w-4" />
               Solicitações
             </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <Calendar className="h-4 w-4 mr-2" />
+            <TabsTrigger
+              value="calendar"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
+            >
+              <Calendar className="h-4 w-4" />
               Calendário
             </TabsTrigger>
-            <TabsTrigger value="types">
-              <Settings className="h-4 w-4 mr-2" />
+            <TabsTrigger
+              value="types"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
+            >
+              <Settings className="h-4 w-4" />
               Tipos
             </TabsTrigger>
           </TabsList>

@@ -1,15 +1,15 @@
 import { useState } from "react";
+import { ChangelogModal } from "@/components/ChangelogModal";
 import {
   LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
   Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useSystemTheme } from "@/hooks/use-system-theme";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger, useSidebar,
@@ -171,18 +171,23 @@ function saveSectionState(state: Record<string, boolean>) {
 // ── NavItem component ─────────────────────────────────────────────────────────
 
 function NavItem({ item }: { item: NavItem }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isActive = location.pathname === item.url || location.pathname.startsWith(item.url + "/");
+
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild>
-        <NavLink
-          to={item.url}
-          end
-          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground"
-          activeClassName="bg-primary/10 text-primary font-semibold shadow-[inset_2px_0_0_hsl(var(--primary))]"
-        >
-          <item.icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{item.title}</span>
-        </NavLink>
+      <SidebarMenuButton
+        tooltip={item.title}
+        isActive={isActive}
+        onClick={() => navigate(item.url)}
+        className={cn(
+          "flex items-center gap-3 text-sm font-medium text-sidebar-foreground/80 transition-all",
+          isActive && "bg-primary/10 text-primary font-semibold shadow-[inset_2px_0_0_hsl(var(--primary))]"
+        )}
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{item.title}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -260,6 +265,7 @@ export function AdminSidebar() {
   const isMasterAdmin = hasRole("master_admin");
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(loadSectionState);
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   const toggleSection = (key: string) => {
     setOpenSections((prev) => {
@@ -290,18 +296,35 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       {/* Logo + trigger */}
-      <div className="flex flex-col items-center gap-2 border-b border-sidebar-border px-4 py-3 group-data-[collapsible=icon]:px-2">
-        <img
-          src="/logo.png"
-          alt="TalentHS Logo"
-          className="h-8 w-auto group-data-[collapsible=icon]:hidden"
-        />
-        <img
-          src="/logo.png"
-          alt="TalentHS"
-          className="hidden h-6 w-auto group-data-[collapsible=icon]:block"
-        />
-        <SidebarTrigger />
+      <div className="border-b border-sidebar-border">
+        {/* Expanded state */}
+        <div className="flex items-center justify-between px-3 py-3 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+              <img
+                src="/logo-sem-nome.png"
+                alt="TalentHS"
+                className="h-6 w-6 object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-tight text-sidebar-foreground truncate">TalentHS</p>
+              <p className="text-[11px] leading-tight text-muted-foreground/70 truncate">Gestão de Pessoas</p>
+            </div>
+          </div>
+          <SidebarTrigger className="shrink-0" />
+        </div>
+        {/* Collapsed state */}
+        <div className="hidden flex-col items-center gap-2 py-3 group-data-[collapsible=icon]:flex">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+            <img
+              src="/logo-sem-nome.png"
+              alt="TalentHS"
+              className="h-5 w-5 object-contain"
+            />
+          </div>
+          <SidebarTrigger />
+        </div>
       </div>
 
       <SidebarContent className="gap-0">
@@ -394,6 +417,17 @@ export function AdminSidebar() {
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
+        {/* Version info */}
+        <div className="mt-2 group-data-[collapsible=icon]:hidden">
+          <button
+            onClick={() => setChangelogOpen(true)}
+            className="w-full rounded-md px-2 py-1.5 text-center transition-colors hover:bg-sidebar-accent"
+          >
+            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.0.0</p>
+            <p className="text-[10px] text-muted-foreground/35 leading-tight">© 2026 Health & Safety Tech</p>
+          </button>
+        </div>
+        <ChangelogModal open={changelogOpen} onOpenChange={setChangelogOpen} />
       </SidebarFooter>
     </Sidebar>
   );

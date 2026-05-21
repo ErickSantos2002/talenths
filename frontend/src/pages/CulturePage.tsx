@@ -166,7 +166,7 @@ export default function CulturePage() {
         {/* Purpose */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Propósito</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Propósito</h2>
             {canEdit && !editingPurpose && (
               <Button variant="ghost" size="sm" onClick={startEditPurpose}>
                 <Pencil className="h-4 w-4 mr-2" />
@@ -211,7 +211,7 @@ export default function CulturePage() {
         {/* Manifesto */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Manifesto</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Manifesto</h2>
             {canEdit && !editingManifesto && (
               <Button variant="ghost" size="sm" onClick={startEditManifesto}>
                 <Pencil className="h-4 w-4 mr-2" />
@@ -258,7 +258,7 @@ export default function CulturePage() {
         {/* Values */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-muted-foreground uppercase tracking-wider">Nossos Valores</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Nossos Valores</h2>
             {canEdit && (
               <Button size="sm" onClick={openCreateValue}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -276,7 +276,7 @@ export default function CulturePage() {
           ) : data?.values && data.values.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.values.map((v) => (
-                <Card key={v.id} className="group relative hover:shadow-md transition-shadow">
+                <Card key={v.id} className="group relative hover:shadow-md hover:border-primary/20 transition-all">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <CardTitle className="text-base font-semibold leading-snug">{v.title}</CardTitle>

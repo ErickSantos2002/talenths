@@ -40,12 +40,12 @@ export default function ComunicadosPage() {
             <p className="text-sm font-semibold text-primary">Acontece hoje 🎉</p>
             <div className="flex flex-wrap gap-2">
               {todayBirthdays.map(b => (
-                <div key={b.user_id} className="flex items-center gap-1.5 rounded-full bg-pink-100 text-pink-700 px-3 py-1 text-xs font-medium">
+                <div key={b.user_id} className="flex items-center gap-1.5 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/20 px-3 py-1 text-xs font-medium">
                   <Cake className="h-3 w-3" /> {b.name}
                 </div>
               ))}
               {todayMilestones.map(m => (
-                <div key={m.user_id} className="flex items-center gap-1.5 rounded-full bg-amber-100 text-amber-700 px-3 py-1 text-xs font-medium">
+                <div key={m.user_id} className="flex items-center gap-1.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20 px-3 py-1 text-xs font-medium">
                   <Award className="h-3 w-3" /> {m.name} — {m.years} {m.years === 1 ? "ano" : "anos"} de empresa
                 </div>
               ))}
@@ -82,11 +82,11 @@ export default function ComunicadosPage() {
                   {birthdays.map(b => (
                     <div key={b.user_id} className={cn(
                       "flex items-center gap-2 text-sm",
-                      b.is_today && "font-semibold text-pink-600"
+                      b.is_today && "font-semibold text-pink-400"
                     )}>
                       <span className="text-xs w-5 text-right text-muted-foreground shrink-0">{b.day}</span>
                       <span className="truncate">{b.name}</span>
-                      {b.is_today && <Badge className="bg-pink-100 text-pink-700 border-0 text-[10px] h-4 px-1">hoje</Badge>}
+                      {b.is_today && <Badge className="bg-pink-500/15 text-pink-400 border-0 text-[10px] h-4 px-1">hoje</Badge>}
                     </div>
                   ))}
                 </div>
@@ -103,11 +103,11 @@ export default function ComunicadosPage() {
                   {milestones.map(m => (
                     <div key={m.user_id} className={cn(
                       "flex items-center gap-2 text-sm",
-                      m.is_today && "font-semibold text-amber-600"
+                      m.is_today && "font-semibold text-amber-400"
                     )}>
-                      <span className="text-xs font-medium text-amber-600 shrink-0">{m.years}a</span>
+                      <span className="text-xs font-medium text-amber-400 shrink-0">{m.years}a</span>
                       <span className="truncate flex-1">{m.name}</span>
-                      {m.is_today && <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px] h-4 px-1">hoje</Badge>}
+                      {m.is_today && <Badge className="bg-amber-500/15 text-amber-400 border-0 text-[10px] h-4 px-1">hoje</Badge>}
                     </div>
                   ))}
                 </div>

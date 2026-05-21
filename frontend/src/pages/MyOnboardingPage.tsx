@@ -56,19 +56,20 @@ export default function MyOnboardingPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardCheck className="h-6 w-6" /> Meu Onboarding
-          </h1>
-          {checklist.template_name && (
-            <p className="text-muted-foreground text-sm mt-1">{checklist.template_name}</p>
-          )}
+        <div className="flex items-center gap-3">
+          <ClipboardCheck className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Meu Onboarding</h1>
+            {checklist.template_name && (
+              <p className="text-muted-foreground text-sm">{checklist.template_name}</p>
+            )}
+          </div>
         </div>
 
         {isComplete ? (
-          <div className="rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 p-6 text-center">
-            <PartyPopper className="mx-auto h-10 w-10 text-emerald-500 mb-2" />
-            <p className="font-semibold text-emerald-700 dark:text-emerald-400">Onboarding concluído!</p>
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center">
+            <PartyPopper className="mx-auto h-10 w-10 text-emerald-400 mb-2" />
+            <p className="font-semibold text-emerald-400">Onboarding concluído!</p>
             <p className="text-sm text-muted-foreground mt-1">Parabéns pela integração completa.</p>
           </div>
         ) : (
@@ -85,13 +86,13 @@ export default function MyOnboardingPage() {
 
         {myTasks.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
               Suas tarefas
             </h2>
             <div className="space-y-2">
               {myTasks.map(task => (
                 <div key={task.id} className={cn(
-                  "flex items-start gap-3 rounded-xl border bg-card px-4 py-3",
+                  "flex items-start gap-3 rounded-xl border bg-card px-4 py-3 hover:border-primary/20 transition-all",
                   task.completed_at && "opacity-60"
                 )}>
                   <button
@@ -125,13 +126,13 @@ export default function MyOnboardingPage() {
 
         {hrTasks.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
               Tarefas do RH
             </h2>
             <div className="space-y-2">
               {hrTasks.map(task => (
                 <div key={task.id} className={cn(
-                  "flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3",
+                  "flex items-start gap-3 rounded-xl border bg-muted/40 px-4 py-3 hover:border-primary/20 transition-all",
                   task.completed_at && "opacity-60"
                 )}>
                   {task.completed_at

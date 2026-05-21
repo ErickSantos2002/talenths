@@ -1,0 +1,144 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+interface ChangelogEntry {
+  type: "novidade" | "melhoria" | "corrigido";
+  text: string;
+}
+
+interface ChangelogVersion {
+  version: string;
+  date: string;
+  current?: boolean;
+  entries: ChangelogEntry[];
+}
+
+const CHANGELOG: ChangelogVersion[] = [
+  {
+    version: "v1.0.0",
+    date: "21/05/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Lançamento do TalentHS — sistema de gestão de pessoas da Health & Safety Tech.",
+      },
+      {
+        type: "novidade",
+        text: "Módulo de Colaboradores com cadastro, edição e gestão de perfis.",
+      },
+      {
+        type: "novidade",
+        text: "Módulo de Feedbacks com envio por RH e resposta pelos colaboradores.",
+      },
+      {
+        type: "novidade",
+        text: "Módulo de Documentos com upload, filtros por destino e download autenticado.",
+      },
+      {
+        type: "novidade",
+        text: "Módulo de Ausências com solicitação, aprovação e tipos configuráveis.",
+      },
+      {
+        type: "novidade",
+        text: "Módulo de Benefícios com categorias e gestão individual.",
+      },
+      {
+        type: "novidade",
+        text: "Módulo de Onboarding com checklists e acompanhamento por colaborador.",
+      },
+      {
+        type: "novidade",
+        text: "Dashboard do colaborador com visão personalizada de desenvolvimento.",
+      },
+      {
+        type: "novidade",
+        text: "Sistema de avaliações psicométricas DISC + Big Five com histórico de resultados.",
+      },
+      {
+        type: "novidade",
+        text: "Chat IA contextualizado com perfil comportamental do colaborador.",
+      },
+    ],
+  },
+];
+
+const TYPE_CONFIG = {
+  novidade: { label: "Novidade", className: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
+  melhoria: { label: "Melhoria", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" },
+  corrigido: { label: "Corrigido", className: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+};
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ChangelogModal({ open, onOpenChange }: Props) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+          <DialogTitle className="text-xl font-bold">O que há de novo?</DialogTitle>
+          <p className="text-sm text-muted-foreground">Atualizações recentes do TalentHS</p>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          {CHANGELOG.map((version) => (
+            <div key={version.version}>
+              {/* Version header */}
+              <div className="flex items-center gap-3 mb-3">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-md px-2.5 py-1 text-xs font-bold tracking-wide",
+                    version.current
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground"
+                  )}
+                >
+                  {version.version}
+                </span>
+                <span className="text-xs text-muted-foreground">{version.date}</span>
+                {version.current && (
+                  <Badge variant="outline" className="text-[10px] h-5 bg-primary/10 text-primary border-primary/20">
+                    Versão atual
+                  </Badge>
+                )}
+              </div>
+
+              {/* Entries */}
+              <div className="space-y-2">
+                {version.entries.map((entry, i) => {
+                  const config = TYPE_CONFIG[entry.type];
+                  return (
+                    <div
+                      key={i}
+                      className="flex gap-3 rounded-lg border bg-card p-3"
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold h-fit mt-0.5",
+                          config.className
+                        )}
+                      >
+                        {config.label}
+                      </span>
+                      <p className="text-sm text-foreground/80 leading-relaxed">{entry.text}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="px-6 py-3 border-t shrink-0 text-center">
+          <p className="text-[11px] text-muted-foreground/50">
+            TalentHS — desenvolvido internamente pela equipe
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

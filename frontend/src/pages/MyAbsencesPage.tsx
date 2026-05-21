@@ -30,10 +30,10 @@ import { CalendarOff, Plus, Trash2 } from "lucide-react";
 
 function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
   if (status === "approved")
-    return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Aprovada</Badge>;
+    return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20">Aprovada</Badge>;
   if (status === "rejected")
-    return <Badge className="bg-red-100 text-red-700 border-red-200">Recusada</Badge>;
-  return <Badge className="bg-amber-100 text-amber-700 border-amber-200">Pendente</Badge>;
+    return <Badge className="bg-red-500/15 text-red-400 border-red-500/20">Recusada</Badge>;
+  return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20">Pendente</Badge>;
 }
 
 // ── Request Dialog ────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ function RequestDialog({
               </SelectContent>
             </Select>
             {selectedType && !selectedType.requires_approval && (
-              <p className="text-xs text-emerald-600">Aprovação automática — sem necessidade de revisão.</p>
+              <p className="text-xs text-emerald-400">Aprovação automática — sem necessidade de revisão.</p>
             )}
           </div>
 
@@ -246,7 +246,7 @@ export default function MyAbsencesPage() {
         ) : (
           <div className="space-y-3">
             {requests.map((r) => (
-              <Card key={r.id}>
+              <Card key={r.id} className="hover:shadow-md hover:border-primary/20 transition-all">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div

@@ -41,12 +41,12 @@ function areaBreakdown(courses: EmployeeCourse[]) {
 }
 
 const AREA_COLORS = [
-  "bg-blue-500/10 text-blue-600",
-  "bg-emerald-500/10 text-emerald-600",
-  "bg-amber-500/10 text-amber-600",
-  "bg-purple-500/10 text-purple-600",
-  "bg-rose-500/10 text-rose-600",
-  "bg-cyan-500/10 text-cyan-600",
+  "bg-blue-500/10 text-blue-400",
+  "bg-emerald-500/10 text-emerald-400",
+  "bg-amber-500/10 text-amber-400",
+  "bg-purple-500/10 text-purple-400",
+  "bg-rose-500/10 text-rose-400",
+  "bg-cyan-500/10 text-cyan-400",
 ];
 
 // ── Team Tab ──────────────────────────────────────────────────────────────────
@@ -420,12 +420,12 @@ export default function LearningAdminPage() {
         <CsvImportSection />
 
         <Tabs defaultValue="team">
-          <TabsList>
-            <TabsTrigger value="team">
-              <Users className="h-4 w-4 mr-2" /> Progresso da Equipe
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="team" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+              <Users className="h-4 w-4" /> Progresso da Equipe
             </TabsTrigger>
-            <TabsTrigger value="catalog">
-              <BookOpen className="h-4 w-4 mr-2" /> Catálogo
+            <TabsTrigger value="catalog" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+              <BookOpen className="h-4 w-4" /> Catálogo
             </TabsTrigger>
           </TabsList>
 

@@ -19,13 +19,14 @@ import { cn } from "@/lib/utils";
 
 function MethodBadge({ method }: { method: string }) {
   const colors: Record<string, string> = {
-    POST: "bg-emerald-100 text-emerald-700",
-    PUT: "bg-blue-100 text-blue-700",
-    PATCH: "bg-blue-100 text-blue-700",
-    DELETE: "bg-red-100 text-red-700",
+    POST: "bg-emerald-500/15 text-emerald-400",
+    PUT: "bg-blue-500/15 text-blue-400",
+    PATCH: "bg-blue-500/15 text-blue-400",
+    DELETE: "bg-red-500/15 text-red-400",
+    GET: "bg-muted text-muted-foreground",
   };
   return (
-    <Badge className={cn("text-[10px] border-0 font-mono font-bold px-1.5", colors[method] ?? "bg-gray-100 text-gray-700")}>
+    <Badge className={cn("text-[10px] border-0 font-mono font-bold px-1.5", colors[method] ?? "bg-muted text-muted-foreground")}>
       {method}
     </Badge>
   );
@@ -35,7 +36,7 @@ function StatusBadge({ code }: { code?: number }) {
   if (!code) return <span className="text-muted-foreground text-xs">—</span>;
   const ok = code < 400;
   return (
-    <Badge className={cn("text-[10px] border-0 font-mono", ok ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+    <Badge className={cn("text-[10px] border-0 font-mono", ok ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400")}>
       {code}
     </Badge>
   );
@@ -64,7 +65,7 @@ function FiltersBar({ filters, onChange }: { filters: Filters; onChange: (f: Fil
 
   return (
     <div className="flex flex-wrap gap-3 items-center">
-      <div className="flex gap-2 flex-1 min-w-[200px] max-w-sm">
+      <div className="flex gap-2 flex-1 min-w-[200px]">
         <Input
           placeholder="Buscar usuário, ação ou rota..."
           value={draft}

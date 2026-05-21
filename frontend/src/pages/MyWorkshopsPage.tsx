@@ -38,13 +38,12 @@ export default function MyWorkshopsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <CalendarDays className="h-6 w-6" /> Programa de Desenvolvimento
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Workshops e treinamentos disponíveis para você
-          </p>
+        <div className="flex items-center gap-3">
+          <CalendarDays className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">Programa de Desenvolvimento</h1>
+            <p className="text-sm text-muted-foreground">Workshops e treinamentos disponíveis para você</p>
+          </div>
         </div>
 
         {isLoading ? (
@@ -58,7 +57,7 @@ export default function MyWorkshopsPage() {
           <div className="space-y-6">
             {myRegistered.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
                   Meus workshops
                 </h2>
                 {myRegistered.map(w => (
@@ -73,7 +72,7 @@ export default function MyWorkshopsPage() {
 
             {openWorkshops.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
                   Disponíveis para inscrição
                 </h2>
                 {openWorkshops.map(w => (

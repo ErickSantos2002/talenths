@@ -11,6 +11,8 @@ interface ReportCard {
   description: string;
   filename: string;
   icon: React.ElementType;
+  iconBg: string;
+  iconColor: string;
   fn: () => Promise<void>;
 }
 
@@ -20,6 +22,8 @@ const REPORTS: ReportCard[] = [
     description: "Lista completa com nome, e-mail, departamento, cargo, data de admissão e nascimento.",
     filename: "colaboradores.csv",
     icon: Users,
+    iconBg: "bg-primary/10",
+    iconColor: "text-primary",
     fn: reportsApi.collaborators,
   },
   {
@@ -27,6 +31,8 @@ const REPORTS: ReportCard[] = [
     description: "Todas as solicitações de ausência com tipo, período, status e notas do gestor.",
     filename: "ausencias.csv",
     icon: CalendarOff,
+    iconBg: "bg-amber-500/10",
+    iconColor: "text-amber-400",
     fn: reportsApi.absences,
   },
   {
@@ -34,6 +40,8 @@ const REPORTS: ReportCard[] = [
     description: "Benefícios atribuídos por colaborador com valor, fornecedor e período de vigência.",
     filename: "beneficios.csv",
     icon: Gift,
+    iconBg: "bg-rose-500/10",
+    iconColor: "text-rose-400",
     fn: reportsApi.benefits,
   },
   {
@@ -41,6 +49,8 @@ const REPORTS: ReportCard[] = [
     description: "Planos de desenvolvimento e ações com status, prazos e datas de conclusão.",
     filename: "pdi.csv",
     icon: Target,
+    iconBg: "bg-blue-500/10",
+    iconColor: "text-blue-400",
     fn: reportsApi.pdi,
   },
   {
@@ -48,6 +58,8 @@ const REPORTS: ReportCard[] = [
     description: "Cursos e capacitações concluídos por colaborador com carga horária e área.",
     filename: "treinamentos.csv",
     icon: BookOpen,
+    iconBg: "bg-violet-500/10",
+    iconColor: "text-violet-400",
     fn: reportsApi.learning,
   },
 ];
@@ -87,8 +99,8 @@ export default function ReportsAdminPage() {
             <Card key={report.filename} className="flex flex-col">
               <CardContent className="p-5 flex flex-col gap-3 flex-1">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <report.icon className="h-5 w-5 text-primary" />
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${report.iconBg}`}>
+                    <report.icon className={`h-5 w-5 ${report.iconColor}`} />
                   </div>
                   <h2 className="font-semibold text-sm">{report.title}</h2>
                 </div>

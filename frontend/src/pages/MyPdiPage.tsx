@@ -152,33 +152,47 @@ export default function MyPdiPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="h-6 w-6" /> Meu PDI
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Acompanhe seu Plano de Desenvolvimento Individual
-          </p>
+        <div className="flex items-center gap-3">
+          <BookOpen className="h-6 w-6 text-primary" />
+          <div>
+            <h1 className="text-2xl font-bold">Meu PDI</h1>
+            <p className="text-sm text-muted-foreground">Acompanhe seu Plano de Desenvolvimento Individual</p>
+          </div>
         </div>
 
         {!isLoading && total > 0 && (
           <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-3xl font-bold">{total}</p>
-                <p className="text-sm text-muted-foreground mt-1">Planos</p>
+            <Card className="hover:shadow-md hover:border-primary/20 transition-all">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-muted-foreground font-medium">Planos</p>
+                  <div className="rounded-lg p-2 bg-primary/10">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold tracking-tight">{total}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-3xl font-bold text-emerald-500">{active}</p>
-                <p className="text-sm text-muted-foreground mt-1">Ativos</p>
+            <Card className="hover:shadow-md hover:border-emerald-500/20 transition-all">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-muted-foreground font-medium">Ativos</p>
+                  <div className="rounded-lg p-2 bg-emerald-500/10">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold tracking-tight text-emerald-400">{active}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <p className="text-3xl font-bold text-primary">{avgProgress}%</p>
-                <p className="text-sm text-muted-foreground mt-1">Progresso médio</p>
+            <Card className="hover:shadow-md hover:border-blue-500/20 transition-all">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm text-muted-foreground font-medium">Progresso médio</p>
+                  <div className="rounded-lg p-2 bg-blue-500/10">
+                    <Clock className="h-4 w-4 text-blue-400" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold tracking-tight text-primary">{avgProgress}%</p>
               </CardContent>
             </Card>
           </div>
@@ -187,15 +201,11 @@ export default function MyPdiPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
         ) : plans.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <BookOpen className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Nenhum PDI atribuído ainda.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Seu gestor irá criar um plano de desenvolvimento para você.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-dashed p-16 text-center">
+            <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground">Nenhum PDI atribuído ainda.</p>
+            <p className="text-sm text-muted-foreground mt-1">Seu gestor irá criar um plano de desenvolvimento para você.</p>
+          </div>
         ) : (
           <div className="space-y-4">
             {plans.map((plan) => (

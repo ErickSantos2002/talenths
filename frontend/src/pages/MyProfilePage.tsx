@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPen } from "lucide-react";
+import { Loader2, UserPen, Mail, Building2, LayoutGrid } from "lucide-react";
 
 const maskPhone = (value: string) => {
   return value
@@ -89,100 +89,132 @@ export default function MyProfilePage() {
     }
   };
 
+  const name = form.watch("name");
+  const initials = name
+    ? name.trim().split(" ").filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("")
+    : "?";
+
   return (
     <AdminLayout>
-      <div className="mx-auto max-w-2xl space-y-6 p-4 md:p-6">
+      <div className="space-y-6">
         <div className="flex items-center gap-3">
           <UserPen className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Meu Perfil</h1>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Informações pessoais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Seu nome completo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Telefone</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="(00) 00000-0000"
-                            {...field}
-                            onChange={(e) => field.onChange(maskPhone(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="cpf"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CPF</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="000.000.000-00"
-                            {...field}
-                            onChange={(e) => field.onChange(maskCPF(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="space-y-4 rounded-md border border-border bg-muted/50 p-4">
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Informações da conta</p>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-muted-foreground">Email</label>
-                      <Input value={readOnly.email} disabled className="bg-muted" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-muted-foreground">Empresa</label>
-                      <Input value={readOnly.company || "—"} disabled className="bg-muted" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-muted-foreground">Departamento</label>
-                      <Input value={readOnly.department || "—"} disabled className="bg-muted" />
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Left — identity card */}
+            <Card className="lg:col-span-1 h-fit">
+              <CardContent className="p-6 flex flex-col items-center text-center gap-4">
+                <div className="h-20 w-20 rounded-full bg-primary/15 flex items-center justify-center text-2xl font-bold text-primary">
+                  {initials}
+                </div>
+                <div>
+                  <p className="font-semibold text-lg leading-tight">{name || "—"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{readOnly.email}</p>
+                </div>
+                <div className="w-full border-t pt-4 space-y-3 text-left">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Email</p>
+                      <p className="text-sm truncate">{readOnly.email || "—"}</p>
                     </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Empresa</p>
+                      <p className="text-sm truncate">{readOnly.company || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <LayoutGrid className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Departamento</p>
+                      <p className="text-sm truncate">{readOnly.department || "—"}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <Button type="submit" disabled={saving} className="w-full">
-                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+            {/* Right — editable form */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Informações pessoais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Seu nome completo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Telefone</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="(00) 00000-0000"
+                                {...field}
+                                onChange={(e) => field.onChange(maskPhone(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="cpf"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CPF</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="000.000.000-00"
+                                {...field}
+                                onChange={(e) => field.onChange(maskCPF(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <Button type="submit" disabled={saving}>
+                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar alterações
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </AdminLayout>

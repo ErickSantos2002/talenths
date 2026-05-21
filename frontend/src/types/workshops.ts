@@ -36,7 +36,7 @@ export const WORKSHOP_STATUS_LABELS: Record<WorkshopStatus, string> = {
 
 export const WORKSHOP_STATUS_COLORS: Record<WorkshopStatus, string> = {
   draft: "text-muted-foreground",
-  open: "text-emerald-600",
-  closed: "text-amber-600",
-  done: "text-blue-600",
+  open: "text-emerald-400",
+  closed: "text-amber-400",
+  done: "text-blue-400",
 };

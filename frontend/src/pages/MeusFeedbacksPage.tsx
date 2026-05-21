@@ -85,31 +85,34 @@ export default function MeusFeedbacksPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <MessageSquare className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-semibold">Feedbacks</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Feedbacks</h1>
         </div>
 
         {isLoading && <p className="text-muted-foreground text-sm">Carregando...</p>}
 
         {!isLoading && list.length === 0 && (
-          <p className="text-muted-foreground text-sm">Nenhum feedback recebido ainda.</p>
+          <div className="rounded-xl border border-dashed p-16 text-center">
+            <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground">Nenhum feedback recebido ainda.</p>
+          </div>
         )}
 
         <div className="space-y-3">
           {list.map((item: FeedbackRequest) => (
-            <Card key={item.id}>
+            <Card key={item.id} className="hover:shadow-md hover:border-primary/20 transition-all">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{item.title}</span>
                       {item.has_responded ? (
-                        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20 border-0">
                           Respondido
                         </Badge>
                       ) : (
-                        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                        <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20 border-0">
                           Pendente
                         </Badge>
                       )}

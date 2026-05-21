@@ -14,7 +14,7 @@ export default function MyCareerPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <GitBranch className="h-6 w-6 text-primary" />
@@ -37,7 +37,7 @@ export default function MyCareerPage() {
             <div className="rounded-xl border bg-card p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{myCareer.track_name}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">{myCareer.track_name}</p>
                   <h2 className="text-xl font-bold">{myCareer.level_name}</h2>
                   {myCareer.level_description && (
                     <p className="text-sm text-muted-foreground mt-1">{myCareer.level_description}</p>
@@ -92,7 +92,7 @@ export default function MyCareerPage() {
                   <p className="text-sm text-muted-foreground">{myCareer.next_level.description}</p>
                 )}
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Critérios para promoção</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Critérios para promoção</p>
                   <div className="space-y-2">
                     {myCareer.next_level.min_score_final && (
                       <CriterionRow

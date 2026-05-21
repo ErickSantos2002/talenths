@@ -18,9 +18,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  in_progress: { label: "Em andamento", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200", icon: Clock },
-  submitted: { label: "Aguardando avaliação", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200", icon: AlertCircle },
-  evaluated: { label: "Avaliado", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200", icon: CheckCircle },
+  in_progress: { label: "Em andamento", color: "bg-blue-500/15 text-blue-400 border-blue-500/20", icon: Clock },
+  submitted: { label: "Aguardando avaliação", color: "bg-amber-500/15 text-amber-400 border-amber-500/20", icon: AlertCircle },
+  evaluated: { label: "Avaliado", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20", icon: CheckCircle },
 };
 
 function fmt(dateStr: string | null): string {

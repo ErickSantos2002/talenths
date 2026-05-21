@@ -186,12 +186,12 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit }
                       {rows.map(row => {
                         const devColor = row.deviation !== null
                           ? (detail.objective === "increase" ? row.deviation >= 0 : row.deviation <= 0)
-                            ? "text-emerald-600 dark:text-emerald-400"
+                            ? "text-emerald-400"
                             : "text-red-500"
                           : "";
                         const cumDevColor = row.cumDeviation !== null
                           ? (detail.objective === "increase" ? row.cumDeviation >= 0 : row.cumDeviation <= 0)
-                            ? "text-emerald-600 dark:text-emerald-400"
+                            ? "text-emerald-400"
                             : "text-red-500"
                           : "";
 

@@ -83,11 +83,11 @@ const BAND_LABELS: Record<SalaryBand, string> = {
 };
 
 const BAND_COLORS: Record<SalaryBand, string> = {
-  abaixo_minimo: "bg-red-100 text-red-700 border-red-200",
-  band_90: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  mediana: "bg-green-100 text-green-700 border-green-200",
-  band_105: "bg-blue-100 text-blue-700 border-blue-200",
-  maximo_ou_acima: "bg-purple-100 text-purple-700 border-purple-200",
+  abaixo_minimo: "bg-red-500/15 text-red-400 border-red-500/20",
+  band_90: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  mediana: "bg-green-500/15 text-green-400 border-green-500/20",
+  band_105: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  maximo_ou_acima: "bg-purple-500/15 text-purple-400 border-purple-500/20",
 };
 
 function BandBadge({ band }: { band?: SalaryBand }) {
@@ -310,10 +310,12 @@ function SalaryTableTab({
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-muted/50 border-b">
-                  <th className="sticky left-0 bg-muted/50 z-10 text-left px-4 py-2 font-medium min-w-52">Cargo</th>
-                  {BANDS.map((b) => (
-                    <th key={b.key} className="text-center px-3 py-2 font-medium min-w-36">{b.label}</th>
-                  ))}
+                  <th className="sticky left-0 bg-muted/50 z-10 text-left px-4 py-2.5 font-semibold text-sm min-w-52">Cargo</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-xs text-yellow-400 min-w-36">P90</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-xs text-yellow-300/80 min-w-36">P95</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-xs text-green-400 min-w-36">Mediana</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-xs text-blue-400 min-w-36">P105</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-xs text-purple-400 min-w-36">P110</th>
                 </tr>
               </thead>
               <tbody>
@@ -698,7 +700,7 @@ export default function SalaryTablePage() {
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <DollarSign className="w-6 h-6 text-muted-foreground" />
+          <DollarSign className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Tabela Salarial</h1>
             <p className="text-sm text-muted-foreground">Gerencie referências de mercado e posicionamento salarial da equipe</p>
@@ -733,7 +735,13 @@ export default function SalaryTablePage() {
           )}
         </div>
 
-        {activeRef && <p className="text-sm text-muted-foreground">{activeRef.market} · {activeRef.region} · {activeRef.reference_year}</p>}
+        {activeRef && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{activeRef.market}</span>
+            <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">{activeRef.region}</span>
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{activeRef.reference_year}</span>
+          </div>
+        )}
         {!selectedRefId && <p className="text-sm text-muted-foreground">Selecione ou crie uma referência para editar a tabela e os cargos.</p>}
 
         <CreateReferenceDialog
@@ -747,10 +755,16 @@ export default function SalaryTablePage() {
         />
 
         <Tabs defaultValue="tabela">
-          <TabsList>
-            <TabsTrigger value="tabela">Tabela Salarial</TabsTrigger>
-            <TabsTrigger value="posicionamento">Posicionamento</TabsTrigger>
-            <TabsTrigger value="cargos">Cargos</TabsTrigger>
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="tabela" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground">
+              Tabela Salarial
+            </TabsTrigger>
+            <TabsTrigger value="posicionamento" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground">
+              Posicionamento
+            </TabsTrigger>
+            <TabsTrigger value="cargos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground">
+              Cargos
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="tabela" className="mt-4">
             <SalaryTableTab

@@ -23,9 +23,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  published: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  archived: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  draft: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+  published: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  archived: "bg-slate-500/15 text-slate-400 border-slate-500/20",
 };
 
 const SCORING_LABELS: Record<string, string> = {
@@ -89,7 +89,7 @@ export default function AdminTestesPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-primary" />
@@ -103,15 +103,15 @@ export default function AdminTestesPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
         ) : tests.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              Nenhum teste criado ainda. Clique em "Novo Teste" para começar.
-            </CardContent>
-          </Card>
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <ClipboardList className="h-12 w-12 mb-4 opacity-30" />
+            <p className="text-base font-medium">Nenhum teste criado ainda</p>
+            <p className="text-sm mt-1">Clique em "Novo Teste" para começar</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {tests.map((test) => (
-              <Card key={test.id} className="hover:shadow-md transition-shadow">
+              <Card key={test.id} className="hover:shadow-md hover:border-border/80 transition-all">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">

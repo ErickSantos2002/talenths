@@ -269,7 +269,7 @@ export default function WorkshopsAdminPage() {
           <div className="space-y-6">
             {upcoming.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Próximos</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Próximos</h2>
                 {upcoming.map(w => (
                   <WorkshopCard
                     key={w.id}
@@ -284,7 +284,7 @@ export default function WorkshopsAdminPage() {
             )}
             {done.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Realizados</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Realizados</h2>
                 {done.map(w => (
                   <WorkshopCard
                     key={w.id}
@@ -334,7 +334,7 @@ export function WorkshopCard({ workshop: w, onEdit, onDelete, onAttendance, onRe
   const isFull = !!w.max_seats && w.seats_taken >= w.max_seats && !regStatus;
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
@@ -393,7 +393,7 @@ export function WorkshopCard({ workshop: w, onEdit, onDelete, onAttendance, onRe
                   </Button>
                 )}
                 {regStatus === "attended" && (
-                  <Badge className="text-xs bg-emerald-500/10 text-emerald-600 border-0">Presença confirmada</Badge>
+                  <Badge className="text-xs bg-emerald-500/10 text-emerald-400 border-0">Presença confirmada</Badge>
                 )}
                 {regStatus === "absent" && (
                   <Badge variant="outline" className="text-xs text-muted-foreground">Ausente</Badge>

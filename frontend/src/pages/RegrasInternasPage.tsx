@@ -52,7 +52,7 @@ export default function RegrasInternasPage() {
   if (isLoading) {
     return (
       <AdminLayout>
-        <div className="p-6 max-w-3xl mx-auto space-y-4">
+        <div className="space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32 w-full" />
           <Skeleton className="h-32 w-full" />
@@ -65,7 +65,7 @@ export default function RegrasInternasPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export default function RegrasInternasPage() {
               <ScrollText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Regras Internas</h1>
+              <h1 className="text-2xl font-bold">Regras Internas</h1>
               <p className="text-sm text-muted-foreground">
                 Normas e diretrizes da empresa
               </p>
@@ -152,7 +152,7 @@ export default function RegrasInternasPage() {
         ) : (
           <div className="space-y-4">
             {currentRules.map((rule, i) => (
-              <Card key={i}>
+              <Card key={i} className="hover:shadow-md hover:border-primary/20 transition-all">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">

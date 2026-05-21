@@ -18,9 +18,9 @@ const SCORING_LABELS: Record<string, string> = {
 };
 
 const ATTEMPT_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  in_progress: { label: "Em andamento", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-  submitted: { label: "Aguardando avaliação", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
-  evaluated: { label: "Avaliado", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
+  in_progress: { label: "Em andamento", color: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
+  submitted: { label: "Aguardando avaliação", color: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+  evaluated: { label: "Avaliado", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" },
 };
 
 function fmt(d: string) {
@@ -45,7 +45,7 @@ export default function MeusTestesPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 max-w-3xl mx-auto space-y-8">
+      <div className="space-y-8">
         <div className="flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-semibold">Meus Testes</h1>
@@ -54,9 +54,9 @@ export default function MeusTestesPage() {
         {/* Testes em andamento */}
         {inProgressAttempts.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Em andamento</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Em andamento</h2>
             {inProgressAttempts.map((attempt) => (
-              <Card key={attempt.id} className="border-blue-200 dark:border-blue-800">
+              <Card key={attempt.id} className="border-blue-500/30">
                 <CardContent className="p-4 flex items-center gap-4">
                   <Clock className="h-5 w-5 text-blue-500 shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -79,22 +79,21 @@ export default function MeusTestesPage() {
 
         {/* Testes disponíveis */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Disponíveis</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Disponíveis</h2>
           {loadingAvailable ? (
             <p className="text-sm text-muted-foreground">Carregando...</p>
           ) : available.length === 0 ? (
-            <Card>
-              <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                Nenhum teste disponível no momento.
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border border-dashed p-16 text-center">
+              <ClipboardList className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
+              <p className="text-muted-foreground">Nenhum teste disponível no momento.</p>
+            </div>
           ) : (
             available.map((test) => {
               const attemptsDone = myAttempts.filter((a) => a.test_id === test.id && a.status !== "in_progress").length;
               const maxReached = test.max_attempts !== null && attemptsDone >= test.max_attempts;
 
               return (
-                <Card key={test.id} className="hover:shadow-md transition-shadow">
+                <Card key={test.id} className="hover:shadow-md hover:border-primary/20 transition-all">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <div className="flex-1 min-w-0">
@@ -131,7 +130,7 @@ export default function MeusTestesPage() {
         {/* Histórico */}
         {doneAttempts.length > 0 && (
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Histórico</h2>
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">Histórico</h2>
             {doneAttempts.map((attempt) => {
               const cfg = ATTEMPT_STATUS_CONFIG[attempt.status];
               return (

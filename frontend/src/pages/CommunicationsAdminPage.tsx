@@ -20,12 +20,12 @@ import { cn } from "@/lib/utils";
 const MONTH_NAMES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Geral: "bg-slate-100 text-slate-700",
-  RH: "bg-blue-100 text-blue-700",
-  Benefícios: "bg-emerald-100 text-emerald-700",
-  Evento: "bg-purple-100 text-purple-700",
-  Urgente: "bg-red-100 text-red-700",
-  Reconhecimento: "bg-amber-100 text-amber-700",
+  Geral: "bg-slate-500/15 text-slate-400",
+  RH: "bg-blue-500/15 text-blue-400",
+  Benefícios: "bg-emerald-500/15 text-emerald-400",
+  Evento: "bg-purple-500/15 text-purple-400",
+  Urgente: "bg-red-500/15 text-red-400",
+  Reconhecimento: "bg-amber-500/15 text-amber-400",
 };
 
 // ── Announcement Dialog ───────────────────────────────────────────────────────
@@ -242,9 +242,9 @@ function BirthdaysTab() {
             {birthdays.map(b => (
               <div key={b.user_id} className={cn(
                 "flex items-center gap-3 rounded-xl border px-4 py-3",
-                b.is_today && "border-pink-300 bg-pink-50 dark:bg-pink-950/20"
+                b.is_today && "border-pink-500/30 bg-pink-500/10"
               )}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-100 text-pink-600 font-bold text-sm shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-500/15 text-pink-400 font-bold text-sm shrink-0">
                   {b.day}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -252,7 +252,7 @@ function BirthdaysTab() {
                   {b.department && <p className="text-xs text-muted-foreground">{b.department}</p>}
                 </div>
                 {b.is_today && (
-                  <Badge className="bg-pink-100 text-pink-700 border-0 text-xs">Hoje! 🎂</Badge>
+                  <Badge className="bg-pink-500/15 text-pink-400 border-0 text-xs">Hoje! 🎂</Badge>
                 )}
               </div>
             ))}
@@ -271,9 +271,9 @@ function BirthdaysTab() {
             {milestones.map(m => (
               <div key={m.user_id} className={cn(
                 "flex items-center gap-3 rounded-xl border px-4 py-3",
-                m.is_today && "border-amber-300 bg-amber-50 dark:bg-amber-950/20"
+                m.is_today && "border-amber-500/30 bg-amber-500/10"
               )}>
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-bold text-sm shrink-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500/15 text-amber-400 font-bold text-sm shrink-0">
                   {m.years}a
                 </div>
                 <div className="flex-1 min-w-0">
@@ -282,7 +282,7 @@ function BirthdaysTab() {
                 </div>
                 <span className="text-xs text-muted-foreground shrink-0">dia {m.day}</span>
                 {m.is_today && (
-                  <Badge className="bg-amber-100 text-amber-700 border-0 text-xs">Hoje! 🏆</Badge>
+                  <Badge className="bg-amber-500/15 text-amber-400 border-0 text-xs">Hoje! 🏆</Badge>
                 )}
               </div>
             ))}
@@ -375,12 +375,12 @@ export default function CommunicationsAdminPage() {
         </div>
 
         <Tabs defaultValue="mural">
-          <TabsList>
-            <TabsTrigger value="mural">
-              <Megaphone className="h-4 w-4 mr-2" /> Mural
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="mural" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+              <Megaphone className="h-4 w-4" /> Mural
             </TabsTrigger>
-            <TabsTrigger value="birthdays">
-              <Cake className="h-4 w-4 mr-2" /> Aniversários
+            <TabsTrigger value="birthdays" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+              <Cake className="h-4 w-4" /> Aniversários
             </TabsTrigger>
           </TabsList>
           <TabsContent value="mural" className="mt-4">

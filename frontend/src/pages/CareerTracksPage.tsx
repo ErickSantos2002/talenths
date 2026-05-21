@@ -97,9 +97,9 @@ export default function CareerTracksPage() {
         )}
 
         <Tabs defaultValue="equipe">
-          <TabsList>
-            <TabsTrigger value="equipe">Equipe</TabsTrigger>
-            <TabsTrigger value="trilhas">Trilhas & Níveis</TabsTrigger>
+          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
+            <TabsTrigger value="equipe" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground">Equipe</TabsTrigger>
+            <TabsTrigger value="trilhas" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground">Trilhas & Níveis</TabsTrigger>
           </TabsList>
 
           {/* ── Equipe ── */}

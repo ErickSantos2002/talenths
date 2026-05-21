@@ -70,7 +70,7 @@ export default function MeusBeneficiosPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {myBenefits.map((b) => (
-              <Card key={b.id} className="overflow-hidden">
+              <Card key={b.id} className="overflow-hidden hover:shadow-md hover:border-primary/20 transition-all">
                 <div
                   className={cn(
                     "h-1.5 w-full",
