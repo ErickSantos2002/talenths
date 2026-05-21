@@ -22,7 +22,17 @@ async def get_my_profile(
     conn: asyncpg.Connection = Depends(get_db),
 ):
     row = await conn.fetchrow(
-        "SELECT * FROM public.profiles WHERE user_id = $1", user_id
+        """
+        SELECT
+            p.*,
+            c.name AS company_name,
+            d.name AS department_name
+        FROM public.profiles p
+        LEFT JOIN public.companies c ON c.id = p.company_id
+        LEFT JOIN public.departments d ON d.id = p.department_id
+        WHERE p.user_id = $1
+        """,
+        user_id,
     )
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil não encontrado")
