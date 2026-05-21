@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documents, departments, collaborators } from "@/lib/api";
 import type { Document } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
+import { DocumentPreviewDialog, downloadDocument } from "@/components/DocumentPreviewDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Plus, Download, Trash2 } from "lucide-react";
+import { FileText, Plus, Download, Trash2, Eye } from "lucide-react";
 
 type TargetFilter = "all" | "general" | "department" | "individual";
 
@@ -37,17 +38,6 @@ function formatSize(bytes: number) {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
-async function downloadDocument(doc: Document) {
-  const { url, token } = documents.downloadUrl(doc.id);
-  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-  const blob = await res.blob();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = doc.original_name;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 export default function AdminDocumentosPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -56,6 +46,7 @@ export default function AdminDocumentosPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [form, setForm] = useState<UploadForm>(emptyForm);
   const [filter, setFilter] = useState<TargetFilter>("all");
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
 
   const { data: list = [], isLoading } = useQuery({
     queryKey: ["admin-documents"],
@@ -169,6 +160,13 @@ export default function AdminDocumentosPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPreviewDoc(doc)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => downloadDocument(doc)}
@@ -190,6 +188,8 @@ export default function AdminDocumentosPage() {
           ))}
         </div>
       </div>
+
+      <DocumentPreviewDialog doc={previewDoc} onClose={() => setPreviewDoc(null)} />
 
       <Dialog open={showUpload} onOpenChange={(open) => { setShowUpload(open); if (!open) setForm(emptyForm); }}>
         <DialogContent className="max-w-lg">

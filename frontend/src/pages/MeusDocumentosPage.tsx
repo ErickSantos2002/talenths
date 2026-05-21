@@ -1,12 +1,14 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { documents } from "@/lib/api";
 import type { Document } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
+import { DocumentPreviewDialog, downloadDocument } from "@/components/DocumentPreviewDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Eye } from "lucide-react";
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return bytes + " B";
@@ -14,19 +16,9 @@ function formatSize(bytes: number) {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
-async function downloadDocument(doc: Document) {
-  const { url, token } = documents.downloadUrl(doc.id);
-  const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
-  const blob = await res.blob();
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = doc.original_name;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 export default function MeusDocumentosPage() {
   const { toast } = useToast();
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
 
   const { data: list = [], isLoading } = useQuery({
     queryKey: ["my-documents"],
@@ -77,14 +69,21 @@ export default function MeusDocumentosPage() {
                     {new Date(doc.created_at).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => handleDownload(doc)}>
-                  <Download className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => setPreviewDoc(doc)}>
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDownload(doc)}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       </div>
+
+      <DocumentPreviewDialog doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </AdminLayout>
   );
 }
