@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+/* DM Sans loaded via <link> in index.html for optimal performance */
 
 /* ─────────────────────────────────────────
    FONTE VIDEO — Fonte oficial da marca DN.IA
@@ -133,7 +131,7 @@
     --chart-cyan: #06B6D4;
 
     /* ─── shadcn/ui Semantic Tokens (Light Mode) ─── */
-    --background: 210 40% 98%;
+    --background: 210 30% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -145,31 +143,32 @@
     --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 94%;
+    --secondary: 210 30% 93%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 94%;
+    --muted: 210 30% 93%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 94%;
+    --accent: 160 30% 93%;
     --accent-foreground: 222 47% 11%;
 
     --destructive: 3 92% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 213 27% 84%;
-    --input: 213 27% 84%;
+    --border: 213 27% 88%;
+    --input: 213 27% 88%;
     --ring: 160 84% 39%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
+    /* Sidebar light — teal tint sutil para separar do conteúdo */
+    --sidebar-background: 160 25% 96%;
+    --sidebar-foreground: 222 47% 25%;
     --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 94%;
+    --sidebar-accent: 160 20% 90%;
     --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 213 27% 84%;
+    --sidebar-border: 160 20% 88%;
     --sidebar-ring: 160 84% 39%;
 
     /* Custom tokens */
@@ -180,72 +179,74 @@
     --brand-red: 3 92% 48%;
     --brand-red-foreground: 0 0% 100%;
     --surface: 0 0% 100%;
-    --surface-elevated: 210 40% 98%;
+    --surface-elevated: 210 30% 98%;
 
     /* Chart colors */
     --chart-1: 160 84% 39%;
     --chart-2: 217 91% 60%;
     --chart-3: 38 92% 50%;
-    --chart-4: 160 84% 39%;
-    --chart-5: 280 65% 60%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 190 85% 42%;
   }
 
   .dark {
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
 
-    --background: 222 47% 11%;
-    --foreground: 213 27% 84%;
+    /* Dark mode — navy profundo com caráter teal */
+    --background: 220 52% 9%;        /* #0c1629 */
+    --foreground: 210 40% 94%;       /* #ebf0fa */
 
-    --card: 217 33% 17%;
-    --card-foreground: 213 27% 84%;
+    --card: 220 48% 13%;             /* #111f35 */
+    --card-foreground: 210 40% 94%;
 
-    --popover: 217 33% 17%;
-    --popover-foreground: 213 27% 84%;
+    --popover: 220 48% 13%;
+    --popover-foreground: 210 40% 94%;
 
-    --primary: 160 84% 39%;
+    --primary: 160 84% 44%;          /* #16d49a — verde vibrante */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 25% 27%;
-    --secondary-foreground: 213 27% 84%;
+    --secondary: 220 42% 18%;        /* #182a42 */
+    --secondary-foreground: 210 40% 94%;
 
-    --muted: 215 25% 27%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 45% 15%;            /* #131e33 */
+    --muted-foreground: 215 20% 58%; /* #849099 */
 
-    --accent: 215 25% 27%;
-    --accent-foreground: 213 27% 84%;
+    --accent: 220 42% 18%;
+    --accent-foreground: 210 40% 94%;
 
-    --destructive: 3 92% 48%;
+    --destructive: 3 92% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 25% 27%;
-    --input: 222 47% 11%;
-    --ring: 160 84% 39%;
+    --border: 220 38% 20%;           /* #192c44 */
+    --input: 220 52% 9%;
+    --ring: 160 84% 44%;
 
-    --sidebar-background: 217 33% 14%;
-    --sidebar-foreground: 213 27% 84%;
-    --sidebar-primary: 160 84% 39%;
+    /* Sidebar — mais escuro que o conteúdo, distinto */
+    --sidebar-background: 222 60% 7%;   /* #08111f */
+    --sidebar-foreground: 210 28% 78%;  /* #aabace */
+    --sidebar-primary: 160 84% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 25% 22%;
-    --sidebar-accent-foreground: 213 27% 84%;
-    --sidebar-border: 215 25% 27%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-accent: 220 48% 14%;      /* #101e30 — hover */
+    --sidebar-accent-foreground: 210 40% 94%;
+    --sidebar-border: 220 42% 14%;      /* #101c2e */
+    --sidebar-ring: 160 84% 44%;
 
-    --success: 160 84% 45%;
+    --success: 160 84% 47%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 55%;
+    --warning: 38 95% 58%;
     --warning-foreground: 0 0% 100%;
-    --brand-red: 3 92% 48%;
+    --brand-red: 3 92% 55%;
     --brand-red-foreground: 0 0% 100%;
-    --surface: 217 33% 17%;
-    --surface-elevated: 215 25% 22%;
+    --surface: 220 48% 13%;
+    --surface-elevated: 220 42% 18%;
 
-    /* Chart colors */
-    --chart-1: 160 84% 45%;
-    --chart-2: 217 91% 60%;
-    --chart-3: 38 92% 55%;
-    --chart-4: 160 84% 45%;
-    --chart-5: 280 65% 65%;
+    /* Chart colors — mais vibrantes */
+    --chart-1: 160 84% 47%;
+    --chart-2: 217 91% 65%;
+    --chart-3: 38 95% 58%;
+    --chart-4: 280 65% 68%;
+    --chart-5: 190 85% 50%;
   }
 }
 
@@ -256,12 +257,14 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Poppins', 'Verdana', 'Tahoma', sans-serif;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   h1, h2, h3 {
-    font-family: 'Video', 'Rajdhani', sans-serif;
-    letter-spacing: -0.025em;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 }
 

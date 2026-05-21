@@ -177,8 +177,8 @@ function NavItem({ item }: { item: NavItem }) {
         <NavLink
           to={item.url}
           end
-          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-          activeClassName="bg-primary/10 text-primary font-semibold"
+          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground/80 transition-all hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          activeClassName="bg-primary/10 text-primary font-semibold shadow-[inset_2px_0_0_hsl(var(--primary))]"
         >
           <item.icon className="h-4 w-4 shrink-0" />
           <span className="truncate">{item.title}</span>
@@ -220,8 +220,8 @@ function CollapsibleSection({
         <CollapsibleTrigger asChild>
           <button
             className={cn(
-              "flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors rounded-md",
-              "text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              "flex w-full items-center justify-between px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest transition-colors rounded-md",
+              "text-muted-foreground/50 hover:text-muted-foreground"
             )}
           >
             <span>{section.label}</span>
@@ -308,7 +308,7 @@ export function AdminSidebar() {
         {/* Dashboard */}
         <SidebarGroup className={collapsed ? undefined : "pb-1"}>
           {!collapsed && (
-            <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 select-none">
               Menu
             </p>
           )}
@@ -327,7 +327,7 @@ export function AdminSidebar() {
               <div className="mx-3 my-1 border-t border-sidebar-border" />
             )}
             {!collapsed && (
-              <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 select-none">
                 Empresa
               </p>
             )}
@@ -348,7 +348,7 @@ export function AdminSidebar() {
           <div className="mx-3 my-1 border-t border-sidebar-border" />
         )}
         {!collapsed && (
-          <p className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 select-none">
             Pessoal
           </p>
         )}
