@@ -158,30 +158,29 @@ export default function AdminDocumentosPage() {
                     {new Date(doc.created_at).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
                     onClick={() => setPreviewDoc(doc)}
+                    title="Visualizar"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-colors hover:bg-blue-500/25"
                   >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => downloadDocument(doc)}
+                    title="Baixar"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-500 transition-colors hover:bg-emerald-500/25"
                   >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    <Download className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => deleteMut.mutate(doc.id)}
                     disabled={deleteMut.isPending}
+                    title="Excluir"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25 disabled:opacity-40"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </CardContent>
             </Card>

@@ -248,10 +248,13 @@ function ChecklistCard({ checklist }: { checklist: OnboardingChecklist }) {
               </span>
             </div>
           </div>
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
-            onClick={() => deleteMutation.mutate(checklist.id)}>
+          <button
+            onClick={() => deleteMutation.mutate(checklist.id)}
+            title="Excluir"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25 shrink-0"
+          >
             <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          </button>
         </div>
       </CardHeader>
       {open && (
@@ -351,14 +354,21 @@ function TemplatesTab() {
                     <CardTitle className="text-sm">{t.name}</CardTitle>
                     {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTemplateDialog(t)}>
+                  <div className="flex gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setTemplateDialog(t)}
+                      title="Editar"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
+                    >
                       <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => deleteTemplateMutation.mutate(t.id)}>
+                    </button>
+                    <button
+                      onClick={() => deleteTemplateMutation.mutate(t.id)}
+                      title="Excluir"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </CardHeader>
@@ -371,7 +381,11 @@ function TemplatesTab() {
                       {task.responsible_role === "manager" ? "RH" : "Colaborador"}
                     </Badge>
                     <span className="text-[10px] text-muted-foreground shrink-0">D+{task.due_days}</span>
-                    <button onClick={() => deleteTaskMutation.mutate(task.id)} className="hover:text-destructive shrink-0">
+                    <button
+                      onClick={() => deleteTaskMutation.mutate(task.id)}
+                      title="Excluir"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25 shrink-0"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>

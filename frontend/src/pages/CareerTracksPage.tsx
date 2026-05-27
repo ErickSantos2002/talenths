@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { career as careerApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { TablePagination } from "@/components/TablePagination";
 import type { CareerTrack, CareerLevel, TeamCareerEntry } from "@/types/career";
 import { cn } from "@/lib/utils";
 import { NINE_BOX_QUADRANTS } from "@/types/evaluations";
@@ -32,6 +33,8 @@ export default function CareerTracksPage() {
   const [levelDialog, setLevelDialog] = useState<{ open: boolean; trackId?: string; level?: CareerLevel }>({ open: false });
   const [assignDialog, setAssignDialog] = useState<{ open: boolean; member?: TeamCareerEntry }>({ open: false });
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [teamPage, setTeamPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const { data: tracks, isLoading: tracksLoading } = useQuery({
     queryKey: ["career-tracks"],
@@ -63,6 +66,11 @@ export default function CareerTracksPage() {
 
   const eligibleCount = team?.filter(m => m.eligible_for_next).length ?? 0;
   const noTrackCount = team?.filter(m => !m.track_id).length ?? 0;
+
+  const totalTeamPages = Math.ceil((team?.length ?? 0) / PAGE_SIZE);
+  const teamStartIdx = (teamPage - 1) * PAGE_SIZE;
+  const teamEndIdx = Math.min(teamStartIdx + PAGE_SIZE, team?.length ?? 0);
+  const paginatedTeam = team?.slice(teamStartIdx, teamEndIdx) ?? [];
 
   return (
     <AdminLayout>
@@ -114,6 +122,7 @@ export default function CareerTracksPage() {
               </div>
             ) : (
               <div className="rounded-xl border overflow-hidden">
+                <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>
@@ -126,7 +135,7 @@ export default function CareerTracksPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {team.map(member => (
+                    {paginatedTeam.map(member => (
                       <tr key={member.user_id} className="border-t hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -177,6 +186,18 @@ export default function CareerTracksPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
+                <TablePagination
+                  currentPage={teamPage}
+                  totalPages={totalTeamPages}
+                  totalItems={team?.length ?? 0}
+                  startIdx={teamStartIdx}
+                  endIdx={teamEndIdx}
+                  itemLabel="colaboradores"
+                  onPage={setTeamPage}
+                  onPrev={() => setTeamPage(p => Math.max(1, p - 1))}
+                  onNext={() => setTeamPage(p => Math.min(totalTeamPages, p + 1))}
+                />
               </div>
             )}
           </TabsContent>
