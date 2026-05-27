@@ -183,7 +183,7 @@ function NavItem({ item }: { item: NavItem }) {
         onClick={() => navigate(item.url)}
         className={cn(
           "flex items-center gap-3 text-sm font-medium text-sidebar-foreground/80 transition-all",
-          isActive && "bg-primary/10 text-primary font-semibold shadow-[inset_2px_0_0_hsl(var(--primary))]"
+          isActive && "bg-primary/10 text-primary font-semibold shadow-[inset_-2px_0_0_hsl(var(--primary))]"
         )}
       >
         <item.icon className="h-4 w-4 shrink-0" />
