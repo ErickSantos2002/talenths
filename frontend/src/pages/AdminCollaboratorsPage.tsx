@@ -23,6 +23,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablePagination } from "@/components/TablePagination";
 import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound } from "lucide-react";
 
 type AppRole = "master_admin" | "manager" | "user";
@@ -49,6 +50,9 @@ interface Department {
   name: string;
   company_id: string;
 }
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+const PAGE_SIZE = 10;
 
 const ROLE_PRIORITY: AppRole[] = ["master_admin", "manager", "user"];
 
@@ -88,6 +92,7 @@ export default function AdminCollaboratorsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [collabPage, setCollabPage] = useState(1);
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -228,6 +233,14 @@ export default function AdminCollaboratorsPage() {
       c.email.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => ROLE_PRIORITY.indexOf(a.role) - ROLE_PRIORITY.indexOf(b.role));
+
+  // Reset page when search changes
+  useEffect(() => { setCollabPage(1); }, [search]);
+
+  const totalCollabPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const collabStartIdx = (collabPage - 1) * PAGE_SIZE;
+  const collabEndIdx = Math.min(collabStartIdx + PAGE_SIZE, filtered.length);
+  const paginated = filtered.slice(collabStartIdx, collabEndIdx);
 
   // --- Edit ---
   const openEdit = (collab: Collaborator) => {
@@ -375,43 +388,46 @@ export default function AdminCollaboratorsPage() {
 
   return (
     <AdminLayout>
-      <div className="animate-fade-in space-y-6">
+      <div className="animate-fade-in space-y-5">
+
+        {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
-            Gestão de Colaboradores
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
+            <Users className="h-6 w-6 text-primary" /> Gestão de Colaboradores
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1 text-sm text-muted-foreground">
             Gerencie os colaboradores e departamentos da empresa
           </p>
         </div>
 
         <Tabs defaultValue="colaboradores">
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0 h-auto">
-            <TabsTrigger value="colaboradores" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+          <TabsList className="h-auto w-full justify-start rounded-none border-b bg-transparent p-0">
+            <TabsTrigger value="colaboradores" className="h-11 gap-2 rounded-none border-b-2 border-transparent px-4 font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground">
               <Users className="h-4 w-4" /> Colaboradores
             </TabsTrigger>
-            <TabsTrigger value="departamentos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2">
+            <TabsTrigger value="departamentos" className="h-11 gap-2 rounded-none border-b-2 border-transparent px-4 font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:text-foreground">
               <Building2 className="h-4 w-4" /> Departamentos
             </TabsTrigger>
           </TabsList>
 
           {/* ── Aba Colaboradores ─────────────────────────────────────────── */}
-          <TabsContent value="colaboradores" className="space-y-4 mt-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <TabsContent value="colaboradores" className="mt-4 space-y-3">
+            {/* Search + button */}
+            <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por nome ou email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 w-full"
+                  className="w-full pl-9"
                 />
               </div>
-              <Button onClick={openAdd} className="gap-2 shrink-0">
+              <Button onClick={openAdd} className="w-full gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" /> Adicionar Colaborador
               </Button>
             </div>
+
             {!loading && (
               <p className="text-xs text-muted-foreground">
                 {filtered.length === collaborators.length
@@ -420,7 +436,8 @@ export default function AdminCollaboratorsPage() {
               </p>
             )}
 
-            <Card>
+            {/* Card — overflow-hidden contém o scroll horizontal dentro */}
+            <Card className="overflow-hidden">
               <CardContent className="p-0">
                 {loading ? (
                   <div className="space-y-4 p-6">
@@ -430,69 +447,95 @@ export default function AdminCollaboratorsPage() {
                   </div>
                 ) : filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <Users className="h-12 w-12 mb-4 opacity-40" />
+                    <Users className="mb-4 h-12 w-12 opacity-40" />
                     <p className="text-lg font-medium">
                       {search ? "Nenhum colaborador encontrado" : "Nenhum colaborador cadastrado"}
                     </p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead className="hidden sm:table-cell">Email</TableHead>
-                        <TableHead className="hidden lg:table-cell">Telefone</TableHead>
-                        <TableHead className="hidden lg:table-cell">Departamento</TableHead>
-                        <TableHead className="hidden lg:table-cell">Cargo</TableHead>
-                        <TableHead>Função</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filtered.map((collab) => (
-                        <TableRow key={collab.id} className="hover:bg-muted/40 transition-colors">
-                          <TableCell className="font-medium">{collab.name}</TableCell>
-                          <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{collab.email}</TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">{collab.phone ? formatPhone(collab.phone) : "—"}</TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">{collab.departmentName ?? "—"}</TableCell>
-                          <TableCell className="hidden lg:table-cell text-sm">{collab.job_title ?? "—"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={ROLE_COLORS[collab.role]}>
-                              {ROLE_LABELS[collab.role]}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="icon" onClick={() => openEdit(collab)} title="Editar">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => openResetPassword(collab)} title="Redefinir senha">
-                                <KeyRound className="h-4 w-4" />
-                              </Button>
-                              {isMasterAdmin && (
-                                <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(collab)} title="Excluir" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nome</TableHead>
+                            <TableHead className="hidden sm:table-cell">Email</TableHead>
+                            <TableHead className="hidden lg:table-cell">Telefone</TableHead>
+                            <TableHead className="hidden lg:table-cell">Departamento</TableHead>
+                            <TableHead className="hidden lg:table-cell">Cargo</TableHead>
+                            <TableHead>Função</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginated.map((collab) => (
+                            <TableRow key={collab.id} className="transition-colors hover:bg-muted/40">
+                              <TableCell className="font-medium">{collab.name}</TableCell>
+                              <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{collab.email}</TableCell>
+                              <TableCell className="hidden text-sm lg:table-cell">{collab.phone ? formatPhone(collab.phone) : "—"}</TableCell>
+                              <TableCell className="hidden text-sm lg:table-cell">{collab.departmentName ?? "—"}</TableCell>
+                              <TableCell className="hidden text-sm lg:table-cell">{collab.job_title ?? "—"}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={ROLE_COLORS[collab.role]}>
+                                  {ROLE_LABELS[collab.role]}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1.5">
+                                  <button
+                                    onClick={() => openEdit(collab)}
+                                    title="Editar"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => openResetPassword(collab)}
+                                    title="Redefinir senha"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-colors hover:bg-blue-500/25"
+                                  >
+                                    <KeyRound className="h-3.5 w-3.5" />
+                                  </button>
+                                  {isMasterAdmin && (
+                                    <button
+                                      onClick={() => setDeleteTarget(collab)}
+                                      title="Excluir"
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <TablePagination
+                      currentPage={collabPage}
+                      totalPages={totalCollabPages}
+                      totalItems={filtered.length}
+                      startIdx={collabStartIdx}
+                      endIdx={collabEndIdx}
+                      onPage={setCollabPage}
+                      onPrev={() => setCollabPage((p) => Math.max(1, p - 1))}
+                      onNext={() => setCollabPage((p) => Math.min(totalCollabPages, p + 1))}
+                    />
+                  </>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* ── Aba Departamentos ─────────────────────────────────────────── */}
-          <TabsContent value="departamentos" className="space-y-4 mt-4">
-            <div className="flex justify-end">
-              <Button onClick={openAddDept} className="gap-2">
+          <TabsContent value="departamentos" className="mt-4 space-y-3">
+            <div>
+              <Button onClick={openAddDept} className="w-full gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" /> Novo Departamento
               </Button>
             </div>
-            <Card>
+            <Card className="overflow-hidden">
               <CardContent className="p-0">
                 {loading ? (
                   <div className="space-y-4 p-6">
@@ -502,41 +545,51 @@ export default function AdminCollaboratorsPage() {
                   </div>
                 ) : departments.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <Building2 className="h-12 w-12 mb-4 opacity-40" />
+                    <Building2 className="mb-4 h-12 w-12 opacity-40" />
                     <p className="text-lg font-medium">Nenhum departamento cadastrado</p>
-                    <p className="text-sm mt-1">Crie o primeiro departamento para organizar os colaboradores</p>
+                    <p className="mt-1 text-sm">Crie o primeiro departamento para organizar os colaboradores</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead className="hidden sm:table-cell text-muted-foreground">Colaboradores</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {departments.map((dept) => {
-                        const count = collaborators.filter((c) => c.department_id === dept.id).length;
-                        return (
-                          <TableRow key={dept.id}>
-                            <TableCell className="font-medium">{dept.name}</TableCell>
-                            <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{count}</TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => openEditDept(dept)} title="Editar">
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => setDeptDeleteTarget(dept)} title="Excluir" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome</TableHead>
+                          <TableHead className="hidden sm:table-cell text-muted-foreground">Colaboradores</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {departments.map((dept) => {
+                          const count = collaborators.filter((c) => c.department_id === dept.id).length;
+                          return (
+                            <TableRow key={dept.id}>
+                              <TableCell className="font-medium">{dept.name}</TableCell>
+                              <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{count}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1.5">
+                                  <button
+                                    onClick={() => openEditDept(dept)}
+                                    title="Editar"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeptDeleteTarget(dept)}
+                                    title="Excluir"
+                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
