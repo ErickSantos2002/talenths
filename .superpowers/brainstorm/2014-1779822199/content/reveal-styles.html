@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estilos de Revelação</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; padding: 32px 24px; }
+  h2 { font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+  .subtitle { font-size: 14px; color: #64748b; margin-bottom: 32px; }
+  .options { display: flex; flex-direction: column; gap: 20px; }
+  .option {
+    border: 1.5px solid #1e293b; border-radius: 16px; overflow: hidden;
+    cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; background: #0d1623;
+  }
+  .option:hover { border-color: #10b981; }
+  .option.selected { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+  .option-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #1e293b; }
+  .letter {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; background: #1e293b; color: #94a3b8; flex-shrink: 0;
+  }
+  .option.selected .letter { background: #10b981; color: #fff; }
+  .option-title { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+  .option-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .demo { padding: 20px; background: #060d18; min-height: 140px; display: flex; align-items: center; justify-content: center; }
+
+  /* A — Scroll Reveal */
+  .demo-a { flex-direction: column; gap: 10px; align-items: stretch; }
+  .block {
+    background: #0d1623; border: 1px solid #1e293b; border-radius: 8px;
+    padding: 10px 14px; opacity: 0.2; transition: opacity 0.5s ease, transform 0.5s ease;
+    transform: translateY(8px);
+  }
+  .block.visible { opacity: 1; transform: translateY(0); }
+  .block-label { font-size: 10px; font-weight: 600; color: #10b981; text-transform: uppercase; letter-spacing: 0.08em; }
+  .block-text { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+
+  /* B — Fullscreen Sequence */
+  .demo-b { position: relative; overflow: hidden; width: 100%; min-height: 140px; padding: 0; }
+  .slide {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; gap: 8px;
+    transition: all 0.5s ease; opacity: 0; transform: scale(0.97);
+  }
+  .slide.active { opacity: 1; transform: scale(1); }
+  .slide-label { font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.1em; }
+  .slide-text { font-size: 13px; color: #cbd5e1; max-width: 280px; padding: 0 16px; }
+  .slide-dots { display: flex; gap: 5px; margin-top: 8px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: #1e293b; }
+  .dot.active { background: #10b981; }
+  .slide-nav {
+    position: absolute; bottom: 10px; right: 12px;
+    background: #1e293b; border: none; color: #94a3b8;
+    font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  }
+  .slide-nav:hover { color: #10b981; }
+
+  /* C — Typewriter */
+  .demo-c { flex-direction: column; gap: 8px; align-items: flex-start; width: 100%; }
+  .tw-label { font-size: 10px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.08em; }
+  .tw-row { display: flex; align-items: center; min-height: 60px; }
+  .tw-text { font-size: 13px; color: #cbd5e1; line-height: 1.6; }
+  .cursor {
+    display: inline-block; width: 2px; height: 14px;
+    background: #10b981; margin-left: 2px; vertical-align: middle;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+</style>
+</head>
+<body>
+
+<h2>Como o conteúdo vai aparecer?</h2>
+<p class="subtitle">Escolha o estilo de revelação para a página de apresentação da empresa</p>
+
+<div class="options">
+
+  <!-- A -->
+  <div class="option" id="optA" onclick="selectOption('a')">
+    <div class="option-header">
+      <div class="letter">A</div>
+      <div>
+        <div class="option-title">Scroll Reveal</div>
+        <div class="option-desc">Seções aparecem suavemente conforme o colaborador rola a página para baixo</div>
+      </div>
+    </div>
+    <div class="demo demo-a">
+      <div class="block" id="bA1"><div class="block-label">Missão</div><div class="block-text">Promover saúde e segurança com excelência...</div></div>
+      <div class="block" id="bA2"><div class="block-label">Visão</div><div class="block-text">Ser referência nacional em SST até 2030...</div></div>
+      <div class="block" id="bA3"><div class="block-label">Valores</div><div class="block-text">Integridade · Inovação · Cuidado</div></div>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="option" id="optB" onclick="selectOption('b')">
+    <div class="option-header">
+      <div class="letter">B</div>
+      <div>
+        <div class="option-title">Sequência Fullscreen</div>
+        <div class="option-desc">Cada seção ocupa a tela toda, avança automaticamente ou ao clicar em "Próximo"</div>
+      </div>
+    </div>
+    <div class="demo demo-b">
+      <div class="slide active" id="sB0">
+        <div class="slide-label">Missão</div>
+        <div class="slide-text">Promover saúde e segurança com excelência, transformando ambientes de trabalho.</div>
+        <div class="slide-dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+      <div class="slide" id="sB1">
+        <div class="slide-label">Visão</div>
+        <div class="slide-text">Ser referência nacional em Saúde e Segurança do Trabalho até 2030.</div>
+        <div class="slide-dots"><div class="dot"></div><div class="dot active"></div><div class="dot"></div></div>
+      </div>
+      <div class="slide" id="sB2">
+        <div class="slide-label">Valores</div>
+        <div class="slide-text">Integridade · Inovação · Cuidado · Excelência</div>
+        <div class="slide-dots"><div class="dot"></div><div class="dot"></div><div class="dot active"></div></div>
+      </div>
+      <button class="slide-nav" onclick="event.stopPropagation(); nextSlide()">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="option" id="optC" onclick="selectOption('c')">
+    <div class="option-header">
+      <div class="letter">C</div>
+      <div>
+        <div class="option-title">Typewriter Word-by-Word</div>
+        <div class="option-desc">As palavras aparecem uma a uma como se estivesse sendo digitado em tempo real</div>
+      </div>
+    </div>
+    <div class="demo demo-c">
+      <div class="tw-label" id="twLabel">Missão</div>
+      <div class="tw-row">
+        <span class="tw-text" id="twText"></span><span class="cursor" id="twCursor"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function selectOption(c) {
+  document.querySelectorAll('.option').forEach(function(o){ o.classList.remove('selected'); });
+  document.getElementById('opt' + c.toUpperCase()).classList.add('selected');
+  if (window.__recordChoice) { window.__recordChoice(c); }
+}
+
+// A — scroll blocks
+function runA() {
+  ['bA1','bA2','bA3'].forEach(function(id){ document.getElementById(id).classList.remove('visible'); });
+  setTimeout(function(){ document.getElementById('bA1').classList.add('visible'); }, 300);
+  setTimeout(function(){ document.getElementById('bA2').classList.add('visible'); }, 700);
+  setTimeout(function(){ document.getElementById('bA3').classList.add('visible'); }, 1100);
+}
+runA();
+setInterval(runA, 4000);
+
+// B — slides
+var currentSlide = 0;
+function nextSlide() {
+  var prev = document.getElementById('sB' + currentSlide);
+  prev.classList.remove('active');
+  currentSlide = (currentSlide + 1) % 3;
+  document.getElementById('sB' + currentSlide).classList.add('active');
+}
+
+// C — typewriter
+var phrases = [
+  { label: 'Missão', text: 'Promover saúde e segurança com excelência, transformando ambientes de trabalho em espaços de bem-estar.' },
+  { label: 'Visão', text: 'Ser referência nacional em Saúde e Segurança do Trabalho até 2030.' },
+  { label: 'Valores', text: 'Integridade · Inovação · Cuidado · Excelência' }
+];
+var pIdx = 0, cIdx = 0, going = true;
+
+function tick() {
+  var txt = document.getElementById('twText');
+  var lbl = document.getElementById('twLabel');
+  var p = phrases[pIdx];
+  if (going) {
+    txt.textContent = p.text.substring(0, cIdx);
+    cIdx++;
+    if (cIdx > p.text.length) { going = false; setTimeout(tick, 2000); return; }
+    setTimeout(tick, 38);
+  } else {
+    pIdx = (pIdx + 1) % phrases.length;
+    cIdx = 0; going = true;
+    lbl.textContent = phrases[pIdx].label;
+    txt.textContent = '';
+    setTimeout(tick, 300);
+  }
+}
+setTimeout(tick, 1000);
+</script>
+</body>
+</html>

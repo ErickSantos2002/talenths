@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layout Combinado</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+
+/* Frame simulando o AdminLayout */
+.frame { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 60px; background: #080f1a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 12px; }
+.sidebar-dot { width: 28px; height: 28px; border-radius: 8px; background: #1e293b; }
+.sidebar-dot.active { background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.4); }
+
+.main { flex: 1; overflow-y: scroll; scroll-behavior: smooth; background: #0d1117; }
+
+/* ---- Sections ---- */
+.section {
+  min-height: 85vh; display: flex; flex-direction: column;
+  justify-content: center; padding: 60px 56px;
+  border-bottom: 1px solid #1e293b;
+}
+.section-label {
+  font-size: 11px; font-weight: 700; color: #10b981;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 20px; opacity: 0; transform: translateY(8px);
+  transition: all 0.5s ease;
+}
+.section-label.show { opacity: 1; transform: translateY(0); }
+
+/* Hero */
+.hero { min-height: 60vh; justify-content: flex-end; padding-bottom: 40px; position: relative; overflow: hidden; }
+.hero-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #060d18 0%, #0d1623 60%, #091a12 100%);
+}
+.hero-blob {
+  position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
+}
+.hero-company {
+  position: relative; z-index: 1;
+  font-size: 36px; font-weight: 800; color: #f8fafc; line-height: 1.1;
+  opacity: 0; transform: translateY(20px); transition: all 0.8s ease;
+}
+.hero-company.show { opacity: 1; transform: translateY(0); }
+.hero-sub {
+  position: relative; z-index: 1;
+  font-size: 13px; color: #64748b; margin-top: 6px;
+  opacity: 0; transition: opacity 0.8s ease 0.3s;
+}
+.hero-sub.show { opacity: 1; }
+.hero-badge {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 20px; padding: 4px 12px; font-size: 11px; color: #10b981;
+  margin-bottom: 16px; opacity: 0; transition: opacity 0.6s ease 0.1s;
+}
+.hero-badge.show { opacity: 1; }
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+/* Typewriter section */
+.tw-container { max-width: 640px; }
+.tw-title {
+  font-size: 28px; font-weight: 700; color: #f1f5f9; line-height: 1.3;
+  min-height: 80px;
+}
+.cursor { display: inline-block; width: 3px; height: 24px; background: #10b981; margin-left: 3px; vertical-align: middle; animation: blink 1s infinite; }
+@keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+.tw-placeholder { color: #1e293b; font-size: 28px; font-weight: 700; }
+
+/* Valores — scroll reveal cards */
+.values-label { font-size: 11px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 24px; }
+.values-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; max-width: 640px; }
+.value-card {
+  background: #0d1623; border: 1px solid #1e293b; border-radius: 12px; padding: 18px 20px;
+  opacity: 0; transform: translateY(14px); transition: all 0.5s ease;
+}
+.value-card.show { opacity: 1; transform: translateY(0); }
+.value-title { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+.value-desc { font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.5; }
+.value-icon { font-size: 18px; margin-bottom: 8px; }
+
+/* Section tags */
+.section-tag {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(13,17,23,0.85); backdrop-filter: blur(12px);
+  padding: 8px 56px; border-bottom: 1px solid #1e293b;
+  font-size: 11px; color: #475569; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+}
+.tag-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+
+/* Scroll indicator */
+.scroll-hint {
+  position: relative; z-index: 1; margin-top: 40px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: #334155; animation: bounce 2s infinite;
+}
+@keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(4px);} }
+
+/* Edit button */
+.edit-btn {
+  position: fixed; bottom: 24px; right: 24px; z-index: 100;
+  background: #10b981; color: #fff; border: none; border-radius: 10px;
+  padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(16,185,129,0.3);
+}
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <!-- Sidebar mockup -->
+  <div class="sidebar">
+    <div class="sidebar-dot active"></div>
+    <div class="sidebar-dot"></div>
+    <div class="sidebar-dot"></div>
+    <div class="sidebar-dot"></div>
+    <div class="sidebar-dot"></div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main" id="mainScroll">
+
+    <!-- Hero -->
+    <div class="section hero" id="secHero">
+      <div class="hero-blob" style="width:400px;height:400px;top:-100px;right:-80px;background:rgba(16,185,129,0.08);"></div>
+      <div class="hero-blob" style="width:300px;height:300px;bottom:-80px;left:0;background:rgba(16,185,129,0.05);"></div>
+      <div class="hero-badge" id="heroBadge"><div class="badge-dot"></div> HealthSafety Tech</div>
+      <div class="hero-company" id="heroCompany">HealthSafety Tech</div>
+      <div class="hero-sub" id="heroSub">Saúde e Segurança do Trabalho</div>
+      <div class="scroll-hint">↓ Role para conhecer nossa empresa</div>
+    </div>
+
+    <!-- Missão -->
+    <div class="section-tag"><div class="tag-dot"></div> Missão</div>
+    <div class="section" id="secMission">
+      <div class="section-label" id="lblMission">Nossa Missão</div>
+      <div class="tw-container">
+        <div class="tw-title">
+          <span id="twMission"></span><span class="cursor" id="curMission" style="display:none"></span>
+          <span class="tw-placeholder" id="phMission">Promover saúde e segurança...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visão -->
+    <div class="section-tag"><div class="tag-dot"></div> Visão</div>
+    <div class="section" id="secVision">
+      <div class="section-label" id="lblVision">Nossa Visão</div>
+      <div class="tw-container">
+        <div class="tw-title">
+          <span id="twVision"></span><span class="cursor" id="curVision" style="display:none"></span>
+          <span class="tw-placeholder" id="phVision">Ser referência nacional...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Valores -->
+    <div class="section-tag"><div class="tag-dot"></div> Valores</div>
+    <div class="section" id="secValues">
+      <div class="values-label">Nossos Valores</div>
+      <div class="values-grid">
+        <div class="value-card" id="v0"><div class="value-icon">🎯</div><div class="value-title">Integridade</div><div class="value-desc">Agimos com honestidade e transparência em tudo.</div></div>
+        <div class="value-card" id="v1"><div class="value-icon">💡</div><div class="value-title">Inovação</div><div class="value-desc">Buscamos soluções criativas para desafios complexos.</div></div>
+        <div class="value-card" id="v2"><div class="value-icon">🤝</div><div class="value-title">Cuidado</div><div class="value-desc">Colocamos as pessoas no centro de cada decisão.</div></div>
+        <div class="value-card" id="v3"><div class="value-icon">⭐</div><div class="value-title">Excelência</div><div class="value-desc">Entregamos o melhor em cada projeto e processo.</div></div>
+      </div>
+    </div>
+
+    <!-- História -->
+    <div class="section-tag"><div class="tag-dot"></div> Nossa História</div>
+    <div class="section" id="secHistory">
+      <div class="section-label" id="lblHistory">Nossa História</div>
+      <div class="tw-container">
+        <div class="tw-title" style="font-size:16px;line-height:1.8;font-weight:400;color:#cbd5e1;">
+          <span id="twHistory"></span><span class="cursor" id="curHistory" style="display:none"></span>
+          <span class="tw-placeholder" style="font-size:16px;font-weight:400;" id="phHistory">Fundada com o propósito de transformar...</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Botão de editar (admin) -->
+<button class="edit-btn">✏️ Editar conteúdo</button>
+
+<script>
+var triggered = {};
+
+function typewrite(textEl, cursorEl, placeholderEl, text, onDone) {
+  placeholderEl.style.display = 'none';
+  cursorEl.style.display = 'inline-block';
+  var i = 0;
+  function step() {
+    textEl.textContent = text.substring(0, i);
+    i++;
+    if (i <= text.length) { setTimeout(step, 30); }
+    else { if (onDone) onDone(); }
+  }
+  step();
+}
+
+function revealSection(id) {
+  if (triggered[id]) return;
+  triggered[id] = true;
+
+  if (id === 'secHero') {
+    setTimeout(function(){ document.getElementById('heroBadge').classList.add('show'); }, 200);
+    setTimeout(function(){ document.getElementById('heroCompany').classList.add('show'); }, 400);
+    setTimeout(function(){ document.getElementById('heroSub').classList.add('show'); }, 700);
+  }
+  if (id === 'secMission') {
+    document.getElementById('lblMission').classList.add('show');
+    setTimeout(function(){
+      typewrite(
+        document.getElementById('twMission'),
+        document.getElementById('curMission'),
+        document.getElementById('phMission'),
+        'Promover saúde e segurança com excelência, transformando ambientes de trabalho em espaços de bem-estar e produtividade.'
+      );
+    }, 400);
+  }
+  if (id === 'secVision') {
+    document.getElementById('lblVision').classList.add('show');
+    setTimeout(function(){
+      typewrite(
+        document.getElementById('twVision'),
+        document.getElementById('curVision'),
+        document.getElementById('phVision'),
+        'Ser referência nacional em Saúde e Segurança do Trabalho até 2030, impactando positivamente a vida de milhares de trabalhadores.'
+      );
+    }, 400);
+  }
+  if (id === 'secValues') {
+    ['v0','v1','v2','v3'].forEach(function(vid, i){
+      setTimeout(function(){ document.getElementById(vid).classList.add('show'); }, i * 150);
+    });
+  }
+  if (id === 'secHistory') {
+    document.getElementById('lblHistory').classList.add('show');
+    setTimeout(function(){
+      typewrite(
+        document.getElementById('twHistory'),
+        document.getElementById('curHistory'),
+        document.getElementById('phHistory'),
+        'Fundada em 2015, a HealthSafety Tech nasceu do propósito de transformar a forma como empresas cuidam de seus colaboradores. Ao longo de quase uma década, nos tornamos parceiros de centenas de organizações na jornada por ambientes de trabalho mais seguros e saudáveis.'
+      );
+    }, 400);
+  }
+}
+
+// Trigger hero immediately
+setTimeout(function(){ revealSection('secHero'); }, 300);
+
+// Intersection Observer for other sections
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      revealSection(entry.target.id);
+    }
+  });
+}, { threshold: 0.3 });
+
+['secMission','secVision','secValues','secHistory'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) observer.observe(el);
+});
+</script>
+</body>
+</html>
