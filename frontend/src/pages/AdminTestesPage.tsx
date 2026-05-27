@@ -137,39 +137,39 @@ export default function AdminTestesPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {test.status === "draft" && (
-                        <Button
-                          variant="ghost" size="icon"
+                        <button
                           onClick={() => navigate(`/admin/testes/${test.id}/editar`)}
                           title="Editar"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
                         >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
                       )}
-                      <Button
-                        variant="ghost" size="icon"
+                      <button
                         onClick={() => navigate(`/admin/testes/${test.id}/tentativas`)}
                         title="Ver tentativas"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-colors hover:bg-blue-500/25"
                       >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon"
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      <button
                         onClick={() => duplicateMut.mutate(test.id)}
                         title="Duplicar"
                         disabled={duplicateMut.isPending}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors hover:bg-muted/80 disabled:opacity-40"
                       >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
                       {test.status === "draft" && (
-                        <Button
-                          variant="ghost" size="icon"
+                        <button
                           onClick={() => setDeleteTarget(test)}
                           title="Excluir"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       )}
                     </div>
                   </div>
