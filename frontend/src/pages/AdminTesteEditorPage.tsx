@@ -410,7 +410,7 @@ export default function AdminTesteEditorPage() {
                     </span>
                     <button
                       onClick={() => removeAssignMut.mutate(a.id)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      className="flex h-6 w-6 items-center justify-center rounded-md bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -463,12 +463,13 @@ export default function AdminTesteEditorPage() {
                       {expandedQ === q.id ? "Fechar" : "Ver opções"}
                     </Button>
                     {isDraft && (
-                      <Button
-                        variant="ghost" size="icon"
+                      <button
                         onClick={() => deleteQMut.mutate(q.id)}
+                        title="Excluir questão"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -493,12 +494,13 @@ export default function AdminTesteEditorPage() {
                         {opt.text}
                       </span>
                       {isDraft && (
-                        <Button
-                          variant="ghost" size="icon" className="h-6 w-6"
+                        <button
                           onClick={() => deleteOptMut.mutate(opt.id)}
+                          title="Excluir opção"
+                          className="flex h-6 w-6 items-center justify-center rounded-md bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                         >
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       )}
                     </div>
                   ))}

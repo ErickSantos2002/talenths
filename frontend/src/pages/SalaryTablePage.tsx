@@ -407,7 +407,7 @@ function CargosTab({
               </span>
               <button
                 onClick={() => setPositions(positions.filter((_, i) => i !== index))}
-                className="text-muted-foreground hover:text-destructive transition-colors px-2 text-base leading-none"
+                className="flex h-6 w-6 items-center justify-center rounded-md bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25 text-sm font-bold"
                 title="Remover cargo"
               >
                 ×
@@ -618,9 +618,13 @@ function PositioningTab({ positions, selectedRefId }: { positions: GridPosition[
                       <BandBadge band={emp.band} />
                     </td>
                     <td className="px-4 py-2">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditing(emp)}>
+                      <button
+                        onClick={() => setEditing(emp)}
+                        title="Editar"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
+                      >
                         <Pencil className="w-3.5 h-3.5" />
-                      </Button>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -722,16 +726,14 @@ export default function SalaryTablePage() {
             <Plus className="w-4 h-4 mr-1" />Nova referência
           </Button>
           {activeRef && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
+            <button
               onClick={() => {
                 if (confirm(`Excluir "${activeRef.name}"? Todos os dados serão removidos.`)) deleteRefMutation.mutate(activeRef.id);
               }}
+              className="flex items-center gap-1.5 rounded-lg bg-destructive/15 px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/25"
             >
-              <Trash2 className="w-4 h-4 mr-1" />Excluir referência
-            </Button>
+              <Trash2 className="w-4 h-4" />Excluir referência
+            </button>
           )}
         </div>
 

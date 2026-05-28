@@ -177,12 +177,12 @@ function TeamTab() {
                             )}
                           </div>
                         </div>
-                        <Button
-                          size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive shrink-0"
+                        <button
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                           onClick={() => deleteMutation.mutate(c.id)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -318,13 +318,13 @@ function CatalogTab() {
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">{item.duration_hours}h</span>
                     <div className="flex gap-1 shrink-0">
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDialogItem(item)}>
+                      <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25" onClick={() => setDialogItem(item)}>
                         <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                      </button>
+                      <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                         onClick={() => deleteMutation.mutate(item.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 ))}

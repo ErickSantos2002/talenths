@@ -420,14 +420,13 @@ function EditForm({
                     className="resize-none text-sm leading-relaxed"
                   />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                <button
                   onClick={() => removeValue(i)}
+                  title="Remover valor"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                </button>
               </div>
             ))}
           </div>

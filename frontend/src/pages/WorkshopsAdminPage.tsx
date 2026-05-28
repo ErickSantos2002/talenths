@@ -375,14 +375,14 @@ export function WorkshopCard({ workshop: w, onEdit, onDelete, onAttendance, onRe
                   </Button>
                 )}
                 {onEdit && (
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+                  <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25" onClick={onEdit}>
                     <Pencil className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 )}
                 {onDelete && (
-                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={onDelete}>
+                  <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25" onClick={onDelete}>
                     <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 )}
               </>
             ) : (

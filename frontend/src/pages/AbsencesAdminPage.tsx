@@ -492,19 +492,17 @@ function TypesTab() {
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDialog({ open: true, type: t })}>
+                  <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25" onClick={() => setDialog({ open: true, type: t })}>
                     <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-red-500/10"
+                  </button>
+                  <button
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                     onClick={() => {
                       if (confirm(`Remover tipo "${t.name}"?`)) deleteMutation.mutate(t.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </div>
               </CardContent>
             </Card>

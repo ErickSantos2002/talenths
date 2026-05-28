@@ -327,13 +327,13 @@ export default function SurveysAdminPage() {
                       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setResultsFor(s)}>
                         <Eye className="h-3 w-3 mr-1" /> Resultados
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setSurveyDialog(s)}>
+                      <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25" onClick={() => setSurveyDialog(s)}>
                         <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                      </button>
+                      <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                         onClick={() => deleteMutation.mutate(s.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 </CardHeader>

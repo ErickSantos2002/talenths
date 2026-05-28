@@ -235,12 +235,12 @@ export default function CareerTracksPage() {
                         <Badge variant="outline" className="ml-2 text-xs shrink-0">{track.levels.length} níveis</Badge>
                       </button>
                       <div className="flex items-center gap-1 ml-2">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setTrackDialog({ open: true, track })}>
+                        <button onClick={() => setTrackDialog({ open: true, track })} title="Editar" className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25">
                           <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteTrackMutation.mutate(track.id)}>
+                        </button>
+                        <button onClick={() => deleteTrackMutation.mutate(track.id)} title="Excluir" className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25">
                           <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        </button>
                       </div>
                     </div>
 
@@ -265,10 +265,10 @@ export default function CareerTracksPage() {
                                     <span className="text-xs text-muted-foreground font-mono">{level.position}</span>
                                     <span className="font-medium">{level.name}</span>
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button onClick={() => setLevelDialog({ open: true, trackId: track.id, level })} className="hover:text-primary">
+                                      <button onClick={() => setLevelDialog({ open: true, trackId: track.id, level })} title="Editar" className="flex h-5 w-5 items-center justify-center rounded-md bg-amber-500/15 text-amber-500 hover:bg-amber-500/25">
                                         <Pencil className="h-3 w-3" />
                                       </button>
-                                      <button onClick={() => deleteLevelMutation.mutate(level.id)} className="hover:text-destructive">
+                                      <button onClick={() => deleteLevelMutation.mutate(level.id)} title="Excluir" className="flex h-5 w-5 items-center justify-center rounded-md bg-destructive/15 text-destructive hover:bg-destructive/25">
                                         <Trash2 className="h-3 w-3" />
                                       </button>
                                     </div>

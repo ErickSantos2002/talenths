@@ -280,16 +280,14 @@ export default function MyAbsencesPage() {
                       )}
                     </div>
                     {r.status === "pending" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                      <button
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
                         onClick={() => {
                           if (confirm("Cancelar esta solicitação?")) deleteMutation.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </CardContent>
