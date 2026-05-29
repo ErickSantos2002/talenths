@@ -5,9 +5,15 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+function getSidebarDefaultOpen(): boolean {
+  const match = document.cookie.split("; ").find((c) => c.startsWith("sidebar:state="));
+  if (!match) return true;
+  return match.split("=")[1] === "true";
+}
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={getSidebarDefaultOpen()}>
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
         <main className="flex-1 overflow-x-hidden p-6 lg:p-8">{children}</main>
