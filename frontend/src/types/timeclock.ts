@@ -89,7 +89,7 @@ export interface TeamDayPerson {
   expected_minutes: number;
   worked_minutes: number;
   open: boolean;
-  status: "working" | "done" | "none";
+  status: "working" | "done" | "none" | "incomplete";
   punches: Punch[];
 }
 

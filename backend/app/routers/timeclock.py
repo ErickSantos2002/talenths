@@ -92,12 +92,18 @@ def _worked_minutes(rows) -> tuple[int, bool]:
 
 def _day_summary(work_date, rows, expected_hours: float, adj_map: Optional[dict] = None) -> dict:
     worked, is_open = _worked_minutes(rows)
+    today = datetime.now(timezone.utc).astimezone(BRT).date()
+    is_today = work_date == today
+    # "Em aberto" só faz sentido hoje (ainda pode bater a saída). Em dias passados,
+    # uma batida sem par = "falta saída / corrigir".
+    open_now = is_open and is_today
+    needs_fix = (not open_now) and (is_open or len(rows) % 2 == 1)
     return {
         "work_date": work_date.isoformat(),
         "expected_minutes": int(round(expected_hours * 60)),
         "worked_minutes": worked,
-        "open": is_open,
-        "odd": len(rows) % 2 == 1 and not is_open,
+        "open": open_now,
+        "odd": needs_fix,
         "punches": [_ser_punch(p, adj_map) for p in rows],
     }
 
@@ -241,19 +247,28 @@ async def team(
     for r in punch_rows:
         by_user.setdefault(str(r["user_id"]), []).append(r)
 
+    is_today = day == today
     result = []
     for person in people:
         uid = str(person["user_id"])
         rows = by_user.get(uid, [])
         worked, is_open = _worked_minutes(rows)
+        if is_open and is_today:
+            status_val = "working"
+        elif is_open or len(rows) % 2 == 1:
+            status_val = "incomplete"
+        elif rows:
+            status_val = "done"
+        else:
+            status_val = "none"
         result.append({
             "user_id": uid,
             "user_name": person["name"],
             "department": person["department"],
             "expected_minutes": int(round(float(person["daily_work_hours"]) * 60)),
             "worked_minutes": worked,
-            "open": is_open,
-            "status": "working" if is_open else ("done" if rows else "none"),
+            "open": is_open and is_today,
+            "status": status_val,
             "punches": [_ser_punch(p) for p in rows],
         })
     return {"mode": "day", "work_date": day.isoformat(), "people": result}

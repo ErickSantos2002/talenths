@@ -126,6 +126,7 @@ function TodayTab() {
   const STATUS = {
     working: { label: "Trabalhando", cls: "text-emerald-500 border-emerald-500/30" },
     done: { label: "Encerrado", cls: "text-muted-foreground" },
+    incomplete: { label: "Incompleto", cls: "text-amber-600 dark:text-amber-400 border-amber-500/40" },
     none: { label: "Sem registro", cls: "text-muted-foreground/60" },
   };
 
@@ -262,7 +263,7 @@ function PeriodTab() {
                     <span className="font-semibold tabular-nums">{formatMinutes(day.worked_minutes)}</span>
                     <span className="text-muted-foreground">/ {formatMinutes(day.expected_minutes)}</span>
                     {day.open && <Badge variant="outline" className="text-amber-500 border-amber-500/30">Em aberto</Badge>}
-                    {day.odd && <Badge variant="outline" className="text-red-500 border-red-500/30">Batida ímpar</Badge>}
+                    {day.odd && <Badge variant="outline" className="text-red-500 border-red-500/30">Incompleto — falta batida</Badge>}
                   </div>
                 </div>
                 <div className="space-y-1.5">

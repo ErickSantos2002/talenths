@@ -103,7 +103,7 @@ function DayCard({ day, onAdjust, onHistory }: { day: DaySummary; onAdjust: (p: 
           <span className="font-semibold tabular-nums">{formatMinutes(day.worked_minutes)}</span>
           <span className="text-muted-foreground">/ {formatMinutes(day.expected_minutes)}</span>
           {day.open && <Badge variant="outline" className="text-amber-500 border-amber-500/30">Em aberto</Badge>}
-          {day.odd && <Badge variant="outline" className="text-red-500 border-red-500/30">Batida ímpar</Badge>}
+          {day.odd && <Badge variant="outline" className="text-red-500 border-red-500/30">Incompleto — falta batida</Badge>}
         </div>
       </div>
       <div className="space-y-1.5">
