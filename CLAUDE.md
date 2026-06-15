@@ -218,6 +218,24 @@ Nunca commitar `.env`. Usar `.env.example` para documentar.
 
 ---
 
+## Changelog e Versionamento
+
+Ao **concluir uma entrega visível ao usuário** (nova funcionalidade ou correção relevante), atualizar o changelog e a versão **antes do commit final**, em **3 lugares**:
+
+1. **`frontend/src/components/ChangelogModal.tsx`** — adicionar uma nova entrada **no topo** do array `CHANGELOG`:
+   - `version` (ex.: `"v1.2.0"`), `date` (`DD/MM/AAAA`), `current: true`.
+   - **Remover `current: true` da versão anterior** (só a mais nova é a atual).
+   - `entries`: lista de `{ type, text }`, com `type` ∈ `"novidade" | "melhoria" | "corrigido"`.
+   - O `text` é **voltado ao usuário final** (pt-BR, sem jargão técnico) — esse modal é exibido a todos ao clicar na versão na sidebar.
+
+2. **`frontend/src/components/AdminSidebar.tsx`** — atualizar a string `TalentHS vX.Y.Z` no rodapé.
+
+3. **`frontend/package.json`** — atualizar o campo `"version"`.
+
+**Versionamento (semver):** funcionalidade nova → bump **minor** (`x.Y.0`); correções → bump **patch** (`x.y.Z`). Manter a data igual nos 3 e a do dia da entrega.
+
+---
+
 ## Contexto do Projeto
 
 Este projeto foi iniciado como um remix do sistema DN.IA e está sendo transformado no **TalentHS** — produto próprio de RH. O foco da evolução é empoderar cada colaborador com visibilidade sobre seu próprio desenvolvimento dentro da empresa.
