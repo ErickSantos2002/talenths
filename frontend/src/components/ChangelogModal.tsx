@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.3.0",
+    version: "v1.3.1",
     date: "15/06/2026",
     current: true,
+    entries: [
+      {
+        type: "corrigido",
+        text: "Ponto: dias com batida faltando (ex.: esqueceu a saída) aparecem como 'Incompleto' para correção, em vez de 'Trabalhando'. A contagem de entrada/saída reseta corretamente a cada dia.",
+      },
+    ],
+  },
+  {
+    version: "v1.3.0",
+    date: "15/06/2026",
     entries: [
       {
         type: "novidade",
