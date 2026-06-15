@@ -31,6 +31,7 @@ export interface Goal {
   pct_month: number | null;
   pct_cumulative: number | null;
   pct_year: number | null;
+  nota: number | null;
   cum_actual: number;
   cum_planned: number;
 }

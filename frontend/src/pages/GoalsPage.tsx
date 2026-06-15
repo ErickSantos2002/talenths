@@ -226,6 +226,7 @@ export default function GoalsPage() {
           open={!!selectedGoalId}
           onOpenChange={(open) => !open && setSelectedGoalId(null)}
           canEdit={canEdit}
+          departments={allDepts}
         />
       )}
     </AdminLayout>
@@ -284,7 +285,7 @@ function DepartmentGoalsTable({
                 <th className="text-center px-3 py-3 font-medium text-muted-foreground">Peso</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Mês</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Acum.</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ano</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Nota</th>
               </tr>
             </thead>
             <tbody>
@@ -330,7 +331,7 @@ function GoalRow({ goal, onClick }: { goal: Goal; onClick: () => void }) {
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-center">
-          <DonutRing value={goal.pct_year} label="Ano" objective={goal.objective} />
+          <DonutRing value={goal.nota} label="Nota" objective={goal.objective} />
         </div>
       </td>
     </tr>

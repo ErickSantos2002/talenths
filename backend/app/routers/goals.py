@@ -38,10 +38,68 @@ async def _validate_goal_ownership(goal_id: str, company_id: str, conn: asyncpg.
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Meta não encontrada")
 
 
+def _curve_nota(realizado: float, v_low: float, v_mid: float, v_high: float, cap: float) -> float:
+    """Régua crescente de atingimento: (v_low → 80), (v_mid → 100), (v_high → 120).
+
+    Abaixo de v_low a nota é proporcional até zero; acima de v_high satura no teto (cap).
+    """
+    if realizado <= 0:
+        return 0.0
+    if v_low and realizado <= v_low:
+        return round(realizado / v_low * 80, 2)
+    if realizado <= v_mid:
+        span = v_mid - v_low
+        return round(80 + (realizado - v_low) / span * 20, 2) if span else 100.0
+    if realizado <= v_high:
+        span = v_high - v_mid
+        return round(100 + (realizado - v_mid) / span * 20, 2) if span else cap
+    return cap
+
+
+def _compute_nota(
+    realizado: Optional[float],
+    target_value: float,
+    curve_v80: Optional[float],
+    curve_v100: Optional[float],
+    curve_v120: Optional[float],
+    objective: str,
+    min_curve: float,
+    max_curve: float,
+) -> Optional[float]:
+    """Converte o realizado acumulado em nota de atingimento (%) via curva.
+
+    O ponto de 100% é o valor alvo total (curve_v100, ou target_value se não informado).
+    Para metas de 'diminuir', a curva é espelhada (menor realizado = nota maior).
+    """
+    if realizado is None:
+        return None
+    # Âncora de 100% = valor alvo total. Valores de curva nulos/<=0 contam como "não configurados".
+    v100 = curve_v100 if (curve_v100 is not None and curve_v100 > 0) else target_value
+    if not v100:
+        return None
+    cap = round(max_curve * 100, 2)
+
+    if objective == "decrease":
+        v80 = curve_v80 if (curve_v80 is not None and curve_v80 > 0) else v100 * (2 - min_curve)
+        v120 = curve_v120 if (curve_v120 is not None and curve_v120 > 0) else v100 * (2 - max_curve)
+        # Espelha realizado e âncoras em torno de v100 → curva volta a ser crescente.
+        return _curve_nota(2 * v100 - realizado, 2 * v100 - v80, v100, 2 * v100 - v120, cap)
+
+    v80 = curve_v80 if (curve_v80 is not None and curve_v80 > 0) else v100 * min_curve
+    v120 = curve_v120 if (curve_v120 is not None and curve_v120 > 0) else v100 * max_curve
+    return _curve_nota(realizado, v80, v100, v120, cap)
+
+
 def _compute_progress(
     goal_id: str,
     calculation_type: str,
     target_value: float,
+    objective: str,
+    curve_v80: Optional[float],
+    curve_v100: Optional[float],
+    curve_v120: Optional[float],
+    min_curve: float,
+    max_curve: float,
     plans_map: dict,
     actuals_map: dict,
     current_month: int,
@@ -55,20 +113,26 @@ def _compute_progress(
         for m in months_range
         if m in goal_actuals and goal_actuals[m] is not None
     }
+    set_months = sorted(set_actuals.keys())
 
     if calculation_type in ("sum", "subtraction"):
         cum_actual = sum(set_actuals.values()) if set_actuals else 0.0
+        cum_planned = sum(goal_plans.get(m, 0.0) or 0.0 for m in months_range)
     elif calculation_type == "average":
         vals = list(set_actuals.values())
         cum_actual = sum(vals) / len(vals) if vals else 0.0
+        # Planejado acumulado também é a média (dos meses com realizado), não a soma.
+        planned_set = [goal_plans.get(m, 0.0) or 0.0 for m in set_months]
+        cum_planned = sum(planned_set) / len(planned_set) if planned_set else 0.0
     elif calculation_type == "repeat":
-        cum_actual = set_actuals[max(set_actuals.keys())] if set_actuals else 0.0
+        cum_actual = set_actuals[set_months[-1]] if set_months else 0.0
+        cum_planned = (goal_plans.get(set_months[-1], 0.0) or 0.0) if set_months else 0.0
     else:
         cum_actual = 0.0
+        cum_planned = 0.0
 
     actual_this_month = goal_actuals.get(current_month)
     planned_this_month = goal_plans.get(current_month, 0.0) or 0.0
-    cum_planned = sum(goal_plans.get(m, 0.0) or 0.0 for m in months_range)
 
     pct_month = None
     if actual_this_month is not None and planned_this_month:
@@ -82,10 +146,17 @@ def _compute_progress(
     if target_value:
         pct_year = round(cum_actual / target_value * 100, 2)
 
+    nota = _compute_nota(
+        cum_actual if set_actuals else None,
+        target_value, curve_v80, curve_v100, curve_v120,
+        objective, min_curve, max_curve,
+    )
+
     return {
         "pct_month": pct_month,
         "pct_cumulative": pct_cumulative,
         "pct_year": pct_year,
+        "nota": nota,
         "cum_actual": cum_actual,
         "cum_planned": cum_planned,
     }
@@ -284,11 +355,14 @@ async def get_overview(
     company_id = await _get_company_id(user_id, conn)
 
     cycle = await conn.fetchrow(
-        "SELECT id FROM public.management_cycles WHERE id = $1 AND company_id = $2",
+        "SELECT id, min_curve_value, max_progress_value FROM public.management_cycles WHERE id = $1 AND company_id = $2",
         cycle_id, company_id,
     )
     if not cycle:
         raise HTTPException(status_code=404, detail="Ciclo não encontrado")
+
+    min_curve = float(cycle["min_curve_value"]) if cycle["min_curve_value"] is not None else 0.80
+    max_curve = float(cycle["max_progress_value"]) if cycle["max_progress_value"] is not None else 1.20
 
     goal_rows = await conn.fetch(
         """SELECT g.*, p.name AS responsible_name, d.name AS department_name
@@ -341,6 +415,12 @@ async def get_overview(
             goal_id,
             r["calculation_type"],
             float(r["target_value"]) if r["target_value"] else 0.0,
+            r["objective"],
+            float(r["curve_v80"]) if r["curve_v80"] is not None else None,
+            float(r["curve_v100"]) if r["curve_v100"] is not None else None,
+            float(r["curve_v120"]) if r["curve_v120"] is not None else None,
+            min_curve,
+            max_curve,
             plans_map,
             actuals_map,
             current_month,
@@ -440,6 +520,13 @@ async def get_goal(
         goal_id,
     )
 
+    cycle = await conn.fetchrow(
+        "SELECT min_curve_value, max_progress_value FROM public.management_cycles WHERE id = $1",
+        row["cycle_id"],
+    )
+    min_curve = float(cycle["min_curve_value"]) if cycle and cycle["min_curve_value"] is not None else 0.80
+    max_curve = float(cycle["max_progress_value"]) if cycle and cycle["max_progress_value"] is not None else 1.20
+
     plans_map = {goal_id: {p["month"]: float(p["planned_value"]) for p in plans}}
     actuals_map = {
         goal_id: {
@@ -451,6 +538,11 @@ async def get_goal(
     progress = _compute_progress(
         goal_id, row["calculation_type"],
         float(row["target_value"]) if row["target_value"] else 0.0,
+        row["objective"],
+        float(row["curve_v80"]) if row["curve_v80"] is not None else None,
+        float(row["curve_v100"]) if row["curve_v100"] is not None else None,
+        float(row["curve_v120"]) if row["curve_v120"] is not None else None,
+        min_curve, max_curve,
         plans_map, actuals_map, current_month,
     )
 
@@ -617,6 +709,34 @@ async def close_month(
 
     await conn.execute(
         "UPDATE public.goal_monthly_actuals SET is_closed = true WHERE goal_id = $1 AND month = $2",
+        goal_id, month,
+    )
+    return {"ok": True}
+
+
+@router.post("/{goal_id}/reopen/{month}")
+async def reopen_month(
+    goal_id: str,
+    month: int,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    await _validate_goal_ownership(goal_id, company_id, conn)
+
+    if not 1 <= month <= 12:
+        raise HTTPException(status_code=400, detail="Mês inválido")
+
+    existing = await conn.fetchrow(
+        "SELECT is_closed FROM public.goal_monthly_actuals WHERE goal_id = $1 AND month = $2",
+        goal_id, month,
+    )
+    if not existing or not existing["is_closed"]:
+        raise HTTPException(status_code=422, detail="Este mês não está fechado")
+
+    await conn.execute(
+        "UPDATE public.goal_monthly_actuals SET is_closed = false WHERE goal_id = $1 AND month = $2",
         goal_id, month,
     )
     return {"ok": True}
