@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/Combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Plus, Download, Trash2, Eye } from "lucide-react";
@@ -225,37 +226,27 @@ export default function AdminDocumentosPage() {
             {form.target_type === "department" && (
               <div className="space-y-1.5">
                 <Label>Departamento</Label>
-                <Select
-                  value={form.target_department_id}
-                  onValueChange={(v) => setForm((f) => ({ ...f, target_department_id: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar departamento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(deptList as { id: string; name: string }[]).map((d) => (
-                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={(deptList as { id: string; name: string }[]).map((d) => ({ value: d.id, label: d.name }))}
+                  value={form.target_department_id || undefined}
+                  onChange={(v) => setForm((f) => ({ ...f, target_department_id: v ?? "" }))}
+                  placeholder="Selecionar departamento"
+                  searchPlaceholder="Buscar departamento..."
+                  emptyText="Nenhum departamento encontrado."
+                />
               </div>
             )}
             {form.target_type === "individual" && (
               <div className="space-y-1.5">
                 <Label>Colaborador</Label>
-                <Select
-                  value={form.target_user_id}
-                  onValueChange={(v) => setForm((f) => ({ ...f, target_user_id: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar colaborador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(collabList as { user_id: string; name: string }[]).map((c) => (
-                      <SelectItem key={c.user_id} value={c.user_id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={(collabList as { user_id: string; name: string }[]).map((c) => ({ value: c.user_id, label: c.name }))}
+                  value={form.target_user_id || undefined}
+                  onChange={(v) => setForm((f) => ({ ...f, target_user_id: v ?? "" }))}
+                  placeholder="Selecionar colaborador"
+                  searchPlaceholder="Buscar pessoa..."
+                  emptyText="Nenhuma pessoa encontrada."
+                />
               </div>
             )}
             <div className="space-y-1.5">

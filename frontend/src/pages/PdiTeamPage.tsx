@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/Combobox";
 import { pdi as pdiApi, evaluations as evalApi } from "@/lib/api";
 import { collaborators as collabApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -312,16 +313,14 @@ function CreatePlanDialog({ open, onOpenChange, onSaved }: {
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label>Colaborador</Label>
-            <Select value={userId} onValueChange={setUserId}>
-              <SelectTrigger><SelectValue placeholder="Selecionar colaborador..." /></SelectTrigger>
-              <SelectContent>
-                {(colabs ?? []).map((c: Record<string, unknown>) => (
-                  <SelectItem key={c.user_id as string} value={c.user_id as string}>
-                    {c.name as string}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={(colabs ?? []).map((c: Record<string, unknown>) => ({ value: c.user_id as string, label: c.name as string }))}
+              value={userId || undefined}
+              onChange={(v) => setUserId(v ?? "")}
+              placeholder="Selecionar colaborador..."
+              searchPlaceholder="Buscar pessoa..."
+              emptyText="Nenhuma pessoa encontrada."
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Ciclo de avaliação <span className="text-muted-foreground font-normal">(opcional)</span></Label>

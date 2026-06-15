@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/Combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -366,25 +367,17 @@ export default function AdminTesteEditorPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={assignTarget} onValueChange={setAssignTarget}>
-                <SelectTrigger className="flex-1 min-w-40 h-8 text-sm">
-                  <SelectValue placeholder={assignType === "user" ? "Selecione o colaborador..." : "Selecione o departamento..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  {assignType === "user"
-                    ? collabList.map((c) => (
-                        <SelectItem key={String(c.user_id)} value={String(c.user_id)}>
-                          {String(c.name)}
-                        </SelectItem>
-                      ))
-                    : deptList.map((d) => (
-                        <SelectItem key={String(d.id)} value={String(d.id)}>
-                          {String(d.name)}
-                        </SelectItem>
-                      ))
-                  }
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={assignType === "user"
+                  ? collabList.map((c) => ({ value: String(c.user_id), label: String(c.name) }))
+                  : deptList.map((d) => ({ value: String(d.id), label: String(d.name) }))}
+                value={assignTarget || undefined}
+                onChange={(v) => setAssignTarget(v ?? "")}
+                placeholder={assignType === "user" ? "Selecione o colaborador..." : "Selecione o departamento..."}
+                searchPlaceholder={assignType === "user" ? "Buscar pessoa..." : "Buscar departamento..."}
+                emptyText="Nada encontrado."
+                className="h-8 text-sm flex-1 min-w-40"
+              />
 
               <Button
                 size="sm" className="h-8"

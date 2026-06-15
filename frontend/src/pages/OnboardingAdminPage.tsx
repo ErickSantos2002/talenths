@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/Combobox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -52,16 +53,14 @@ function AssignDialog({ templates, onOpenChange, onSaved }: {
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label>Colaborador</Label>
-            <Select value={userId} onValueChange={setUserId}>
-              <SelectTrigger><SelectValue placeholder="Selecionar colaborador..." /></SelectTrigger>
-              <SelectContent>
-                {(colabs as Record<string, unknown>[]).map(c => (
-                  <SelectItem key={c.user_id as string} value={c.user_id as string}>
-                    {c.name as string}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={(colabs as Record<string, unknown>[]).map(c => ({ value: c.user_id as string, label: c.name as string }))}
+              value={userId || undefined}
+              onChange={(v) => setUserId(v ?? "")}
+              placeholder="Selecionar colaborador..."
+              searchPlaceholder="Buscar pessoa..."
+              emptyText="Nenhuma pessoa encontrada."
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Template <span className="text-muted-foreground font-normal">(opcional)</span></Label>

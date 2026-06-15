@@ -23,6 +23,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Combobox } from "@/components/Combobox";
 import { TablePagination } from "@/components/TablePagination";
 import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound } from "lucide-react";
 
@@ -635,17 +636,14 @@ export default function AdminCollaboratorsPage() {
             </div>
             <div className="space-y-2">
               <Label>Departamento</Label>
-              <Select value={addDeptId || "none"} onValueChange={(v) => setAddDeptId(v === "none" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem departamento</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[{ value: "none", label: "Sem departamento" }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
+                value={addDeptId || "none"}
+                onChange={(v) => setAddDeptId(!v || v === "none" ? "" : v)}
+                placeholder="Selecione o departamento"
+                searchPlaceholder="Buscar departamento..."
+                emptyText="Nenhum departamento encontrado."
+              />
             </div>
             <div className="space-y-2">
               <Label>Cargo</Label>
@@ -719,17 +717,14 @@ export default function AdminCollaboratorsPage() {
             </div>
             <div className="space-y-2">
               <Label>Departamento</Label>
-              <Select value={editDeptId || "none"} onValueChange={(v) => setEditDeptId(v === "none" ? "" : v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sem departamento</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[{ value: "none", label: "Sem departamento" }, ...departments.map((d) => ({ value: d.id, label: d.name }))]}
+                value={editDeptId || "none"}
+                onChange={(v) => setEditDeptId(!v || v === "none" ? "" : v)}
+                placeholder="Selecione o departamento"
+                searchPlaceholder="Buscar departamento..."
+                emptyText="Nenhum departamento encontrado."
+              />
             </div>
             <div className="space-y-2">
               <Label>Cargo</Label>
