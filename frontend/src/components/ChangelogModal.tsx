@@ -16,9 +16,39 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.1.0",
+    date: "15/06/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: nota de atingimento por curva — o realizado vira uma nota (%), com 100% sempre no valor alvo total. Funciona também em metas de redução.",
+      },
+      {
+        type: "novidade",
+        text: "Metas: agora é possível editar e excluir uma meta, e reabrir um mês já fechado.",
+      },
+      {
+        type: "corrigido",
+        text: "Metas: corrigido o cálculo das metas de média, que mostrava desvios acumulados incorretos.",
+      },
+      {
+        type: "novidade",
+        text: "Benefícios: o Vale-Transporte ganhou um ajuste de dias úteis no catálogo (+/-), para meses que precisam de um dia a mais ou a menos.",
+      },
+      {
+        type: "melhoria",
+        text: "Campos de seleção de pessoa e de departamento agora permitem buscar por texto, facilitando achar o nome em listas grandes.",
+      },
+      {
+        type: "melhoria",
+        text: "Adicionados pontos de ajuda (?) explicando os conceitos das Metas (nota, curva, tipos de cálculo, peso e colunas).",
+      },
+    ],
+  },
+  {
     version: "v1.0.0",
     date: "21/05/2026",
-    current: true,
     entries: [
       {
         type: "novidade",
