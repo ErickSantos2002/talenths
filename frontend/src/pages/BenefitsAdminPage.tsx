@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { BenefitCatalogItem, BenefitCategory, BenefitValueType, EmployeeBenefit } from "@/types/benefits";
 import { Gift, Users, BookOpen, LayoutDashboard, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HelpTip } from "@/components/HelpTip";
 
 // ── Currency input ────────────────────────────────────────────────────────────
 
@@ -207,15 +208,18 @@ const MONTH_NAMES = [
 function VTCalculator({
   initialPrice,
   initialPerDay,
+  adjustment = 0,
   onVTChange,
 }: {
   initialPrice?: number;
   initialPerDay?: number;
+  adjustment?: number;
   onVTChange: (vt: { ticket_price: number; tickets_per_day: number } | null) => void;
 }) {
   const next = new Date();
   next.setMonth(next.getMonth() + 1);
-  const workingDays = countWorkingDays(next.getFullYear(), next.getMonth());
+  const baseWorkingDays = countWorkingDays(next.getFullYear(), next.getMonth());
+  const workingDays = Math.max(0, baseWorkingDays + adjustment);
 
   const [ticketPrice, setTicketPrice] = useState(initialPrice != null ? String(initialPrice) : "");
   const [ticketsPerDay, setTicketsPerDay] = useState(initialPerDay != null ? String(initialPerDay) : "2");
@@ -258,7 +262,13 @@ function VTCalculator({
       </div>
 
       <div className="flex items-center justify-between text-sm pt-1 border-t">
-        <span className="text-muted-foreground">{workingDays} dias úteis em {MONTH_NAMES[next.getMonth()]} × {ticketsPerDay} passagens</span>
+        <span className="text-muted-foreground">
+          {workingDays} dias úteis em {MONTH_NAMES[next.getMonth()]}
+          {adjustment !== 0 && (
+            <span className="text-amber-600 dark:text-amber-400"> ({baseWorkingDays} {adjustment > 0 ? "+" : "−"}{Math.abs(adjustment)})</span>
+          )}
+          {" "}× {ticketsPerDay} passagens
+        </span>
         <span className="font-semibold">
           {total > 0
             ? total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
@@ -342,7 +352,7 @@ function AssignDialog({
           </div>
 
           {isVT && (
-            <VTCalculator onVTChange={setVtData} />
+            <VTCalculator adjustment={selectedBenefit?.working_days_adjustment ?? 0} onVTChange={setVtData} />
           )}
 
           {showValue && (
@@ -419,6 +429,7 @@ function EditAssignmentDialog({
             <VTCalculator
               initialPrice={benefit.ticket_price ?? undefined}
               initialPerDay={benefit.tickets_per_day ?? undefined}
+              adjustment={benefit.working_days_adjustment ?? 0}
               onVTChange={setVtData}
             />
           ) : benefit.value_type !== "info" ? (
@@ -552,7 +563,7 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
                       const next = new Date();
                       next.setMonth(next.getMonth() + 1);
                       const vtTotal = b.ticket_price && b.tickets_per_day
-                        ? b.ticket_price * b.tickets_per_day * countWorkingDays(next.getFullYear(), next.getMonth())
+                        ? b.ticket_price * b.tickets_per_day * Math.max(0, countWorkingDays(next.getFullYear(), next.getMonth()) + (b.working_days_adjustment ?? 0))
                         : null;
                       const chipColor = b.benefit_category ? CATEGORY_COLORS[b.benefit_category] : "bg-muted/40 text-foreground";
                       return (
@@ -620,6 +631,7 @@ function CatalogDialog({
   const [valueType, setValueType] = useState<BenefitValueType>(item?.value_type ?? "info");
   const [value, setValue] = useState(item?.value?.toString() ?? "");
   const [active, setActive] = useState(item?.active ?? true);
+  const [workingDaysAdj, setWorkingDaysAdj] = useState(item?.working_days_adjustment ?? 0);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -631,6 +643,7 @@ function CatalogDialog({
         value_type: valueType,
         value: value ? parseFloat(value) : undefined,
         active,
+        working_days_adjustment: workingDaysAdj,
       };
       return item
         ? benefitsApi.updateCatalogItem(item.id, data)
@@ -647,6 +660,7 @@ function CatalogDialog({
   });
 
   const showValue = valueType !== "info";
+  const isTransport = category === "transporte";
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -704,6 +718,30 @@ function CatalogDialog({
               ) : (
                 <CurrencyInput value={value} onChange={setValue} />
               )}
+            </div>
+          )}
+
+          {isTransport && (
+            <div className="space-y-1">
+              <Label className="inline-flex items-center gap-1">
+                Ajuste de dias úteis
+                <HelpTip>
+                  Some ou subtraia dias do cálculo automático de dias úteis do Vale-Transporte (ex.: +1 num mês que precisa de um dia a mais). Vale para todos os colaboradores. Deixe 0 para usar só o automático.
+                </HelpTip>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setWorkingDaysAdj((v) => v - 1)}>−</Button>
+                <Input
+                  type="number"
+                  value={workingDaysAdj}
+                  onChange={(e) => setWorkingDaysAdj(parseInt(e.target.value) || 0)}
+                  className="text-center w-20"
+                />
+                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setWorkingDaysAdj((v) => v + 1)}>+</Button>
+                <span className="text-xs text-muted-foreground">
+                  {workingDaysAdj === 0 ? "Sem ajuste (só o automático)" : `${workingDaysAdj > 0 ? "+" : "−"}${Math.abs(workingDaysAdj)} dia(s) sobre o automático`}
+                </span>
+              </div>
             </div>
           )}
 

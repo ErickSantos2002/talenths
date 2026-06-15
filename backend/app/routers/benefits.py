@@ -59,6 +59,7 @@ def _ser_catalog(b) -> dict:
         "value_type": b["value_type"],
         "value": float(b["value"]) if b["value"] is not None else None,
         "active": b["active"],
+        "working_days_adjustment": b.get("working_days_adjustment") or 0,
         "created_at": b["created_at"].isoformat() if b["created_at"] else None,
     }
 
@@ -66,6 +67,7 @@ def _ser_catalog(b) -> dict:
 BENEFIT_JOIN = """
     SELECT eb.*, bc.name AS benefit_name, bc.category AS benefit_category,
            bc.provider AS benefit_provider, bc.value_type, bc.value AS catalog_value,
+           bc.working_days_adjustment,
            p.name AS user_name, p.email AS user_email, d.name AS department
     FROM employee_benefits eb
     JOIN benefit_catalog bc ON bc.id = eb.benefit_id
@@ -92,6 +94,7 @@ def _ser_assignment(a) -> dict:
         "value_override": value_override,
         "ticket_price": float(a["ticket_price"]) if a.get("ticket_price") is not None else None,
         "tickets_per_day": a.get("tickets_per_day"),
+        "working_days_adjustment": a.get("working_days_adjustment") or 0,
         "start_date": a["start_date"].isoformat() if a["start_date"] else None,
         "end_date": a["end_date"].isoformat() if a["end_date"] else None,
         "notes": a["notes"],
@@ -123,13 +126,14 @@ async def create_catalog_item(
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     row = await conn.fetchrow(
-        """INSERT INTO benefit_catalog (company_id, name, category, description, provider, value_type, value, active)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *""",
+        """INSERT INTO benefit_catalog (company_id, name, category, description, provider, value_type, value, active, working_days_adjustment)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *""",
         company_id, body["name"], body["category"],
         body.get("description"), body.get("provider"),
         body.get("value_type", "info"),
         body.get("value"),
         body.get("active", True),
+        body.get("working_days_adjustment", 0),
     )
     return _ser_catalog(row)
 
@@ -150,12 +154,14 @@ async def update_catalog_item(
                provider = COALESCE($4, provider),
                value_type = COALESCE($5, value_type),
                value = COALESCE($6, value),
-               active = COALESCE($7, active)
-           WHERE id = $8 AND company_id = $9 RETURNING *""",
+               active = COALESCE($7, active),
+               working_days_adjustment = COALESCE($8, working_days_adjustment)
+           WHERE id = $9 AND company_id = $10 RETURNING *""",
         body.get("name"), body.get("category"),
         body.get("description"), body.get("provider"),
         body.get("value_type"), body.get("value"),
         body.get("active"),
+        body.get("working_days_adjustment"),
         benefit_id, company_id,
     )
     if not row:

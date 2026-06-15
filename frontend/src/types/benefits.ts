@@ -10,6 +10,7 @@ export interface BenefitCatalogItem {
   value_type: BenefitValueType;
   value?: number;
   active: boolean;
+  working_days_adjustment: number;
   created_at: string;
 }
 
@@ -28,6 +29,7 @@ export interface EmployeeBenefit {
   value_override?: number;
   ticket_price?: number | null;
   tickets_per_day?: number | null;
+  working_days_adjustment?: number;
   start_date: string;
   end_date?: string;
   notes?: string;
