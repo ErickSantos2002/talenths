@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.1.0",
+    version: "v1.2.0",
     date: "15/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Ponto Eletrônico: colaboradores habilitados podem bater ponto pelo sistema (entrada/saída), com horário, localização e observação opcional.",
+      },
+      {
+        type: "novidade",
+        text: "Ponto: o RH define quem bate ponto e a jornada diária de cada colaborador (padrão 8h30, configurável).",
+      },
+      {
+        type: "novidade",
+        text: "Ponto: o gestor acompanha as batidas do dia e por período, com total de horas trabalhadas, e pode corrigir ou adicionar batidas.",
+      },
+    ],
+  },
+  {
+    version: "v1.1.0",
+    date: "15/06/2026",
     entries: [
       {
         type: "novidade",
