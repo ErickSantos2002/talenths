@@ -363,6 +363,33 @@ export const absences = {
   delete: (id: string) => del(`/absences/${id}`),
 };
 
+// ── Timeclock (Ponto Eletrônico) ───────────────────────────────────────────────
+
+import type { TodayStatus, DaySummary, TeamDayResponse, TeamUserResponse, Punch } from "@/types/timeclock";
+
+function qs(params: Record<string, string | undefined>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v) sp.set(k, v);
+  const s = sp.toString();
+  return s ? `?${s}` : "";
+}
+
+export const timeclock = {
+  punch: (data: { latitude?: number; longitude?: number; note?: string }) =>
+    post<Punch>("/timeclock/punch", data),
+  today: () => get<TodayStatus>("/timeclock/my/today"),
+  my: (params: { start_date?: string; end_date?: string } = {}) =>
+    get<DaySummary[]>(`/timeclock/my${qs(params)}`),
+  teamDay: (date?: string) => get<TeamDayResponse>(`/timeclock/team${qs({ date })}`),
+  teamUser: (user_id: string, start_date?: string, end_date?: string) =>
+    get<TeamUserResponse>(`/timeclock/team${qs({ user_id, start_date, end_date })}`),
+  manual: (data: { user_id: string; punched_at: string; kind: "in" | "out"; note?: string }) =>
+    post<Punch>("/timeclock/manual", data),
+  update: (id: string, data: { punched_at?: string; kind?: "in" | "out"; note?: string }) =>
+    put<Punch>(`/timeclock/${id}`, data),
+  delete: (id: string) => del(`/timeclock/${id}`),
+};
+
 // ── Logs ──────────────────────────────────────────────────────────────────────
 
 export interface AuditLog {

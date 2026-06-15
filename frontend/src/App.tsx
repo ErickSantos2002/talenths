@@ -35,6 +35,8 @@ import SurveysAdminPage from "./pages/SurveysAdminPage";
 import MySurveysPage from "./pages/MySurveysPage";
 import AbsencesAdminPage from "./pages/AbsencesAdminPage";
 import MyAbsencesPage from "./pages/MyAbsencesPage";
+import AdminTimeclockPage from "./pages/AdminTimeclockPage";
+import MyTimeclockPage from "./pages/MyTimeclockPage";
 import BenefitsAdminPage from "./pages/BenefitsAdminPage";
 import SalaryTablePage from "./pages/SalaryTablePage";
 import MeusBeneficiosPage from "./pages/MeusBeneficiosPage";
@@ -311,6 +313,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MyAbsencesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/ponto"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <AdminTimeclockPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meu-ponto"
+              element={
+                <ProtectedRoute>
+                  <MyTimeclockPage />
                 </ProtectedRoute>
               }
             />

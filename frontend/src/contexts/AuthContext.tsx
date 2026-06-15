@@ -29,6 +29,8 @@ interface Profile {
   phone: string | null;
   company_id: string | null;
   department_id: string | null;
+  timeclock_enabled?: boolean;
+  daily_work_hours?: number;
 }
 
 interface AuthContextType {

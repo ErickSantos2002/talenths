@@ -37,6 +37,8 @@ class CollaboratorUpdate(BaseModel):
     company_id: Optional[str] = None
     department_id: Optional[str] = None
     job_title: Optional[str] = None
+    timeclock_enabled: Optional[bool] = None
+    daily_work_hours: Optional[float] = None
 
 
 class RoleUpdate(BaseModel):

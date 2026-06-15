@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Combobox } from "@/components/Combobox";
+import { Switch } from "@/components/ui/switch";
 import { TablePagination } from "@/components/TablePagination";
 import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound } from "lucide-react";
 
@@ -42,6 +43,8 @@ interface Collaborator {
   department_id: string | null;
   departmentName: string | null;
   job_title: string | null;
+  timeclock_enabled: boolean;
+  daily_work_hours: number;
   role: AppRole;
   roleId: string | null;
 }
@@ -106,6 +109,8 @@ export default function AdminCollaboratorsPage() {
   const [editDeptId, setEditDeptId] = useState<string>("");
   const [editRole, setEditRole] = useState<AppRole>("user");
   const [editJobTitle, setEditJobTitle] = useState("");
+  const [editTimeclockEnabled, setEditTimeclockEnabled] = useState(false);
+  const [editDailyHours, setEditDailyHours] = useState("8.5");
   const [saving, setSaving] = useState(false);
 
   // Add dialog
@@ -213,6 +218,8 @@ export default function AdminCollaboratorsPage() {
           department_id: p.department_id,
           departmentName: p.department_id ? deptMap.get(p.department_id) ?? null : null,
           job_title: p.job_title ?? null,
+          timeclock_enabled: p.timeclock_enabled ?? false,
+          daily_work_hours: p.daily_work_hours != null ? Number(p.daily_work_hours) : 8.5,
           role: primaryRole,
           roleId: primaryRoleId,
         };
@@ -254,6 +261,8 @@ export default function AdminCollaboratorsPage() {
     setEditDeptId(collab.department_id ?? "");
     setEditRole(collab.role);
     setEditJobTitle(collab.job_title ?? "");
+    setEditTimeclockEnabled(collab.timeclock_enabled);
+    setEditDailyHours(String(collab.daily_work_hours ?? 8.5));
     setEditOpen(true);
   };
 
@@ -278,6 +287,8 @@ export default function AdminCollaboratorsPage() {
         company_id: editTarget.company_id,
         department_id: editDeptId || null,
         job_title: editJobTitle.trim() || null,
+        timeclock_enabled: editTimeclockEnabled,
+        daily_work_hours: parseFloat(editDailyHours) || 8.5,
       });
 
       if (isMasterAdmin && editRole !== editTarget.role && editTarget.roleId) {
@@ -729,6 +740,28 @@ export default function AdminCollaboratorsPage() {
             <div className="space-y-2">
               <Label>Cargo</Label>
               <Input value={editJobTitle} onChange={(e) => setEditJobTitle(e.target.value)} placeholder="Ex: Analista de RH Pleno" />
+            </div>
+            <div className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label htmlFor="edit-timeclock">Bater ponto pelo sistema</Label>
+                  <p className="text-xs text-muted-foreground">Habilita o registro de ponto para este colaborador.</p>
+                </div>
+                <Switch id="edit-timeclock" checked={editTimeclockEnabled} onCheckedChange={setEditTimeclockEnabled} />
+              </div>
+              {editTimeclockEnabled && (
+                <div className="space-y-1.5">
+                  <Label>Jornada diária (horas)</Label>
+                  <Input
+                    type="number"
+                    step="0.5"
+                    value={editDailyHours}
+                    onChange={(e) => setEditDailyHours(e.target.value)}
+                    className="w-32"
+                    placeholder="8.5"
+                  />
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Função *</Label>

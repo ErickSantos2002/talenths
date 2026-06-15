@@ -31,6 +31,7 @@ from app.routers.logs import router as logs_router
 from app.routers.custom_tests import router as custom_tests_router
 from app.routers.feedbacks import router as feedbacks_router
 from app.routers.documents import router as documents_router
+from app.routers.timeclock import router as timeclock_router
 
 
 @asynccontextmanager
@@ -88,6 +89,7 @@ app.include_router(logs_router)
 app.include_router(custom_tests_router)
 app.include_router(feedbacks_router)
 app.include_router(documents_router)
+app.include_router(timeclock_router)
 
 
 @app.get("/health")

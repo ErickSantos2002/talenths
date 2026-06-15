@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
-  Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText,
+  Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText, Clock,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -82,6 +82,7 @@ const adminSections: NavSection[] = [
     items: [
       { title: "Ausências", url: "/admin/ausencias", icon: CalendarOff },
       { title: "Benefícios", url: "/admin/beneficios", icon: Gift },
+      { title: "Ponto Eletrônico", url: "/admin/ponto", icon: Clock },
       { title: "Tabela Salarial", url: "/admin/tabela-salarial", icon: DollarSign },
     ],
   },
@@ -253,7 +254,7 @@ function CollapsibleSection({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function AdminSidebar() {
-  const { hasRole, signOut } = useAuth();
+  const { hasRole, signOut, profile } = useAuth();
   const { theme, setTheme } = useTheme();
   const systemTheme = useSystemTheme();
   const effectiveTheme = theme === "system" ? systemTheme : theme;
@@ -281,6 +282,17 @@ export function AdminSidebar() {
       return {
         ...section,
         items: [...section.items, { title: "Logs", url: "/admin/logs", icon: Shield }],
+      };
+    }
+    return section;
+  });
+
+  // "Meu Ponto" só aparece para quem o RH habilitou
+  const builtPersonalSections: NavSection[] = personalSections.map((section) => {
+    if (section.key === "rh-pessoal" && profile?.timeclock_enabled) {
+      return {
+        ...section,
+        items: [...section.items, { title: "Meu Ponto", url: "/meu-ponto", icon: Clock }],
       };
     }
     return section;
@@ -375,7 +387,7 @@ export function AdminSidebar() {
             Pessoal
           </p>
         )}
-        {personalSections.map((section) => (
+        {builtPersonalSections.map((section) => (
           <CollapsibleSection
             key={section.key}
             section={section}
@@ -423,7 +435,7 @@ export function AdminSidebar() {
             onClick={() => setChangelogOpen(true)}
             className="w-full rounded-md px-2 py-1.5 text-center transition-colors hover:bg-sidebar-accent"
           >
-            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.1.0</p>
+            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.2.0</p>
             <p className="text-[10px] text-muted-foreground/35 leading-tight">© 2026 Health & Safety Tech</p>
           </button>
         </div>
