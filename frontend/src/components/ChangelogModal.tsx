@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.2.0",
+    version: "v1.3.0",
     date: "15/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Ponto: o colaborador pode registrar uma batida manualmente (ex.: esquecimento) e solicitar o ajuste do horário de uma batida — ambos vão para aprovação do RH.",
+      },
+      {
+        type: "novidade",
+        text: "Ponto: o RH tem uma aba 'Solicitações' para confirmar ou cancelar registros manuais e aprovar ou negar ajustes de horário.",
+      },
+      {
+        type: "novidade",
+        text: "Ponto: cada batida ajustada guarda o histórico completo (horário anterior, novo horário, motivo e quem aprovou) — nenhuma informação é perdida.",
+      },
+    ],
+  },
+  {
+    version: "v1.2.0",
+    date: "15/06/2026",
     entries: [
       {
         type: "novidade",
