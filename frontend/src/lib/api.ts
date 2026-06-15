@@ -365,7 +365,7 @@ export const absences = {
 
 // ── Timeclock (Ponto Eletrônico) ───────────────────────────────────────────────
 
-import type { TodayStatus, DaySummary, TeamDayResponse, TeamUserResponse, Punch } from "@/types/timeclock";
+import type { TodayStatus, DaySummary, TeamDayResponse, TeamUserResponse, Punch, RequestsInbox, AdjustmentHistoryItem } from "@/types/timeclock";
 
 function qs(params: Record<string, string | undefined>): string {
   const sp = new URLSearchParams();
@@ -388,6 +388,17 @@ export const timeclock = {
   update: (id: string, data: { punched_at?: string; kind?: "in" | "out"; note?: string }) =>
     put<Punch>(`/timeclock/${id}`, data),
   delete: (id: string) => del(`/timeclock/${id}`),
+  // Solicitações
+  manualSelf: (data: { punched_at: string; kind: "in" | "out"; reason: string }) =>
+    post<Punch>("/timeclock/manual-self", data),
+  adjust: (punchId: string, data: { requested_punched_at: string; reason: string }) =>
+    post<{ id: string }>(`/timeclock/${punchId}/adjust`, data),
+  requests: () => get<RequestsInbox>("/timeclock/requests"),
+  confirmPunch: (id: string) => post<Punch>(`/timeclock/punches/${id}/confirm`),
+  rejectPunch: (id: string) => post<Punch>(`/timeclock/punches/${id}/reject`),
+  approveAdjustment: (id: string) => post<{ ok: boolean }>(`/timeclock/adjustments/${id}/approve`),
+  rejectAdjustment: (id: string, note?: string) => post<{ ok: boolean }>(`/timeclock/adjustments/${id}/reject`, { note }),
+  punchHistory: (id: string) => get<AdjustmentHistoryItem[]>(`/timeclock/punches/${id}/history`),
 };
 
 // ── Logs ──────────────────────────────────────────────────────────────────────

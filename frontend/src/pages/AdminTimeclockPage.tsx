@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Clock, Plus, Pencil, Trash2, MapPin } from "lucide-react";
+import { Clock, Plus, Pencil, Trash2, MapPin, Check, X, ArrowRight } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Combobox } from "@/components/Combobox";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { timeclock as timeclockApi, collaborators as collaboratorsApi } from "@/lib/api";
+import { PunchHistoryDialog } from "@/components/PunchHistoryDialog";
 import { formatMinutes, formatPunchTime, type Punch, type DaySummary } from "@/types/timeclock";
 
 const todayISO = () => new Date().toLocaleDateString("en-CA");
@@ -30,11 +31,19 @@ function toLocalInput(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
 function PunchChip({ p }: { p: Punch }) {
   const isIn = p.kind === "in";
+  const pending = p.status === "pending";
+  const cls = pending
+    ? "text-amber-600 dark:text-amber-400 border-amber-500/40 bg-amber-500/10"
+    : isIn ? "text-emerald-500 border-emerald-500/30" : "text-amber-500 border-amber-500/30";
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${isIn ? "text-emerald-500 border-emerald-500/30" : "text-amber-500 border-amber-500/30"}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${cls}`} title={pending ? "Registro manual pendente de confirmação" : undefined}>
       {isIn ? "E" : "S"} {formatPunchTime(p.punched_at)}
+      {pending && <span className="opacity-70">⏳</span>}
       {p.latitude != null && p.longitude != null && (
         <a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" title="Ver no mapa" className="hover:opacity-100">
           <MapPin className="h-3 w-3 opacity-60" />
@@ -178,6 +187,7 @@ function PeriodTab() {
   const [end, setEnd] = useState(todayISO());
   const [dialog, setDialog] = useState<{ punch?: Punch } | null>(null);
   const [deleting, setDeleting] = useState<Punch | null>(null);
+  const [historyPunchId, setHistoryPunchId] = useState<string | null>(null);
 
   const { data: colabs = [] } = useQuery({
     queryKey: ["collaborators"],
@@ -262,7 +272,14 @@ function PeriodTab() {
                         {p.kind === "in" ? "Entrada" : "Saída"}
                       </Badge>
                       <span className="font-medium tabular-nums">{formatPunchTime(p.punched_at)}</span>
+                      {p.status === "pending" && <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15 text-[10px]">Pendente</Badge>}
                       {p.source === "manual" && <Badge variant="secondary" className="text-[10px]">RH</Badge>}
+                      {p.pending_adjustment && <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15 text-[10px]">Ajuste solicitado</Badge>}
+                      {p.adjusted && (
+                        <button type="button" onClick={() => setHistoryPunchId(p.id)} className="text-[11px] text-primary hover:underline" title="Ver histórico do ajuste">
+                          ajustado
+                        </button>
+                      )}
                       {p.latitude != null && p.longitude != null && (
                         <a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" title="Ver no mapa" className="text-primary">
                           <MapPin className="h-3.5 w-3.5" />
@@ -283,6 +300,7 @@ function PeriodTab() {
       )}
 
       {dialog && userId && <PunchDialog userId={userId} punch={dialog.punch} onClose={() => setDialog(null)} />}
+      {historyPunchId && <PunchHistoryDialog punchId={historyPunchId} onClose={() => setHistoryPunchId(null)} />}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
@@ -306,7 +324,91 @@ function PeriodTab() {
   );
 }
 
+// ── Aba Solicitações ───────────────────────────────────────────────────────────
+
+function RequestsTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ["timeclock-requests"], queryFn: timeclockApi.requests });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["timeclock-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["timeclock-team-day"] });
+    queryClient.invalidateQueries({ queryKey: ["timeclock-team-user"] });
+  };
+  const act = (fn: () => Promise<unknown>, ok: string) =>
+    fn().then(() => { toast({ title: ok }); invalidate(); })
+      .catch((e: Error) => toast({ title: "Erro", description: e.message, variant: "destructive" }));
+
+  if (isLoading) return <Skeleton className="h-48 w-full" />;
+  const punches = data?.pending_punches ?? [];
+  const adjustments = data?.adjustments ?? [];
+
+  if (punches.length === 0 && adjustments.length === 0) {
+    return <p className="text-sm text-muted-foreground">Nenhuma solicitação pendente. 🎉</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {punches.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Registros manuais pendentes</h3>
+          {punches.map((p) => (
+            <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm">
+              <span className="font-medium">{p.user_name}</span>
+              <Badge variant="outline" className={p.kind === "in" ? "text-emerald-500 border-emerald-500/30" : "text-amber-500 border-amber-500/30"}>
+                {p.kind === "in" ? "Entrada" : "Saída"}
+              </Badge>
+              <span className="tabular-nums">{fmtDateTime(p.punched_at)}</span>
+              {p.reason && <span className="text-xs text-muted-foreground italic">{p.reason}</span>}
+              <div className="ml-auto flex gap-2">
+                <Button size="sm" variant="outline" className="text-emerald-600 dark:text-emerald-400" onClick={() => act(() => timeclockApi.confirmPunch(p.id), "Ponto confirmado")}>
+                  <Check className="h-4 w-4 mr-1" /> Confirmar
+                </Button>
+                <Button size="sm" variant="outline" className="text-destructive" onClick={() => act(() => timeclockApi.rejectPunch(p.id), "Ponto cancelado")}>
+                  <X className="h-4 w-4 mr-1" /> Cancelar
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {adjustments.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Ajustes de horário</h3>
+          {adjustments.map((a) => (
+            <div key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm">
+              <span className="font-medium">{a.user_name}</span>
+              <Badge variant="outline" className={a.punch_kind === "in" ? "text-emerald-500 border-emerald-500/30" : "text-amber-500 border-amber-500/30"}>
+                {a.punch_kind === "in" ? "Entrada" : "Saída"}
+              </Badge>
+              <span className="inline-flex items-center gap-1.5 tabular-nums">
+                <span className="text-muted-foreground line-through">{fmtDateTime(a.current_punched_at)}</span>
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium">{fmtDateTime(a.requested_punched_at)}</span>
+              </span>
+              {a.reason && <span className="text-xs text-muted-foreground italic">{a.reason}</span>}
+              <div className="ml-auto flex gap-2">
+                <Button size="sm" variant="outline" className="text-emerald-600 dark:text-emerald-400" onClick={() => act(() => timeclockApi.approveAdjustment(a.id), "Ajuste aprovado")}>
+                  <Check className="h-4 w-4 mr-1" /> Aprovar
+                </Button>
+                <Button size="sm" variant="outline" className="text-destructive" onClick={() => act(() => timeclockApi.rejectAdjustment(a.id), "Ajuste negado")}>
+                  <X className="h-4 w-4 mr-1" /> Negar
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminTimeclockPage() {
+  const { data: requests } = useQuery({ queryKey: ["timeclock-requests"], queryFn: timeclockApi.requests });
+  const pendingCount = (requests?.pending_punches.length ?? 0) + (requests?.adjustments.length ?? 0);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -323,9 +425,14 @@ export default function AdminTimeclockPage() {
             <TabsTrigger value="period" className="data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent">
               Por período
             </TabsTrigger>
+            <TabsTrigger value="requests" className="data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent gap-2">
+              Solicitações
+              {pendingCount > 0 && <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15 h-5 px-1.5">{pendingCount}</Badge>}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="today" className="mt-6"><TodayTab /></TabsContent>
           <TabsContent value="period" className="mt-6"><PeriodTab /></TabsContent>
+          <TabsContent value="requests" className="mt-6"><RequestsTab /></TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
