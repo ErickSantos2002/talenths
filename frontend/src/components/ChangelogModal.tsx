@@ -24,6 +24,10 @@ const CHANGELOG: ChangelogVersion[] = [
         type: "corrigido",
         text: "Ponto: dias com batida faltando (ex.: esqueceu a saída) aparecem como 'Incompleto' para correção, em vez de 'Trabalhando'. A contagem de entrada/saída reseta corretamente a cada dia.",
       },
+      {
+        type: "corrigido",
+        text: "Ponto: a sequência entrada/saída agora é sempre alternada pela ordem dos horários, corrigindo casos com duas 'Entrada' (ou duas 'Saída') seguidas após ajustes ou registros manuais — o total de horas também passa a refletir o pareamento correto.",
+      },
     ],
   },
   {

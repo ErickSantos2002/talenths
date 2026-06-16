@@ -30,13 +30,13 @@ async def _get_profile(user_id: str, conn: asyncpg.Connection):
     return row
 
 
-def _ser_punch(p, adj_map: Optional[dict] = None) -> dict:
+def _ser_punch(p, adj_map: Optional[dict] = None, kind: Optional[str] = None) -> dict:
     d = {
         "id": str(p["id"]),
         "user_id": str(p["user_id"]),
         "punched_at": p["punched_at"].isoformat(),
         "work_date": p["work_date"].isoformat(),
-        "kind": p["kind"],
+        "kind": kind or p["kind"],
         "source": p["source"],
         "status": p["status"],
         "reason": p["reason"],
@@ -75,19 +75,18 @@ async def _adjustments_map(punch_ids: list, conn: asyncpg.Connection) -> dict:
     return m
 
 
+def _effective_kind(index: int) -> str:
+    """Tipo pela posição no dia (alternado): 1ª=entrada, 2ª=saída, 3ª=entrada…"""
+    return "in" if index % 2 == 0 else "out"
+
+
 def _worked_minutes(rows) -> tuple[int, bool]:
-    """Pareia in→out (ordenado por horário) e soma a duração. Retorna (minutos, em_aberto)."""
+    """Pareia por posição (ordenado por horário): (1ª,2ª), (3ª,4ª)…  Retorna (minutos, ímpar/em_aberto)."""
     total = 0.0
-    last_in = None
-    for p in rows:
-        if p["kind"] == "in":
-            if last_in is None:
-                last_in = p["punched_at"]
-        else:  # out
-            if last_in is not None:
-                total += (p["punched_at"] - last_in).total_seconds() / 60
-                last_in = None
-    return int(round(total)), last_in is not None
+    for i in range(0, len(rows) - 1, 2):
+        total += (rows[i + 1]["punched_at"] - rows[i]["punched_at"]).total_seconds() / 60
+    has_unpaired = len(rows) % 2 == 1
+    return int(round(total)), has_unpaired
 
 
 def _day_summary(work_date, rows, expected_hours: float, adj_map: Optional[dict] = None) -> dict:
@@ -97,14 +96,14 @@ def _day_summary(work_date, rows, expected_hours: float, adj_map: Optional[dict]
     # "Em aberto" só faz sentido hoje (ainda pode bater a saída). Em dias passados,
     # uma batida sem par = "falta saída / corrigir".
     open_now = is_open and is_today
-    needs_fix = (not open_now) and (is_open or len(rows) % 2 == 1)
+    needs_fix = (not open_now) and is_open
     return {
         "work_date": work_date.isoformat(),
         "expected_minutes": int(round(expected_hours * 60)),
         "worked_minutes": worked,
         "open": open_now,
         "odd": needs_fix,
-        "punches": [_ser_punch(p, adj_map) for p in rows],
+        "punches": [_ser_punch(p, adj_map, _effective_kind(i)) for i, p in enumerate(rows)],
     }
 
 
@@ -252,10 +251,10 @@ async def team(
     for person in people:
         uid = str(person["user_id"])
         rows = by_user.get(uid, [])
-        worked, is_open = _worked_minutes(rows)
-        if is_open and is_today:
+        worked, has_unpaired = _worked_minutes(rows)
+        if has_unpaired and is_today:
             status_val = "working"
-        elif is_open or len(rows) % 2 == 1:
+        elif has_unpaired:
             status_val = "incomplete"
         elif rows:
             status_val = "done"
@@ -267,9 +266,9 @@ async def team(
             "department": person["department"],
             "expected_minutes": int(round(float(person["daily_work_hours"]) * 60)),
             "worked_minutes": worked,
-            "open": is_open and is_today,
+            "open": has_unpaired and is_today,
             "status": status_val,
-            "punches": [_ser_punch(p) for p in rows],
+            "punches": [_ser_punch(p, None, _effective_kind(i)) for i, p in enumerate(rows)],
         })
     return {"mode": "day", "work_date": day.isoformat(), "people": result}
 
