@@ -435,7 +435,7 @@ export function AdminSidebar() {
             onClick={() => setChangelogOpen(true)}
             className="w-full rounded-md px-2 py-1.5 text-center transition-colors hover:bg-sidebar-accent"
           >
-            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.6.1</p>
+            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.6.2</p>
             <p className="text-[10px] text-muted-foreground/35 leading-tight">© 2026 Health & Safety Tech</p>
           </button>
         </div>

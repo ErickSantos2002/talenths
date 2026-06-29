@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.6.2",
+    date: "29/06/2026",
+    current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Campos de busca (Time, Responsável e demais seletores): agora dá para digitar direto no campo. Basta dar TAB e começar a digitar para filtrar — sem precisar do mouse. Use as setas para navegar e Enter para escolher.",
+      },
+    ],
+  },
+  {
     version: "v1.6.1",
     date: "16/06/2026",
-    current: true,
     entries: [
       {
         type: "novidade",
