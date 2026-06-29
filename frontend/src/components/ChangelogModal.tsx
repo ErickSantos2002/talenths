@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.7.0",
+    version: "v1.7.1",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "corrigido",
+        text: "Metas: a nota pela curva agora é limitada entre 0 e 120 — acima do ponto de 120% ela trava em 120 (em vez de extrapolar para valores como 175) e não fica negativa abaixo do mínimo. O cálculo dentro da curva permanece o mesmo.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.0",
+    date: "29/06/2026",
     entries: [
       {
         type: "novidade",

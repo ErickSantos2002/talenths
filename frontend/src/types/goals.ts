@@ -144,8 +144,11 @@ export function computeNota(
   if (pctYear == null || v80 == null || v100 == null || v120 == null) return null;
   if (v100 === v80 || v120 === v100) return null;
   const E = pctYear;
-  const nota = E >= v100
+  // Fórmula da planilha (2 trechos lineares); mantida idêntica.
+  const raw = E >= v100
     ? ((120 - 100) / (v120 - v100)) * (E - v100) + 100
     : ((100 - 80) / (v100 - v80)) * (E - v80) + 80;
+  // Limita o resultado entre 0 e 120 (acima do v120 satura no teto; não fica negativo).
+  const nota = Math.max(0, Math.min(120, raw));
   return Math.round(nota * 100) / 100;
 }
