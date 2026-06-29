@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { HelpTip } from "@/components/HelpTip";
 import { Combobox } from "@/components/Combobox";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const goalSchema = z.object({
   department_id: z.string().min(1, "Obrigatório"),
@@ -54,6 +55,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
   const [step, setStep] = useState<1 | 2>(1);
   const [plans, setPlans] = useState<number[]>(plansToArray(goalToEdit));
+  const [splitEqually, setSplitEqually] = useState(false);
 
   const { data: colabs } = useQuery({
     queryKey: ["collaborators"],
@@ -85,10 +87,12 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
   const targetValue = watch("target_value");
 
-  const distributeEqually = () => {
+  // Quando "dividir igualmente" está marcado, distribui o alvo pelos 12 meses automaticamente.
+  useEffect(() => {
+    if (!splitEqually) return;
     const val = parseFloat(String(targetValue)) || 0;
     setPlans(Array(12).fill(parseFloat((val / 12).toFixed(4))));
-  };
+  }, [splitEqually, targetValue]);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -266,14 +270,14 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
         {step === 2 && (
           <div className="space-y-4 py-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Distribua o valor alvo pelos meses do ciclo.
-              </p>
-              <Button type="button" variant="outline" size="sm" onClick={distributeEqually}>
-                Dividir igualmente
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Distribua o valor alvo pelos meses do ciclo.
+            </p>
+
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={splitEqually} onCheckedChange={(c) => setSplitEqually(c === true)} />
+              Dividir o valor alvo igualmente entre os meses da meta
+            </label>
 
             <div className="grid grid-cols-3 gap-3">
               {MONTHS.map((month, i) => (
@@ -283,6 +287,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                     type="number"
                     step="any"
                     value={plans[i]}
+                    disabled={splitEqually}
                     onChange={(e) => {
                       const newPlans = [...plans];
                       newPlans[i] = parseFloat(e.target.value) || 0;

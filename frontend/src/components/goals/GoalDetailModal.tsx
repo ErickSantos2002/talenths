@@ -104,7 +104,7 @@ function computeMonthlyRows(
 export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, departments }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [updateTarget, setUpdateTarget] = useState<{ month: number; current: number | null } | null>(null);
+  const [updateTarget, setUpdateTarget] = useState<{ month: number; current: number | null; planned: number } | null>(null);
   const [activeTab, setActiveTab] = useState<"table" | "history">("table");
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -319,7 +319,7 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                                         variant="ghost"
                                         size="icon"
                                         className="h-6 w-6"
-                                        onClick={() => setUpdateTarget({ month: row.month, current: row.actual })}
+                                        onClick={() => setUpdateTarget({ month: row.month, current: row.actual, planned: row.planned })}
                                       >
                                         <Pencil className="h-3 w-3" />
                                       </Button>
@@ -417,6 +417,7 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
           cycleId={cycleId}
           month={updateTarget.month}
           currentValue={updateTarget.current}
+          planned={updateTarget.planned}
           resultType={detail.result_type}
         />
       )}

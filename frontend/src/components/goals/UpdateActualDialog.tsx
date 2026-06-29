@@ -18,14 +18,20 @@ interface Props {
   cycleId: string;
   month: number;
   currentValue: number | null;
+  planned: number;
   resultType: string;
 }
 
-export function UpdateActualDialog({ open, onOpenChange, goalId, cycleId, month, currentValue, resultType }: Props) {
+export function UpdateActualDialog({ open, onOpenChange, goalId, cycleId, month, currentValue, planned, resultType }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [value, setValue] = useState(currentValue?.toString() ?? "");
   const [comment, setComment] = useState("");
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["goal-detail", goalId] });
+    queryClient.invalidateQueries({ queryKey: ["goals-overview", cycleId] });
+  };
 
   const mutation = useMutation({
     mutationFn: () => goalsApi.updateActual(goalId, month, {
@@ -33,15 +39,25 @@ export function UpdateActualDialog({ open, onOpenChange, goalId, cycleId, month,
       comment: comment.trim() || undefined,
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["goal-detail", goalId] });
-      queryClient.invalidateQueries({ queryKey: ["goals-overview", cycleId] });
+      invalidate();
       toast({ title: "Realizado atualizado" });
       onOpenChange(false);
     },
     onError: (err: Error) => toast({ title: "Erro ao atualizar", description: err.message, variant: "destructive" }),
   });
 
+  const clearMutation = useMutation({
+    mutationFn: () => goalsApi.clearActual(goalId, month),
+    onSuccess: () => {
+      invalidate();
+      toast({ title: "Mês limpo" });
+      onOpenChange(false);
+    },
+    onError: (err: Error) => toast({ title: "Erro ao limpar", description: err.message, variant: "destructive" }),
+  });
+
   const isValid = value !== "" && !isNaN(parseFloat(value));
+  const busy = mutation.isPending || clearMutation.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,21 +66,23 @@ export function UpdateActualDialog({ open, onOpenChange, goalId, cycleId, month,
           <DialogTitle>Atualizar {MONTHS[month - 1]}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          {currentValue !== null && (
-            <p className="text-sm text-muted-foreground">
-              Valor atual: <span className="font-medium text-foreground">{formatGoalValue(currentValue, resultType)}</span>
-            </p>
-          )}
           <div className="space-y-1.5">
             <Label>Valor realizado</Label>
-            <Input
-              type="number"
-              step="any"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="Ex: 12.5"
-              autoFocus
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                step="any"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder="0"
+                autoFocus
+                className="flex-1"
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                / {formatGoalValue(planned, resultType)}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">Planejado do mês: {formatGoalValue(planned, resultType)}</p>
           </div>
           <div className="space-y-1.5">
             <Label>Comentário (opcional)</Label>
@@ -77,11 +95,18 @@ export function UpdateActualDialog({ open, onOpenChange, goalId, cycleId, month,
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => mutation.mutate()} disabled={!isValid || mutation.isPending}>
-            {mutation.isPending ? "Salvando..." : "Salvar"}
-          </Button>
+        <DialogFooter className="flex-row justify-between sm:justify-between">
+          {currentValue !== null ? (
+            <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => clearMutation.mutate()} disabled={busy}>
+              Limpar mês
+            </Button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button onClick={() => mutation.mutate()} disabled={!isValid || busy}>
+              {mutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

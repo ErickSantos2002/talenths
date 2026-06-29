@@ -213,6 +213,7 @@ export const goals = {
   updatePlans: (goalId: string, plans: MonthlyPlan[]) => put<MonthlyPlan[]>(`/goals/${goalId}/plans`, { plans }),
   updateActual: (goalId: string, month: number, data: { actual_value: number; comment?: string }) =>
     put<{ ok: boolean }>(`/goals/${goalId}/actuals/${month}`, data),
+  clearActual: (goalId: string, month: number) => del(`/goals/${goalId}/actuals/${month}`),
   closeMonth: (goalId: string, month: number) => post<{ ok: boolean }>(`/goals/${goalId}/close/${month}`),
   reopenMonth: (goalId: string, month: number) => post<{ ok: boolean }>(`/goals/${goalId}/reopen/${month}`),
 };

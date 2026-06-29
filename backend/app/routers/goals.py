@@ -619,6 +619,34 @@ async def update_actual(
     return {"ok": True}
 
 
+@router.delete("/{goal_id}/actuals/{month}", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_actual(
+    goal_id: str,
+    month: int,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    """Limpa o realizado de um mês (remove o registro)."""
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    await _validate_goal_ownership(goal_id, company_id, conn)
+
+    if not 1 <= month <= 12:
+        raise HTTPException(status_code=400, detail="Mês inválido")
+
+    existing = await conn.fetchrow(
+        "SELECT is_closed FROM public.goal_monthly_actuals WHERE goal_id = $1 AND month = $2",
+        goal_id, month,
+    )
+    if existing and existing["is_closed"]:
+        raise HTTPException(status_code=409, detail="Este mês está fechado. Reabra antes de limpar.")
+
+    await conn.execute(
+        "DELETE FROM public.goal_monthly_actuals WHERE goal_id = $1 AND month = $2",
+        goal_id, month,
+    )
+
+
 @router.post("/{goal_id}/close/{month}")
 async def close_month(
     goal_id: str,
