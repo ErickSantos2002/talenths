@@ -23,6 +23,7 @@ import { goals as goalsApi, departments as deptsApi } from "@/lib/api";
 import type { DepartmentOverview, Goal, Cycle } from "@/types/goals";
 import { CALC_TYPE_LABELS, RESULT_TYPE_LABELS, MONTHS } from "@/types/goals";
 import { DonutRing } from "@/components/goals/DonutRing";
+import { HelpTip } from "@/components/HelpTip";
 import { CreateCycleDialog } from "@/components/goals/CreateCycleDialog";
 import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
 import { GoalDetailModal } from "@/components/goals/GoalDetailModal";
@@ -457,7 +458,14 @@ function DepartmentGoalsTable({
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Meta</th>
                 <th className="text-left px-3 py-3 font-medium text-muted-foreground hidden sm:table-cell">Responsável</th>
                 <th className="text-center px-3 py-3 font-medium text-muted-foreground hidden md:table-cell">Cálculo</th>
-                <th className="text-center px-3 py-3 font-medium text-muted-foreground">Peso</th>
+                <th className="text-center px-3 py-3 font-medium text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">Peso
+                    <HelpTip side="bottom">
+                      Em cima, o <b>peso informado</b> (o que você digitou). Embaixo, o <b>peso ponderado</b> —
+                      recalculado para o time somar 100% (peso ÷ soma dos pesos do time).
+                    </HelpTip>
+                  </span>
+                </th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Mês</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Até o mês</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Do ano</th>
@@ -469,6 +477,7 @@ function DepartmentGoalsTable({
                 <GoalRow
                   key={goal.id}
                   goal={goal}
+                  weightTotal={dept.weight_total}
                   onClick={() => onGoalClick(goal.id)}
                   canEdit={canEdit}
                   isFirst={i === 0}
@@ -488,9 +497,10 @@ function DepartmentGoalsTable({
 }
 
 function GoalRow({
-  goal, onClick, canEdit, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onDelete,
+  goal, weightTotal, onClick, canEdit, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onDelete,
 }: {
   goal: Goal;
+  weightTotal: number;
   onClick: () => void;
   canEdit: boolean;
   isFirst: boolean;
@@ -500,6 +510,7 @@ function GoalRow({
   onMoveDown: () => void;
   onDelete: () => void;
 }) {
+  const ponderado = weightTotal > 0 ? (goal.weight / weightTotal) * 100 : goal.weight;
   return (
     <tr
       className="border-t hover:bg-muted/30 cursor-pointer transition-colors"
@@ -517,7 +528,12 @@ function GoalRow({
       <td className="px-3 py-3 text-center hidden md:table-cell">
         <Badge variant="outline" className="text-xs">{CALC_TYPE_LABELS[goal.calculation_type]}</Badge>
       </td>
-      <td className="px-3 py-3 text-center font-medium">{goal.weight}%</td>
+      <td className="px-3 py-3 text-center">
+        <div className="font-medium">{goal.weight}%</div>
+        <div className="text-xs text-muted-foreground">
+          pond. {ponderado.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
+        </div>
+      </td>
       <td className="px-4 py-3">
         <div className="flex justify-center">
           <DonutRing value={goal.pct_month} label="Mês" objective={goal.objective} />

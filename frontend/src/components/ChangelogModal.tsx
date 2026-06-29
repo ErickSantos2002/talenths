@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.7.1",
+    version: "v1.7.2",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: a coluna Peso mostra dois valores — o peso informado (o que você digitou) e o peso ponderado, recalculado para o time somar 100% (peso ÷ soma dos pesos do time).",
+      },
+    ],
+  },
+  {
+    version: "v1.7.1",
+    date: "29/06/2026",
     entries: [
       {
         type: "corrigido",
