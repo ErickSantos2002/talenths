@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.2",
+    version: "v1.6.3",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: ao criar ou editar um ciclo, a escolha de data inicial e final passou a usar um calendário próprio no tema do sistema (escuro), com seletor de mês e ano, no lugar do calendário padrão do navegador.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.2",
+    date: "29/06/2026",
     entries: [
       {
         type: "melhoria",

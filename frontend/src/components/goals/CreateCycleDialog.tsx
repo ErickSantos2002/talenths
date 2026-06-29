@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/DatePicker";
 import type { Cycle } from "@/types/goals";
 
 const schema = z.object({
@@ -39,7 +40,7 @@ export function CreateCycleDialog({ open, onOpenChange, onCreated, cycle }: Prop
   const queryClient = useQueryClient();
   const isEdit = !!cycle;
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: cycle
       ? {
@@ -89,12 +90,24 @@ export function CreateCycleDialog({ open, onOpenChange, onCreated, cycle }: Prop
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Data inicial</Label>
-              <Input type="date" {...register("start_date")} />
+              <Controller
+                control={control}
+                name="start_date"
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} placeholder="Selecionar data" />
+                )}
+              />
               {errors.start_date && <p className="text-xs text-destructive">{errors.start_date.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label>Data final</Label>
-              <Input type="date" {...register("end_date")} />
+              <Controller
+                control={control}
+                name="end_date"
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} placeholder="Selecionar data" />
+                )}
+              />
               {errors.end_date && <p className="text-xs text-destructive">{errors.end_date.message}</p>}
             </div>
           </div>
