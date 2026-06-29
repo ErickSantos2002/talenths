@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.7.2",
+    version: "v1.7.3",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: o peso total do time passou a exibir o ponderado (sempre 100%), sem o aviso de 'pesos não somam 100%' — já que o sistema redistribui automaticamente. O peso informado de cada meta continua visível na coluna Peso.",
+      },
+    ],
+  },
+  {
+    version: "v1.7.2",
+    date: "29/06/2026",
     entries: [
       {
         type: "novidade",

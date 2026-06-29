@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Target, Plus, TriangleAlert, ChevronDown, Download, Pencil, Trash2, MoreVertical, ArrowUp, ArrowDown } from "lucide-react";
+import { Target, Plus, ChevronDown, Download, Pencil, Trash2, MoreVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -273,9 +273,9 @@ export default function GoalsPage() {
                       className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary relative"
                     >
                       {dept.department_name}
-                      {Math.abs(dept.weight_total - 100) > 0.01 && (
-                        <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold px-1.5 h-4">
-                          {dept.weight_total}%
+                      {dept.weight_total > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-bold px-1.5 h-4">
+                          100%
                         </span>
                       )}
                     </TabsTrigger>
@@ -417,7 +417,8 @@ function DepartmentGoalsTable({
   onMoveGoal: (g: Goal, dir: "up" | "down") => void;
   onDeleteGoal: (g: Goal) => void;
 }) {
-  const weightOk = Math.abs(dept.weight_total - 100) <= 0.01;
+  // O peso é sempre ponderado para o time somar 100% (o informado por meta fica na coluna Peso).
+  const ponderadoTotal = dept.weight_total > 0 ? 100 : 0;
 
   return (
     <div className="space-y-3">
@@ -435,14 +436,10 @@ function DepartmentGoalsTable({
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Peso total do time:</span>
-          <span className={`font-semibold ${weightOk ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
-            {dept.weight_total}%
+          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+            {ponderadoTotal}%
           </span>
-          {!weightOk && (
-            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-xs">
-              <TriangleAlert className="h-3.5 w-3.5" /> Pesos não somam 100%
-            </span>
-          )}
+          <span className="text-xs text-muted-foreground">(ponderado)</span>
         </div>
       </div>
 
