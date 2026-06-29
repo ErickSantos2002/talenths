@@ -204,7 +204,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                     <br /><b>Diminuir</b> — quanto menor, melhor (ex: custos, turnover, tempo de atendimento).
                   </HelpTip>
                 </Label>
-                <Select defaultValue={goalToEdit?.objective ?? "increase"} onValueChange={(v) => setValue("objective", v as FormData["objective"])}>
+                <Select value={watch("objective")} onValueChange={(v) => setValue("objective", v as FormData["objective"])}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="increase">Aumentar valor</SelectItem>
@@ -224,7 +224,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                     <br /><b>Repetir</b> — usa o último valor lançado (ex: saldo, headcount).
                   </HelpTip>
                 </Label>
-                <Select defaultValue={goalToEdit?.calculation_type ?? "sum"} onValueChange={(v) => setValue("calculation_type", v as FormData["calculation_type"])}>
+                <Select value={watch("calculation_type")} onValueChange={(v) => setValue("calculation_type", v as FormData["calculation_type"])}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sum">Soma</SelectItem>
@@ -237,7 +237,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
               <div className="space-y-1.5">
                 <Label>Tipo de resultado</Label>
-                <Select defaultValue={goalToEdit?.result_type ?? "value"} onValueChange={(v) => setValue("result_type", v as FormData["result_type"])}>
+                <Select value={watch("result_type")} onValueChange={(v) => setValue("result_type", v as FormData["result_type"])}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="currency">R$</SelectItem>

@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.6",
+    version: "v1.6.7",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "corrigido",
+        text: "Metas: ao criar/editar uma meta, mudar Objetivo, Expressão de cálculo ou Tipo de resultado e navegar entre as etapas (Próximo/Voltar) não reverte mais a seleção para o valor padrão.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.6",
+    date: "29/06/2026",
     entries: [
       {
         type: "melhoria",
