@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.0",
+    version: "v1.6.1",
     date: "16/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: é possível excluir um ciclo pelo seletor. Por segurança, só apaga ciclos sem metas (se houver metas, o sistema avisa para movê-las ou excluí-las antes).",
+      },
+    ],
+  },
+  {
+    version: "v1.6.0",
+    date: "16/06/2026",
     entries: [
       {
         type: "novidade",
