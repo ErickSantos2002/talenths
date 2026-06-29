@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.3",
+    version: "v1.6.4",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: removido o botão 'Nova Meta' duplicado que aparecia dentro de cada time — o botão do topo da página continua disponível.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.3",
+    date: "29/06/2026",
     entries: [
       {
         type: "melhoria",

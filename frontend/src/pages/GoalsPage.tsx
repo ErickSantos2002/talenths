@@ -266,9 +266,7 @@ export default function GoalsPage() {
                   <TabsContent key={dept.department_id} value={dept.department_id} className="mt-4">
                     <DepartmentGoalsTable
                       dept={dept}
-                      canEdit={canEdit}
                       onGoalClick={setSelectedGoalId}
-                      onNewGoal={() => openCreateGoal(dept.department_id)}
                     />
                   </TabsContent>
                 ))}
@@ -352,14 +350,10 @@ export default function GoalsPage() {
 
 function DepartmentGoalsTable({
   dept,
-  canEdit,
   onGoalClick,
-  onNewGoal,
 }: {
   dept: DepartmentOverview;
-  canEdit: boolean;
   onGoalClick: (id: string) => void;
-  onNewGoal: () => void;
 }) {
   const weightOk = Math.abs(dept.weight_total - 100) <= 0.01;
 
@@ -388,11 +382,6 @@ function DepartmentGoalsTable({
             </span>
           )}
         </div>
-        {canEdit && (
-          <Button size="sm" variant="outline" onClick={onNewGoal}>
-            <Plus className="h-3.5 w-3.5 mr-1" /> Nova Meta
-          </Button>
-        )}
       </div>
 
       {dept.goals.length === 0 ? (
