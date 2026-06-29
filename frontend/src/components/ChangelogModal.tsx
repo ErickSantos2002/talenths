@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.3.2",
+    version: "v1.4.0",
     date: "16/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: seletor de mês na visão geral — escolha o mês de referência e os indicadores (Mês / Até o mês / Do ano) se ajustam.",
+      },
+      {
+        type: "novidade",
+        text: "Metas: cada time passa a exibir os indicadores agregados no topo (média ponderada pelo peso das metas).",
+      },
+    ],
+  },
+  {
+    version: "v1.3.2",
+    date: "16/06/2026",
     entries: [
       {
         type: "melhoria",
