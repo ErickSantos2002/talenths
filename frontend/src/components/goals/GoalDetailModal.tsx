@@ -164,6 +164,18 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
 
   const fmt = (v: number | null) => v !== null && detail ? formatGoalValue(v, detail.result_type) : "—";
 
+  // % de atingimento (realizado ÷ meta). Null quando não há realizado ou a meta é zero.
+  const attainmentPct = (actual: number | null, planned: number) =>
+    actual !== null && planned !== 0 ? Math.round((actual / planned) * 100) : null;
+
+  // Desvio formatado: valor absoluto + (% de atingimento), ex.: "+5 (150%)".
+  const fmtDeviation = (deviation: number | null, actual: number | null, planned: number) => {
+    if (deviation === null) return "—";
+    const pct = attainmentPct(actual, planned);
+    const base = (deviation > 0 ? "+" : "") + fmt(deviation);
+    return pct !== null ? `${base} (${pct}%)` : base;
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -295,12 +307,12 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                             <td className="text-right py-2 px-2">{fmt(row.planned)}</td>
                             <td className="text-right py-2 px-2 font-medium">{fmt(row.actual)}</td>
                             <td className={`text-right py-2 px-2 ${devColor}`}>
-                              {row.deviation !== null ? (row.deviation > 0 ? "+" : "") + fmt(row.deviation) : "—"}
+                              {fmtDeviation(row.deviation, row.actual, row.planned)}
                             </td>
                             <td className="text-right py-2 px-2 pl-4 text-muted-foreground border-l border-border">{fmt(row.cumPlan)}</td>
                             <td className="text-right py-2 px-2">{fmt(row.cumActual)}</td>
                             <td className={`text-right py-2 px-2 ${cumDevColor}`}>
-                              {row.cumDeviation !== null ? (row.cumDeviation > 0 ? "+" : "") + fmt(row.cumDeviation) : "—"}
+                              {fmtDeviation(row.cumDeviation, row.cumActual, row.cumPlan)}
                             </td>
                             {canEdit && (
                               <td className="py-2 px-2">

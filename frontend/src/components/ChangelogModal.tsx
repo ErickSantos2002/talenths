@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.8",
+    version: "v1.6.9",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: o Desvio (mensal e acumulado) agora mostra também o percentual de atingimento entre parênteses — ex.: '+5 (150%)', onde 150% = realizado ÷ meta.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.8",
+    date: "29/06/2026",
     entries: [
       {
         type: "novidade",
