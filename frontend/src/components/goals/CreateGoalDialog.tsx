@@ -26,9 +26,6 @@ const goalSchema = z.object({
   result_type: z.enum(["currency", "percentage", "value"]),
   weight: z.coerce.number().min(0).max(100),
   target_value: z.coerce.number().min(0),
-  curve_v80: z.coerce.number().optional(),
-  curve_v100: z.coerce.number().optional(),
-  curve_v120: z.coerce.number().optional(),
 });
 
 type FormData = z.infer<typeof goalSchema>;
@@ -75,9 +72,6 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
           result_type: goalToEdit.result_type,
           weight: goalToEdit.weight,
           target_value: goalToEdit.target_value,
-          curve_v80: goalToEdit.curve_v80 ?? undefined,
-          curve_v100: goalToEdit.curve_v100 ?? undefined,
-          curve_v120: goalToEdit.curve_v120 ?? undefined,
         }
       : {
           department_id: defaultDepartmentId ?? "",
@@ -90,16 +84,6 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
   });
 
   const targetValue = watch("target_value");
-  const objectiveValue = watch("objective");
-
-  // Valores automáticos da curva (mostrados como placeholder) a partir do valor alvo.
-  const curvePlaceholder = (pct: 80 | 100 | 120) => {
-    const target = parseFloat(String(targetValue)) || 0;
-    if (!target) return "—";
-    const factor = pct / 100;
-    const v = objectiveValue === "decrease" && pct !== 100 ? target * (2 - factor) : target * factor;
-    return v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-  };
 
   const distributeEqually = () => {
     const val = parseFloat(String(targetValue)) || 0;
@@ -211,15 +195,15 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                 <Select defaultValue={goalToEdit?.objective ?? "increase"} onValueChange={(v) => setValue("objective", v as FormData["objective"])}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="increase">Aumentar</SelectItem>
-                    <SelectItem value="decrease">Diminuir</SelectItem>
+                    <SelectItem value="increase">Aumentar valor</SelectItem>
+                    <SelectItem value="decrease">Diminuir valor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
                 <Label className="inline-flex items-center gap-1">
-                  Cálculo acumulado
+                  Expressão de cálculo
                   <HelpTip>
                     Como os meses se combinam no acumulado do ano:
                     <br /><b>Soma</b> — soma os meses (ex: vendas, chamados).
@@ -244,9 +228,9 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                 <Select defaultValue={goalToEdit?.result_type ?? "value"} onValueChange={(v) => setValue("result_type", v as FormData["result_type"])}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="currency">Moeda (R$)</SelectItem>
-                    <SelectItem value="percentage">Percentual (%)</SelectItem>
-                    <SelectItem value="value">Valor numérico</SelectItem>
+                    <SelectItem value="currency">R$</SelectItem>
+                    <SelectItem value="percentage">%</SelectItem>
+                    <SelectItem value="value">Valor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -264,38 +248,10 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
               <div className="space-y-1.5">
                 <Label className="inline-flex items-center gap-1">
                   Valor alvo total (anual)
-                  <HelpTip>A meta para o ano inteiro. É o ponto de <b>100%</b> da nota de atingimento.</HelpTip>
+                  <HelpTip>A meta para o ano inteiro. É a referência do indicador "Do ano" (realizado ÷ alvo).</HelpTip>
                 </Label>
                 <Input type="number" step="any" {...register("target_value")} placeholder="Ex: 120" />
                 {errors.target_value && <p className="text-xs text-destructive">{errors.target_value.message}</p>}
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="inline-flex items-center gap-1">
-                Curva de nota (opcional)
-                <HelpTip>
-                  Régua que converte o realizado em nota. <b>100% = valor alvo</b>.
-                  <br />Atingir o "Valor a 120%" dá nota 120 (teto); o "Valor a 80%" dá nota 80 (piso); abaixo disso a nota cai proporcionalmente.
-                  <br />Útil quando o piso/teto não são 80%/120% do alvo (ex: uptime, que não passa de 100%).
-                </HelpTip>
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Os valores em cinza são os automáticos (80% / 100% / 120% do valor alvo) — deixe em branco para usá-los. Preencha apenas se quiser sobrescrever. O ponto de 100% é sempre o valor alvo total.
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Valor a 80%</p>
-                  <Input type="number" step="any" {...register("curve_v80")} placeholder={curvePlaceholder(80)} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Valor a 100%</p>
-                  <Input type="number" step="any" {...register("curve_v100")} placeholder={curvePlaceholder(100)} />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Valor a 120%</p>
-                  <Input type="number" step="any" {...register("curve_v120")} placeholder={curvePlaceholder(120)} />
-                </div>
               </div>
             </div>
 

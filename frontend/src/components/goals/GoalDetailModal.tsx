@@ -101,24 +101,6 @@ function computeMonthlyRows(
   });
 }
 
-/** Calcula os 3 pontos efetivos da curva (usando os defaults de 80%/120% quando em branco). */
-function effectiveCurve(detail: { curve_v80: number | null; curve_v100: number | null; curve_v120: number | null; target_value: number; objective: string }) {
-  const ok = (v: number | null): v is number => v !== null && v > 0;
-  const v100 = ok(detail.curve_v100) ? detail.curve_v100 : detail.target_value;
-  if (detail.objective === "decrease") {
-    return {
-      v80: ok(detail.curve_v80) ? detail.curve_v80 : v100 * 1.2,
-      v100,
-      v120: ok(detail.curve_v120) ? detail.curve_v120 : v100 * 0.8,
-    };
-  }
-  return {
-    v80: ok(detail.curve_v80) ? detail.curve_v80 : v100 * 0.8,
-    v100,
-    v120: ok(detail.curve_v120) ? detail.curve_v120 : v100 * 1.2,
-  };
-}
-
 export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, departments }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -209,15 +191,6 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                 {detail.responsible_name && (
                   <Badge variant="secondary">Resp: {detail.responsible_name}</Badge>
                 )}
-                {detail.nota !== null && (
-                  <span className="inline-flex items-center gap-1">
-                    <Badge className="bg-primary/15 text-primary hover:bg-primary/15">Nota: {Math.round(detail.nota)}%</Badge>
-                    <HelpTip side="bottom">
-                      Nota de atingimento da meta. Converte o realizado em % por uma régua onde <b>100% = valor alvo</b> (80% e 120% são o piso e o teto).
-                      <br />Em metas de <b>soma</b>, a nota sobe ao longo do ano conforme o realizado acumula — então no meio do ano é normal estar mais baixa.
-                    </HelpTip>
-                  </span>
-                )}
                 {detail.calculation_type === "average" && (
                   <Badge variant="secondary">Média realizada: {formatGoalValue(detail.cum_actual, detail.result_type)}</Badge>
                 )}
@@ -264,51 +237,31 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
               </div>
             ) : activeTab === "table" && detail ? (
               <div className="p-1 space-y-6">
-                {/* Curva de nota */}
-                {(() => {
-                  const c = effectiveCurve(detail);
-                  return (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
-                      <span className="inline-flex items-center gap-1 font-medium text-muted-foreground">
-                        Curva de nota
-                        <HelpTip side="bottom">
-                          Régua que transforma o realizado em nota. <b>100% = valor alvo</b>.
-                          <br />Atingir o valor de 120% dá nota 120 (teto); o de 80% dá nota 80 (piso); abaixo, a nota cai proporcionalmente.
-                          {detail.objective === "decrease" && <><br />Como a meta é de <b>diminuir</b>, quanto <b>menor</b> o realizado, maior a nota.</>}
-                        </HelpTip>
-                      </span>
-                      <span>Nota 80% = <span className="font-medium text-foreground">{formatGoalValue(c.v80, detail.result_type)}</span></span>
-                      <span>Nota 100% = <span className="font-medium text-foreground">{formatGoalValue(c.v100, detail.result_type)}</span></span>
-                      <span>Nota 120% = <span className="font-medium text-foreground">{formatGoalValue(c.v120, detail.result_type)}</span></span>
-                    </div>
-                  );
-                })()}
-
                 {/* Monthly table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b text-muted-foreground">
                         <th className="text-left py-2 px-2 font-medium">Mês</th>
-                        <th className="text-right py-2 px-2 font-medium">Planejado</th>
-                        <th className="text-right py-2 px-2 font-medium">Realizado</th>
+                        <th className="text-right py-2 px-2 font-medium">Meta pontual</th>
+                        <th className="text-right py-2 px-2 font-medium">Realizado pontual</th>
                         <th className="text-right py-2 px-2 font-medium">
                           <span className="inline-flex items-center gap-1">Desvio
                             <HelpTip side="bottom">Diferença entre realizado e planejado no mês. A cor indica se está no caminho certo (considera se a meta é de aumentar ou diminuir).</HelpTip>
                           </span>
                         </th>
                         <th className="text-right py-2 px-2 font-medium">
-                          <span className="inline-flex items-center gap-1">Acum. Plan
+                          <span className="inline-flex items-center gap-1">Meta acumulado
                             <HelpTip side="bottom">Planejado acumulado até o mês, conforme o cálculo da meta: soma dos meses (Soma) ou média (Média).</HelpTip>
                           </span>
                         </th>
                         <th className="text-right py-2 px-2 font-medium">
-                          <span className="inline-flex items-center gap-1">Acum. Real
+                          <span className="inline-flex items-center gap-1">Realizado acumulado
                             <HelpTip side="bottom">Realizado acumulado até o mês, conforme o cálculo da meta.</HelpTip>
                           </span>
                         </th>
                         <th className="text-right py-2 px-2 font-medium">
-                          <span className="inline-flex items-center gap-1">Desvio Acum
+                          <span className="inline-flex items-center gap-1">Desvio
                             <HelpTip side="bottom">Diferença entre o realizado e o planejado acumulados.</HelpTip>
                           </span>
                         </th>

@@ -284,8 +284,8 @@ function DepartmentGoalsTable({
                 <th className="text-center px-3 py-3 font-medium text-muted-foreground hidden md:table-cell">Cálculo</th>
                 <th className="text-center px-3 py-3 font-medium text-muted-foreground">Peso</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Mês</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Acum.</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Nota</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Até o mês</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">Do ano</th>
               </tr>
             </thead>
             <tbody>
@@ -326,12 +326,12 @@ function GoalRow({ goal, onClick }: { goal: Goal; onClick: () => void }) {
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-center">
-          <DonutRing value={goal.pct_cumulative} label="Acum." objective={goal.objective} />
+          <DonutRing value={goal.pct_cumulative} label="Até o mês" objective={goal.objective} />
         </div>
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-center">
-          <DonutRing value={goal.nota} label="Nota" objective={goal.objective} />
+          <DonutRing value={goal.pct_year} label="Do ano" objective={goal.objective} />
         </div>
       </td>
     </tr>
