@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { HelpTip } from "@/components/HelpTip";
 import { Combobox } from "@/components/Combobox";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const goalSchema = z.object({
   department_id: z.string().min(1, "Obrigatório"),
@@ -55,7 +55,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
   const [step, setStep] = useState<1 | 2>(1);
   const [plans, setPlans] = useState<number[]>(plansToArray(goalToEdit));
-  const [splitEqually, setSplitEqually] = useState(false);
+  const [distMode, setDistMode] = useState<"custom" | "equal" | "repeat">("custom");
 
   const { data: colabs } = useQuery({
     queryKey: ["collaborators"],
@@ -87,12 +87,19 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
   const targetValue = watch("target_value");
 
-  // Quando "dividir igualmente" está marcado, distribui o alvo pelos 12 meses automaticamente.
+  // Preenche os 12 meses conforme o modo de distribuição escolhido.
+  // - "equal": divide o alvo igualmente (alvo ÷ 12 em cada mês; a soma fecha o alvo).
+  // - "repeat": repete o valor alvo cheio em todos os meses.
+  // - "custom": o usuário digita cada mês (não mexe).
   useEffect(() => {
-    if (!splitEqually) return;
+    if (distMode === "custom") return;
     const val = parseFloat(String(targetValue)) || 0;
-    setPlans(Array(12).fill(parseFloat((val / 12).toFixed(4))));
-  }, [splitEqually, targetValue]);
+    if (distMode === "equal") {
+      setPlans(Array(12).fill(parseFloat((val / 12).toFixed(4))));
+    } else {
+      setPlans(Array(12).fill(val));
+    }
+  }, [distMode, targetValue]);
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -129,6 +136,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
       reset();
       setPlans(plansToArray(goalToEdit));
       setStep(1);
+      setDistMode("custom");
     }
     onOpenChange(next);
   };
@@ -274,10 +282,33 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
               Distribua o valor alvo pelos meses do ciclo.
             </p>
 
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox checked={splitEqually} onCheckedChange={(c) => setSplitEqually(c === true)} />
-              Dividir o valor alvo igualmente entre os meses da meta
-            </label>
+            <RadioGroup
+              value={distMode}
+              onValueChange={(v) => setDistMode(v as typeof distMode)}
+              className="gap-2"
+            >
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="equal" className="mt-0.5" />
+                <span>
+                  Dividir igualmente entre os meses
+                  <span className="block text-xs text-muted-foreground">Alvo ÷ 12 em cada mês (a soma fecha o valor alvo).</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="repeat" className="mt-0.5" />
+                <span>
+                  Repetir o valor alvo em todos os meses
+                  <span className="block text-xs text-muted-foreground">O valor alvo cheio em cada mês (ex.: meta de nível como NPS, headcount).</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <RadioGroupItem value="custom" className="mt-0.5" />
+                <span>
+                  Personalizado
+                  <span className="block text-xs text-muted-foreground">Você define o valor de cada mês manualmente.</span>
+                </span>
+              </label>
+            </RadioGroup>
 
             <div className="grid grid-cols-3 gap-3">
               {MONTHS.map((month, i) => (
@@ -287,7 +318,7 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                     type="number"
                     step="any"
                     value={plans[i]}
-                    disabled={splitEqually}
+                    disabled={distMode !== "custom"}
                     onChange={(e) => {
                       const newPlans = [...plans];
                       newPlans[i] = parseFloat(e.target.value) || 0;

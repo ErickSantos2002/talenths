@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.4",
+    version: "v1.6.5",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: na mensalização, agora há três modos de distribuir o valor pelos meses — dividir igualmente (alvo ÷ 12), repetir o valor alvo em todos os meses, ou personalizado (você digita cada mês).",
+      },
+    ],
+  },
+  {
+    version: "v1.6.4",
+    date: "29/06/2026",
     entries: [
       {
         type: "melhoria",
