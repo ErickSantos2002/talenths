@@ -204,7 +204,8 @@ export const goals = {
     post<Cycle>("/goals/cycles", data),
   updateCycle: (id: string, data: Partial<{ name: string; start_date: string; end_date: string; min_curve_value: number; max_progress_value: number; status: string }>) =>
     put<Cycle>(`/goals/cycles/${id}`, data),
-  overview: (cycleId: string) => get<DepartmentOverview[]>(`/goals/overview?cycle_id=${cycleId}`),
+  overview: (cycleId: string, month?: number) =>
+    get<DepartmentOverview[]>(`/goals/overview?cycle_id=${cycleId}${month ? `&month=${month}` : ""}`),
   create: (data: GoalCreate) => post<Goal & { weight_warning: boolean }>("/goals", data),
   get: (id: string) => get<GoalDetail>(`/goals/${id}`),
   update: (id: string, data: Partial<GoalCreate>) => put<Goal>(`/goals/${id}`, data),

@@ -15,7 +15,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { goals as goalsApi, departments as deptsApi } from "@/lib/api";
 import type { DepartmentOverview, Goal } from "@/types/goals";
-import { CALC_TYPE_LABELS, RESULT_TYPE_LABELS, formatGoalValue } from "@/types/goals";
+import { CALC_TYPE_LABELS, RESULT_TYPE_LABELS, MONTHS } from "@/types/goals";
 import { DonutRing } from "@/components/goals/DonutRing";
 import { CreateCycleDialog } from "@/components/goals/CreateCycleDialog";
 import { CreateGoalDialog } from "@/components/goals/CreateGoalDialog";
@@ -31,6 +31,7 @@ export default function GoalsPage() {
   const [createGoalOpen, setCreateGoalOpen] = useState(false);
   const [createGoalDeptId, setCreateGoalDeptId] = useState<string | undefined>();
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
     queryKey: ["goal-cycles"],
@@ -38,8 +39,8 @@ export default function GoalsPage() {
   });
 
   const { data: overview, isLoading: overviewLoading } = useQuery({
-    queryKey: ["goals-overview", selectedCycleId],
-    queryFn: () => goalsApi.overview(selectedCycleId!),
+    queryKey: ["goals-overview", selectedCycleId, selectedMonth],
+    queryFn: () => goalsApi.overview(selectedCycleId!, selectedMonth),
     enabled: !!selectedCycleId,
   });
 
@@ -123,6 +124,25 @@ export default function GoalsPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : null}
+
+            {/* Month selector */}
+            {cycles && cycles.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <span>{MONTHS[selectedMonth - 1]}</span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[140px]">
+                  {MONTHS.map((m, i) => (
+                    <DropdownMenuItem key={m} onClick={() => setSelectedMonth(i + 1)}>
+                      {m}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
 
             {canEdit && (
               <>
@@ -250,10 +270,20 @@ function DepartmentGoalsTable({
 
   return (
     <div className="space-y-3">
+      {/* Indicadores agregados do time */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/20 px-4 py-3">
+        <span className="font-semibold">{dept.department_name}</span>
+        <div className="flex items-center gap-6">
+          <DonutRing value={dept.pct_month} label="Mês" />
+          <DonutRing value={dept.pct_cumulative} label="Até o mês" />
+          <DonutRing value={dept.pct_year} label="Do ano" />
+        </div>
+      </div>
+
       {/* Weight summary */}
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Peso total do departamento:</span>
+          <span className="text-muted-foreground">Peso total do time:</span>
           <span className={`font-semibold ${weightOk ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
             {dept.weight_total}%
           </span>

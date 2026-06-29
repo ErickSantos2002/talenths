@@ -31,7 +31,6 @@ export interface Goal {
   pct_month: number | null;
   pct_cumulative: number | null;
   pct_year: number | null;
-  nota: number | null;
   cum_actual: number;
   cum_planned: number;
 }
@@ -41,6 +40,9 @@ export interface DepartmentOverview {
   department_name: string;
   weight_total: number;
   goals: Goal[];
+  pct_month: number | null;
+  pct_cumulative: number | null;
+  pct_year: number | null;
 }
 
 export interface MonthlyPlan {
