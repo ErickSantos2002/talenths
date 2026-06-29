@@ -283,6 +283,34 @@ async def update_cycle(
     return d
 
 
+@router.delete("/cycles/{cycle_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_cycle(
+    cycle_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+
+    cycle = await conn.fetchrow(
+        "SELECT id FROM public.management_cycles WHERE id = $1 AND company_id = $2",
+        cycle_id, company_id,
+    )
+    if not cycle:
+        raise HTTPException(status_code=404, detail="Ciclo não encontrado")
+
+    goal_count = await conn.fetchval(
+        "SELECT COUNT(*) FROM public.goals WHERE cycle_id = $1", cycle_id
+    )
+    if goal_count:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Este ciclo tem {goal_count} meta(s). Exclua ou mova as metas antes de excluir o ciclo.",
+        )
+
+    await conn.execute("DELETE FROM public.management_cycles WHERE id = $1 AND company_id = $2", cycle_id, company_id)
+
+
 # ── Overview ──────────────────────────────────────────────────────────────────
 
 def _weighted_avg(goals: list, key: str) -> Optional[float]:

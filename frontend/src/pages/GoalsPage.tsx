@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Target, Plus, TriangleAlert, ChevronDown, Download, Pencil } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Target, Plus, TriangleAlert, ChevronDown, Download, Pencil, Trash2 } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -24,11 +29,14 @@ import { GoalDetailModal } from "@/components/goals/GoalDetailModal";
 export default function GoalsPage() {
   const { hasRole } = useAuth();
   const canEdit = hasRole("master_admin") || hasRole("manager");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("");
   const [createCycleOpen, setCreateCycleOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<Cycle | null>(null);
+  const [deletingCycle, setDeletingCycle] = useState<Cycle | null>(null);
   const [createGoalOpen, setCreateGoalOpen] = useState(false);
   const [createGoalDeptId, setCreateGoalDeptId] = useState<string | undefined>();
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -100,6 +108,17 @@ export default function GoalsPage() {
     URL.revokeObjectURL(a.href);
   };
 
+  const deleteCycleMutation = useMutation({
+    mutationFn: (id: string) => goalsApi.deleteCycle(id),
+    onSuccess: (_d, id) => {
+      queryClient.invalidateQueries({ queryKey: ["goal-cycles"] });
+      toast({ title: "Ciclo excluído" });
+      if (selectedCycleId === id) setSelectedCycleId(null);
+      setDeletingCycle(null);
+    },
+    onError: (e: Error) => toast({ title: "Não foi possível excluir", description: e.message, variant: "destructive" }),
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -142,13 +161,22 @@ export default function GoalsPage() {
                         {c.status === "active" ? "Ativo" : c.status === "draft" ? "Rascunho" : "Encerrado"}
                       </Badge>
                       {canEdit && (
-                        <button
-                          className="text-muted-foreground hover:text-foreground"
-                          onClick={(e) => { e.stopPropagation(); setEditingCycle(c); }}
-                          title="Editar ciclo"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
+                        <>
+                          <button
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={(e) => { e.stopPropagation(); setEditingCycle(c); }}
+                            title="Editar ciclo"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); setDeletingCycle(c); }}
+                            title="Excluir ciclo"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </>
                       )}
                     </DropdownMenuItem>
                   ))}
@@ -274,6 +302,27 @@ export default function GoalsPage() {
           cycle={editingCycle}
         />
       )}
+
+      <AlertDialog open={!!deletingCycle} onOpenChange={(o) => !o && setDeletingCycle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir o ciclo "{deletingCycle?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Só é possível excluir um ciclo que não tenha metas. Se houver metas, exclua ou mova-as antes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); if (deletingCycle) deleteCycleMutation.mutate(deletingCycle.id); }}
+              disabled={deleteCycleMutation.isPending}
+            >
+              {deleteCycleMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {selectedCycleId && (
         <CreateGoalDialog

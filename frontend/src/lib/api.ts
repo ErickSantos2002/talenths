@@ -202,6 +202,7 @@ export const goals = {
   listCycles: () => get<Cycle[]>("/goals/cycles"),
   createCycle: (data: { name: string; start_date: string; end_date: string; min_curve_value?: number; max_progress_value?: number; status?: string }) =>
     post<Cycle>("/goals/cycles", data),
+  deleteCycle: (id: string) => del(`/goals/cycles/${id}`),
   updateCycle: (id: string, data: Partial<{ name: string; start_date: string; end_date: string; min_curve_value: number; max_progress_value: number; status: string }>) =>
     put<Cycle>(`/goals/cycles/${id}`, data),
   overview: (cycleId: string, month?: number) =>
