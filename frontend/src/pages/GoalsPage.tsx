@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Target, Plus, TriangleAlert, ChevronDown } from "lucide-react";
+import { Target, Plus, TriangleAlert, ChevronDown, Download, Pencil } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { goals as goalsApi, departments as deptsApi } from "@/lib/api";
-import type { DepartmentOverview, Goal } from "@/types/goals";
+import type { DepartmentOverview, Goal, Cycle } from "@/types/goals";
 import { CALC_TYPE_LABELS, RESULT_TYPE_LABELS, MONTHS } from "@/types/goals";
 import { DonutRing } from "@/components/goals/DonutRing";
 import { CreateCycleDialog } from "@/components/goals/CreateCycleDialog";
@@ -28,6 +28,7 @@ export default function GoalsPage() {
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("");
   const [createCycleOpen, setCreateCycleOpen] = useState(false);
+  const [editingCycle, setEditingCycle] = useState<Cycle | null>(null);
   const [createGoalOpen, setCreateGoalOpen] = useState(false);
   const [createGoalDeptId, setCreateGoalDeptId] = useState<string | undefined>();
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
@@ -78,6 +79,27 @@ export default function GoalsPage() {
 
   const allDepts = (allDeptsRaw ?? []).map((d: Record<string, unknown>) => ({ id: d.id as string, name: d.name as string }));
 
+  const exportCsv = () => {
+    if (!overview || overview.length === 0) return;
+    const fmt = (v: number | null) => (v == null ? "" : String(v).replace(".", ","));
+    const rows: string[][] = [["Time", "Meta", "Responsável", "Peso (%)", "Mês (%)", "Até o mês (%)", "Do ano (%)"]];
+    overview.forEach(dept =>
+      dept.goals.forEach(g =>
+        rows.push([
+          dept.department_name, g.title, g.responsible_name ?? "",
+          fmt(g.weight), fmt(g.pct_month), fmt(g.pct_cumulative), fmt(g.pct_year),
+        ]),
+      ),
+    );
+    const csv = "﻿" + rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `metas_${selectedCycle?.name ?? "ciclo"}_${MONTHS[selectedMonth - 1]}.csv`.replace(/[^\w.-]+/g, "_");
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -115,10 +137,19 @@ export default function GoalsPage() {
                       onClick={() => setSelectedCycleId(c.id)}
                       className="flex items-center justify-between gap-2"
                     >
-                      <span>{c.name}</span>
+                      <span className="flex-1 truncate">{c.name}</span>
                       <Badge variant={c.status === "active" ? "default" : "outline"} className="text-[10px] h-4 px-1.5">
                         {c.status === "active" ? "Ativo" : c.status === "draft" ? "Rascunho" : "Encerrado"}
                       </Badge>
+                      {canEdit && (
+                        <button
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={(e) => { e.stopPropagation(); setEditingCycle(c); }}
+                          title="Editar ciclo"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -142,6 +173,12 @@ export default function GoalsPage() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+            )}
+
+            {overview && overview.length > 0 && (
+              <Button variant="outline" size="sm" onClick={exportCsv} title="Exportar (CSV)">
+                <Download className="h-4 w-4" />
+              </Button>
             )}
 
             {canEdit && (
@@ -229,6 +266,15 @@ export default function GoalsPage() {
         onCreated={(id) => setSelectedCycleId(id)}
       />
 
+      {editingCycle && (
+        <CreateCycleDialog
+          key={editingCycle.id}
+          open={!!editingCycle}
+          onOpenChange={(o) => !o && setEditingCycle(null)}
+          cycle={editingCycle}
+        />
+      )}
+
       {selectedCycleId && (
         <CreateGoalDialog
           open={createGoalOpen}
@@ -302,7 +348,7 @@ function DepartmentGoalsTable({
 
       {dept.goals.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">Nenhuma meta neste departamento.</p>
+          <p className="text-sm text-muted-foreground">Nenhuma meta neste time.</p>
         </div>
       ) : (
         <div className="rounded-xl border overflow-hidden">

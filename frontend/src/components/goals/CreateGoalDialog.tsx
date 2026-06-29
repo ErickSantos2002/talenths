@@ -156,14 +156,14 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Departamento</Label>
+                <Label>Time</Label>
                 <Combobox
                   options={departments.map(d => ({ value: d.id, label: d.name }))}
                   value={watch("department_id") || undefined}
                   onChange={(v) => setValue("department_id", v ?? "")}
                   placeholder="Selecionar..."
-                  searchPlaceholder="Buscar departamento..."
-                  emptyText="Nenhum departamento encontrado."
+                  searchPlaceholder="Buscar time..."
+                  emptyText="Nenhum time encontrado."
                 />
                 {errors.department_id && <p className="text-xs text-destructive">{errors.department_id.message}</p>}
               </div>

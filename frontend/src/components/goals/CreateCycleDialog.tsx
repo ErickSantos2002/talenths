@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Cycle } from "@/types/goals";
 
 const schema = z.object({
   name: z.string().min(1, "Obrigatório"),
@@ -30,41 +31,53 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated?: (id: string) => void;
+  cycle?: Cycle;
 }
 
-export function CreateCycleDialog({ open, onOpenChange, onCreated }: Props) {
+export function CreateCycleDialog({ open, onOpenChange, onCreated, cycle }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isEdit = !!cycle;
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      name: "",
-      start_date: "",
-      end_date: "",
-      min_curve_value: 0.80,
-      max_progress_value: 1.20,
-      status: "active",
-    },
+    defaultValues: cycle
+      ? {
+          name: cycle.name,
+          start_date: cycle.start_date?.slice(0, 10) ?? "",
+          end_date: cycle.end_date?.slice(0, 10) ?? "",
+          min_curve_value: cycle.min_curve_value,
+          max_progress_value: cycle.max_progress_value,
+          status: cycle.status,
+        }
+      : {
+          name: "",
+          start_date: "",
+          end_date: "",
+          min_curve_value: 0.80,
+          max_progress_value: 1.20,
+          status: "active",
+        },
   });
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) => goalsApi.createCycle(data),
-    onSuccess: (cycle) => {
+    mutationFn: (data: FormData) =>
+      isEdit ? goalsApi.updateCycle(cycle!.id, data) : goalsApi.createCycle(data),
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["goal-cycles"] });
-      toast({ title: "Ciclo criado com sucesso" });
+      toast({ title: isEdit ? "Ciclo atualizado" : "Ciclo criado com sucesso" });
       reset();
       onOpenChange(false);
-      onCreated?.(cycle.id);
+      onCreated?.(saved.id);
     },
-    onError: (err: Error) => toast({ title: "Erro ao criar ciclo", description: err.message, variant: "destructive" }),
+    onError: (err: Error) => toast({ title: isEdit ? "Erro ao atualizar ciclo" : "Erro ao criar ciclo", description: err.message, variant: "destructive" }),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Novo Ciclo de Metas</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar Ciclo" : "Novo Ciclo de Metas"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4 py-2">
           <div className="space-y-1.5">
@@ -101,7 +114,7 @@ export function CreateCycleDialog({ open, onOpenChange, onCreated }: Props) {
 
           <div className="space-y-1.5">
             <Label>Status</Label>
-            <Select defaultValue="active" onValueChange={(v) => setValue("status", v as FormData["status"])}>
+            <Select defaultValue={cycle?.status ?? "active"} onValueChange={(v) => setValue("status", v as FormData["status"])}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -118,7 +131,7 @@ export function CreateCycleDialog({ open, onOpenChange, onCreated }: Props) {
               Cancelar
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Criando..." : "Criar Ciclo"}
+              {mutation.isPending ? "Salvando..." : isEdit ? "Salvar" : "Criar Ciclo"}
             </Button>
           </DialogFooter>
         </form>
