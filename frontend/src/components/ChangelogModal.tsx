@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.5.0",
+    version: "v1.6.0",
     date: "16/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: botão para exportar a visão geral do ciclo em planilha (CSV) com os indicadores de cada time e meta.",
+      },
+      {
+        type: "novidade",
+        text: "Metas: dá para editar um ciclo (nome, datas, status) direto no seletor de ciclos.",
+      },
+      {
+        type: "melhoria",
+        text: "Metas: a divisão por 'Departamento' passou a se chamar 'Time'.",
+      },
+    ],
+  },
+  {
+    version: "v1.5.0",
+    date: "16/06/2026",
     entries: [
       {
         type: "novidade",
