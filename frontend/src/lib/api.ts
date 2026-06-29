@@ -210,6 +210,7 @@ export const goals = {
   create: (data: GoalCreate) => post<Goal & { weight_warning: boolean }>("/goals", data),
   get: (id: string) => get<GoalDetail>(`/goals/${id}`),
   update: (id: string, data: Partial<GoalCreate>) => put<Goal>(`/goals/${id}`, data),
+  move: (id: string, direction: "up" | "down") => post<{ ok: boolean }>(`/goals/${id}/move`, { direction }),
   delete: (id: string) => del(`/goals/${id}`),
   updatePlans: (goalId: string, plans: MonthlyPlan[]) => put<MonthlyPlan[]>(`/goals/${goalId}/plans`, { plans }),
   updateActual: (goalId: string, month: number, data: { actual_value: number; comment?: string }) =>

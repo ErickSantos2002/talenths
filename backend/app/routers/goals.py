@@ -170,6 +170,10 @@ class GoalUpdate(BaseModel):
     position: Optional[int] = None
 
 
+class GoalMove(BaseModel):
+    direction: str  # "up" | "down"
+
+
 class MonthlyPlanItem(BaseModel):
     month: int
     planned_value: float
@@ -577,6 +581,49 @@ async def delete_goal(
     )
     if result == "DELETE 0":
         raise HTTPException(status_code=404, detail="Meta não encontrada")
+
+
+@router.post("/{goal_id}/move")
+async def move_goal(
+    goal_id: str,
+    body: GoalMove,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+
+    if body.direction not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="Direção inválida")
+
+    goal = await conn.fetchrow(
+        "SELECT cycle_id, department_id FROM public.goals WHERE id = $1 AND company_id = $2",
+        goal_id, company_id,
+    )
+    if not goal:
+        raise HTTPException(status_code=404, detail="Meta não encontrada")
+
+    # Ordem atual do time (resolve posições zeradas usando created_at como desempate).
+    siblings = await conn.fetch(
+        """SELECT id FROM public.goals
+           WHERE company_id = $1 AND cycle_id = $2 AND department_id = $3
+           ORDER BY position, created_at""",
+        company_id, goal["cycle_id"], goal["department_id"],
+    )
+    ids = [str(r["id"]) for r in siblings]
+    idx = ids.index(goal_id)
+    swap = idx - 1 if body.direction == "up" else idx + 1
+    if 0 <= swap < len(ids):
+        ids[idx], ids[swap] = ids[swap], ids[idx]
+
+    # Reescreve posições sequenciais (0..n-1) na nova ordem.
+    async with conn.transaction():
+        for pos, gid in enumerate(ids):
+            await conn.execute(
+                "UPDATE public.goals SET position = $1 WHERE id = $2 AND company_id = $3",
+                pos, gid, company_id,
+            )
+    return {"ok": True}
 
 
 # ── Monthly Plans ─────────────────────────────────────────────────────────────

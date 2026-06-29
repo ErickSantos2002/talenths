@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.7",
+    version: "v1.6.8",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: cada meta agora tem um menu (⋮) à direita com Editar, Mover para cima, Mover para baixo e Excluir. A ordem das metas dentro do time fica salva.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.7",
+    date: "29/06/2026",
     entries: [
       {
         type: "corrigido",

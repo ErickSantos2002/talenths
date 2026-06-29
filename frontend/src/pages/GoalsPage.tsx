@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Target, Plus, TriangleAlert, ChevronDown, Download, Pencil, Trash2 } from "lucide-react";
+import { Target, Plus, TriangleAlert, ChevronDown, Download, Pencil, Trash2, MoreVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +41,8 @@ export default function GoalsPage() {
   const [createGoalOpen, setCreateGoalOpen] = useState(false);
   const [createGoalDeptId, setCreateGoalDeptId] = useState<string | undefined>();
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [deletingGoal, setDeletingGoal] = useState<Goal | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
 
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
@@ -117,6 +120,22 @@ export default function GoalsPage() {
       setDeletingCycle(null);
     },
     onError: (e: Error) => toast({ title: "Não foi possível excluir", description: e.message, variant: "destructive" }),
+  });
+
+  const moveGoalMutation = useMutation({
+    mutationFn: ({ id, direction }: { id: string; direction: "up" | "down" }) => goalsApi.move(id, direction),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["goals-overview", selectedCycleId] }),
+    onError: (e: Error) => toast({ title: "Não foi possível mover", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteGoalMutation = useMutation({
+    mutationFn: (id: string) => goalsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["goals-overview", selectedCycleId] });
+      toast({ title: "Meta excluída" });
+      setDeletingGoal(null);
+    },
+    onError: (e: Error) => toast({ title: "Erro ao excluir meta", description: e.message, variant: "destructive" }),
   });
 
   return (
@@ -266,7 +285,11 @@ export default function GoalsPage() {
                   <TabsContent key={dept.department_id} value={dept.department_id} className="mt-4">
                     <DepartmentGoalsTable
                       dept={dept}
+                      canEdit={canEdit}
                       onGoalClick={setSelectedGoalId}
+                      onEditGoal={(g) => setEditingGoalId(g.id)}
+                      onMoveGoal={(g, dir) => moveGoalMutation.mutate({ id: g.id, direction: dir })}
+                      onDeleteGoal={(g) => setDeletingGoal(g)}
                     />
                   </TabsContent>
                 ))}
@@ -342,6 +365,36 @@ export default function GoalsPage() {
           departments={allDepts}
         />
       )}
+
+      {editingGoalId && selectedCycleId && (
+        <EditGoalLoader
+          goalId={editingGoalId}
+          cycleId={selectedCycleId}
+          departments={allDepts}
+          onClose={() => setEditingGoalId(null)}
+        />
+      )}
+
+      <AlertDialog open={!!deletingGoal} onOpenChange={(o) => !o && setDeletingGoal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir esta meta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{deletingGoal?.title}" será removida permanentemente, junto com sua mensalização e histórico. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); if (deletingGoal) deleteGoalMutation.mutate(deletingGoal.id); }}
+              disabled={deleteGoalMutation.isPending}
+            >
+              {deleteGoalMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
@@ -350,10 +403,18 @@ export default function GoalsPage() {
 
 function DepartmentGoalsTable({
   dept,
+  canEdit,
   onGoalClick,
+  onEditGoal,
+  onMoveGoal,
+  onDeleteGoal,
 }: {
   dept: DepartmentOverview;
+  canEdit: boolean;
   onGoalClick: (id: string) => void;
+  onEditGoal: (g: Goal) => void;
+  onMoveGoal: (g: Goal, dir: "up" | "down") => void;
+  onDeleteGoal: (g: Goal) => void;
 }) {
   const weightOk = Math.abs(dept.weight_total - 100) <= 0.01;
 
@@ -400,11 +461,23 @@ function DepartmentGoalsTable({
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Mês</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Até o mês</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">Do ano</th>
+                {canEdit && <th className="px-2 py-3 w-10" />}
               </tr>
             </thead>
             <tbody>
-              {dept.goals.map((goal) => (
-                <GoalRow key={goal.id} goal={goal} onClick={() => onGoalClick(goal.id)} />
+              {dept.goals.map((goal, i) => (
+                <GoalRow
+                  key={goal.id}
+                  goal={goal}
+                  onClick={() => onGoalClick(goal.id)}
+                  canEdit={canEdit}
+                  isFirst={i === 0}
+                  isLast={i === dept.goals.length - 1}
+                  onEdit={() => onEditGoal(goal)}
+                  onMoveUp={() => onMoveGoal(goal, "up")}
+                  onMoveDown={() => onMoveGoal(goal, "down")}
+                  onDelete={() => onDeleteGoal(goal)}
+                />
               ))}
             </tbody>
           </table>
@@ -414,7 +487,19 @@ function DepartmentGoalsTable({
   );
 }
 
-function GoalRow({ goal, onClick }: { goal: Goal; onClick: () => void }) {
+function GoalRow({
+  goal, onClick, canEdit, isFirst, isLast, onEdit, onMoveUp, onMoveDown, onDelete,
+}: {
+  goal: Goal;
+  onClick: () => void;
+  canEdit: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  onEdit: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDelete: () => void;
+}) {
   return (
     <tr
       className="border-t hover:bg-muted/30 cursor-pointer transition-colors"
@@ -448,6 +533,57 @@ function GoalRow({ goal, onClick }: { goal: Goal; onClick: () => void }) {
           <DonutRing value={goal.pct_year} label="Do ano" objective={goal.objective} />
         </div>
       </td>
+      {canEdit && (
+        <td className="px-2 py-3" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[180px]">
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="h-3.5 w-3.5 mr-2" /> Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onMoveUp} disabled={isFirst}>
+                <ArrowUp className="h-3.5 w-3.5 mr-2" /> Mover para cima
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onMoveDown} disabled={isLast}>
+                <ArrowDown className="h-3.5 w-3.5 mr-2" /> Mover para baixo
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
+      )}
     </tr>
+  );
+}
+
+function EditGoalLoader({
+  goalId, cycleId, departments, onClose,
+}: {
+  goalId: string;
+  cycleId: string;
+  departments: { id: string; name: string }[];
+  onClose: () => void;
+}) {
+  const { data: detail } = useQuery({
+    queryKey: ["goal-detail", goalId],
+    queryFn: () => goalsApi.get(goalId),
+  });
+  if (!detail) return null;
+  return (
+    <CreateGoalDialog
+      key={detail.id}
+      open
+      onOpenChange={(o) => !o && onClose()}
+      cycleId={cycleId}
+      departments={departments}
+      goalToEdit={detail}
+    />
   );
 }
