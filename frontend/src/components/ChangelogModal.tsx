@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.4.1",
+    version: "v1.5.0",
     date: "16/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: o histórico de cada meta agora tem comentários, com possibilidade de anexar arquivos (PDF, Excel, imagem) e baixá-los.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.1",
+    date: "16/06/2026",
     entries: [
       {
         type: "melhoria",
