@@ -69,21 +69,23 @@ function computeMonthlyRows(
     }
 
     // Acumulado respeita o tipo de cálculo (tanto realizado quanto planejado).
+    // O realizado acumulado só é exibido nos meses que têm valor realizado próprio;
+    // meses sem realizado mostram "—" (não carregam o valor do mês anterior).
     let cumActual: number | null = null;
     let cumPlan: number;
     switch (calculationType) {
       case "average":
-        cumActual = setActualValues.length ? avg(setActualValues) : null;
+        cumActual = actual !== null ? avg(setActualValues) : null;
         cumPlan = setPlannedValues.length ? avg(setPlannedValues) : planned;
         break;
       case "repeat":
-        cumActual = setActualValues.length ? setActualValues[setActualValues.length - 1] : null;
+        cumActual = actual !== null ? setActualValues[setActualValues.length - 1] : null;
         cumPlan = setPlannedValues.length ? setPlannedValues[setPlannedValues.length - 1] : planned;
         break;
       case "sum":
       case "subtraction":
       default:
-        cumActual = setActualValues.length ? sum(setActualValues) : null;
+        cumActual = actual !== null ? sum(setActualValues) : null;
         cumPlan = runningSumPlan;
     }
 
@@ -251,7 +253,7 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                             <HelpTip side="bottom">Diferença entre realizado e planejado no mês. A cor indica se está no caminho certo (considera se a meta é de aumentar ou diminuir).</HelpTip>
                           </span>
                         </th>
-                        <th className="text-right py-2 px-2 font-medium">
+                        <th className="text-right py-2 px-2 pl-4 font-medium border-l border-border">
                           <span className="inline-flex items-center gap-1">Meta acumulado
                             <HelpTip side="bottom">Planejado acumulado até o mês, conforme o cálculo da meta: soma dos meses (Soma) ou média (Média).</HelpTip>
                           </span>
@@ -295,7 +297,7 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                             <td className={`text-right py-2 px-2 ${devColor}`}>
                               {row.deviation !== null ? (row.deviation > 0 ? "+" : "") + fmt(row.deviation) : "—"}
                             </td>
-                            <td className="text-right py-2 px-2 text-muted-foreground">{fmt(row.cumPlan)}</td>
+                            <td className="text-right py-2 px-2 pl-4 text-muted-foreground border-l border-border">{fmt(row.cumPlan)}</td>
                             <td className="text-right py-2 px-2">{fmt(row.cumActual)}</td>
                             <td className={`text-right py-2 px-2 ${cumDevColor}`}>
                               {row.cumDeviation !== null ? (row.cumDeviation > 0 ? "+" : "") + fmt(row.cumDeviation) : "—"}

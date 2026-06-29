@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.5",
+    version: "v1.6.6",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: no progresso mensal, os meses ainda sem valor realizado passam a mostrar '—' nas colunas de realizado e desvio (não repetem mais o valor acumulado do mês anterior). A 'Meta acumulado' continua sendo exibida.",
+      },
+      {
+        type: "melhoria",
+        text: "Metas: adicionada uma divisória visual entre as colunas pontuais e as acumuladas, para facilitar a leitura da tabela.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.5",
+    date: "29/06/2026",
     entries: [
       {
         type: "novidade",
