@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.3.2",
+    date: "16/06/2026",
+    current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: os três indicadores agora se chamam Mês, Até o mês e Do ano, deixando mais claro o que cada um representa.",
+      },
+      {
+        type: "melhoria",
+        text: "Metas: o indicador 'Do ano' mostra o realizado acumulado sobre o valor alvo do ano. A curva de nota foi removida para simplificar.",
+      },
+      {
+        type: "melhoria",
+        text: "Metas: a tabela de detalhe foi renomeada para Meta pontual, Realizado pontual, Meta acumulado e Realizado acumulado.",
+      },
+    ],
+  },
+  {
     version: "v1.3.1",
     date: "15/06/2026",
-    current: true,
     entries: [
       {
         type: "corrigido",
