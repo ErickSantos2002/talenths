@@ -553,7 +553,11 @@ async def update_goal(
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
 
-    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    # exclude_unset: só os campos enviados. Campos de curva podem ser setados para NULL
+    # (limpar a curva); os demais só atualizam quando têm valor.
+    data = body.model_dump(exclude_unset=True)
+    nullable = {"curve_v80", "curve_v100", "curve_v120"}
+    fields = {k: v for k, v in data.items() if v is not None or k in nullable}
     if not fields:
         raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
 

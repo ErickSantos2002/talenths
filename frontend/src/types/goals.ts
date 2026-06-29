@@ -99,9 +99,9 @@ export type GoalCreate = {
   result_type: "currency" | "percentage" | "value";
   weight: number;
   target_value: number;
-  curve_v80?: number;
-  curve_v100?: number;
-  curve_v120?: number;
+  curve_v80?: number | null;
+  curve_v100?: number | null;
+  curve_v120?: number | null;
 };
 
 export const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -127,4 +127,25 @@ export function formatGoalValue(value: number, resultType: string): string {
     return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
   }
   return value.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+}
+
+/**
+ * Nota pela curva: converte o % "Do ano" (E) em nota, por interpolação linear em 2 trechos.
+ * Os 3 valores (v80/v100/v120) são os % que correspondem às notas 80, 100 e 120.
+ * - E ≥ v100 → trecho de cima (nota 100→120); senão → trecho de baixo (nota 80→100).
+ * Retorna null se a meta não tem curva configurada ou os pontos são inválidos.
+ */
+export function computeNota(
+  pctYear: number | null,
+  v80?: number | null,
+  v100?: number | null,
+  v120?: number | null,
+): number | null {
+  if (pctYear == null || v80 == null || v100 == null || v120 == null) return null;
+  if (v100 === v80 || v120 === v100) return null;
+  const E = pctYear;
+  const nota = E >= v100
+    ? ((120 - 100) / (v120 - v100)) * (E - v100) + 100
+    : ((100 - 80) / (v100 - v80)) * (E - v80) + 80;
+  return Math.round(nota * 100) / 100;
 }

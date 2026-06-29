@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { goals as goalsApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { MONTHS, CALC_TYPE_LABELS, RESULT_TYPE_LABELS, formatGoalValue, type MonthlyActual, type MonthlyPlan } from "@/types/goals";
+import { MONTHS, CALC_TYPE_LABELS, RESULT_TYPE_LABELS, formatGoalValue, computeNota, type MonthlyActual, type MonthlyPlan } from "@/types/goals";
 import { UpdateActualDialog } from "./UpdateActualDialog";
 import { CreateGoalDialog } from "./CreateGoalDialog";
 import { GoalComments } from "./GoalComments";
@@ -164,6 +164,9 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
 
   const fmt = (v: number | null) => v !== null && detail ? formatGoalValue(v, detail.result_type) : "—";
 
+  // Nota pela curva (quando configurada), a partir do % "Do ano".
+  const nota = detail ? computeNota(detail.pct_year, detail.curve_v80, detail.curve_v100, detail.curve_v120) : null;
+
   // % de atingimento (realizado ÷ meta). Null quando não há realizado ou a meta é zero.
   const attainmentPct = (actual: number | null, planned: number) =>
     actual !== null && planned !== 0 ? Math.round((actual / planned) * 100) : null;
@@ -205,6 +208,17 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                 </span>
                 {detail.responsible_name && (
                   <Badge variant="secondary">Resp: {detail.responsible_name}</Badge>
+                )}
+                {nota !== null && (
+                  <span className="inline-flex items-center gap-1">
+                    <Badge className="bg-primary/15 text-primary border-primary/20" variant="outline">
+                      Nota: {nota.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+                    </Badge>
+                    <HelpTip side="bottom">
+                      Nota pela curva configurada, a partir do % "Do ano". Os pontos definidos: {detail.curve_v80}% → 80,
+                      {" "}{detail.curve_v100}% → 100, {detail.curve_v120}% → 120. Entre eles a nota é interpolada.
+                    </HelpTip>
+                  </span>
                 )}
                 {detail.calculation_type === "average" && (
                   <Badge variant="secondary">Média realizada: {formatGoalValue(detail.cum_actual, detail.result_type)}</Badge>

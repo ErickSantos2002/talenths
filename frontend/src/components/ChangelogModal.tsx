@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.10",
+    version: "v1.7.0",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Metas: opção de 'curva de nota' por meta. Ao criar/editar, você pode ativar e definir quais percentuais do 'Do ano' correspondem às notas 80, 100 e 120 — entre eles a nota é interpolada. A nota aparece no detalhe da meta.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.10",
+    date: "29/06/2026",
     entries: [
       {
         type: "corrigido",

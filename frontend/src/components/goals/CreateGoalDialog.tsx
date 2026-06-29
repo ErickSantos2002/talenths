@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { HelpTip } from "@/components/HelpTip";
 import { Combobox } from "@/components/Combobox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const goalSchema = z.object({
   department_id: z.string().min(1, "Obrigatório"),
@@ -56,6 +57,12 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
   const [step, setStep] = useState<1 | 2>(1);
   const [plans, setPlans] = useState<number[]>(plansToArray(goalToEdit));
   const [distMode, setDistMode] = useState<"custom" | "equal" | "repeat">("custom");
+
+  // Curva de nota (opcional): converte o % "Do ano" em nota. v80/v100/v120 = % p/ notas 80/100/120.
+  const [useCurve, setUseCurve] = useState<boolean>(goalToEdit?.curve_v100 != null);
+  const [curveV80, setCurveV80] = useState<string>(goalToEdit?.curve_v80?.toString() ?? "");
+  const [curveV100, setCurveV100] = useState<string>(goalToEdit?.curve_v100?.toString() ?? "");
+  const [curveV120, setCurveV120] = useState<string>(goalToEdit?.curve_v120?.toString() ?? "");
 
   const { data: colabs } = useQuery({
     queryKey: ["collaborators"],
@@ -102,12 +109,16 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
       const allPlans = plans.map((v, i) => ({ month: i + 1, planned_value: v }));
+      const curve = useCurve
+        ? { curve_v80: parseFloat(curveV80), curve_v100: parseFloat(curveV100), curve_v120: parseFloat(curveV120) }
+        : { curve_v80: null, curve_v100: null, curve_v120: null };
+      const payload = { ...data, ...curve };
       if (isEdit && goalToEdit) {
-        await goalsApi.update(goalToEdit.id, data);
+        await goalsApi.update(goalToEdit.id, payload);
         await goalsApi.updatePlans(goalToEdit.id, allPlans);
         return { id: goalToEdit.id, weight_warning: false };
       }
-      const goal = await goalsApi.create({ ...data, cycle_id: cycleId });
+      const goal = await goalsApi.create({ ...payload, cycle_id: cycleId });
       if (allPlans.some(p => p.planned_value > 0)) {
         await goalsApi.updatePlans(goal.id, allPlans);
       }
@@ -129,12 +140,24 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
       toast({ title: isEdit ? "Erro ao atualizar meta" : "Erro ao criar meta", description: err.message, variant: "destructive" }),
   });
 
+  const goToStep2 = () => {
+    if (useCurve && [curveV80, curveV100, curveV120].some(v => v === "" || isNaN(parseFloat(v)))) {
+      toast({ title: "Preencha os 3 valores da curva (Nota 80, 100 e 120)", variant: "destructive" });
+      return;
+    }
+    handleSubmit(() => setStep(2))();
+  };
+
   const handleClose = (next: boolean) => {
     if (!next) {
       reset();
       setPlans(plansToArray(goalToEdit));
       setStep(1);
       setDistMode("custom");
+      setUseCurve(goalToEdit?.curve_v100 != null);
+      setCurveV80(goalToEdit?.curve_v80?.toString() ?? "");
+      setCurveV100(goalToEdit?.curve_v100?.toString() ?? "");
+      setCurveV120(goalToEdit?.curve_v120?.toString() ?? "");
     }
     onOpenChange(next);
   };
@@ -265,9 +288,37 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
               </div>
             </div>
 
+            <div className="space-y-2 rounded-lg border p-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox checked={useCurve} onCheckedChange={(c) => setUseCurve(c === true)} />
+                Usar curva de nota
+                <HelpTip>
+                  Converte o % "Do ano" (realizado ÷ alvo) em uma nota. Você define qual % corresponde
+                  às notas <b>80</b>, <b>100</b> e <b>120</b>; entre eles a nota é interpolada.
+                  Ex.: 90% → nota 80, 95% → nota 100, 99% → nota 120.
+                </HelpTip>
+              </label>
+              {useCurve && (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">% para Nota 80</Label>
+                    <Input type="number" step="any" value={curveV80} onChange={(e) => setCurveV80(e.target.value)} placeholder="Ex: 90" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">% para Nota 100</Label>
+                    <Input type="number" step="any" value={curveV100} onChange={(e) => setCurveV100(e.target.value)} placeholder="Ex: 100" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">% para Nota 120</Label>
+                    <Input type="number" step="any" value={curveV120} onChange={(e) => setCurveV120(e.target.value)} placeholder="Ex: 120" />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => handleClose(false)}>Cancelar</Button>
-              <Button type="button" onClick={handleSubmit(() => setStep(2))}>
+              <Button type="button" onClick={goToStep2}>
                 Próximo: Mensalização →
               </Button>
             </DialogFooter>
