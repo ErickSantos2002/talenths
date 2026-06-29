@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.6.9",
+    version: "v1.6.10",
     date: "29/06/2026",
     current: true,
+    entries: [
+      {
+        type: "corrigido",
+        text: "Metas: os campos de valor (peso, valor alvo e os meses da mensalização) deixam de vir com '0' preenchido — agora começam vazios e podem ser apagados normalmente.",
+      },
+    ],
+  },
+  {
+    version: "v1.6.9",
+    date: "29/06/2026",
     entries: [
       {
         type: "melhoria",

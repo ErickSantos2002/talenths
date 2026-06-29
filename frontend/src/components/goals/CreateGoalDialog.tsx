@@ -80,8 +80,6 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
           objective: "increase",
           calculation_type: "sum",
           result_type: "value",
-          weight: 0,
-          target_value: 0,
         },
   });
 
@@ -317,11 +315,12 @@ export function CreateGoalDialog({ open, onOpenChange, cycleId, departments, def
                   <Input
                     type="number"
                     step="any"
-                    value={plans[i]}
+                    value={plans[i] === 0 ? "" : plans[i]}
+                    placeholder="0"
                     disabled={distMode !== "custom"}
                     onChange={(e) => {
                       const newPlans = [...plans];
-                      newPlans[i] = parseFloat(e.target.value) || 0;
+                      newPlans[i] = e.target.value === "" ? 0 : (parseFloat(e.target.value) || 0);
                       setPlans(newPlans);
                     }}
                   />
