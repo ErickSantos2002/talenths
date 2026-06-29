@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MONTHS, CALC_TYPE_LABELS, RESULT_TYPE_LABELS, formatGoalValue, type MonthlyActual, type MonthlyPlan } from "@/types/goals";
 import { UpdateActualDialog } from "./UpdateActualDialog";
 import { CreateGoalDialog } from "./CreateGoalDialog";
+import { GoalComments } from "./GoalComments";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -377,9 +378,13 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                 </div>
               </div>
             ) : activeTab === "history" && detail ? (
-              <div className="p-3 space-y-2">
+              <div className="p-3 space-y-5">
+                <GoalComments goalId={goalId} canEdit={canEdit} />
+
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alterações de valor</p>
                 {detail.history.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">Nenhuma atualização registrada.</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">Nenhuma atualização registrada.</p>
                 ) : detail.history.map(h => (
                   <div key={h.id} className="rounded-lg border bg-card p-3 space-y-1">
                     <div className="flex items-center justify-between gap-2">
@@ -403,6 +408,7 @@ export function GoalDetailModal({ goalId, cycleId, open, onOpenChange, canEdit, 
                     )}
                   </div>
                 ))}
+                </div>
               </div>
             ) : null}
           </ScrollArea>

@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date, datetime
 import asyncpg
+import os
+import uuid
 
 from app.dependencies import get_db, get_current_user_id
+from app.config import settings
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -701,3 +705,140 @@ async def reopen_month(
         goal_id, month,
     )
     return {"ok": True}
+
+
+# ── Comentários da meta (com anexos) ───────────────────────────────────────────
+
+async def _serialize_comment(comment_id: str, conn: asyncpg.Connection) -> dict:
+    c = await conn.fetchrow(
+        """SELECT gc.*, p.name AS author_name
+           FROM public.goal_comments gc
+           LEFT JOIN public.profiles p ON p.user_id = gc.author_id
+           WHERE gc.id = $1""",
+        comment_id,
+    )
+    atts = await conn.fetch(
+        "SELECT id, original_name, file_size, mime_type FROM public.goal_comment_attachments WHERE comment_id = $1 ORDER BY created_at",
+        comment_id,
+    )
+    return {
+        "id": str(c["id"]),
+        "author_name": c["author_name"],
+        "body": c["body"],
+        "created_at": c["created_at"].isoformat(),
+        "attachments": [
+            {
+                "id": str(a["id"]),
+                "original_name": a["original_name"],
+                "file_size": a["file_size"],
+                "mime_type": a["mime_type"],
+            }
+            for a in atts
+        ],
+    }
+
+
+@router.get("/{goal_id}/comments")
+async def list_comments(
+    goal_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _get_company_id(user_id, conn)
+    await _validate_goal_ownership(goal_id, company_id, conn)
+    rows = await conn.fetch(
+        "SELECT id FROM public.goal_comments WHERE goal_id = $1 ORDER BY created_at DESC", goal_id
+    )
+    return [await _serialize_comment(str(r["id"]), conn) for r in rows]
+
+
+@router.post("/{goal_id}/comments", status_code=status.HTTP_201_CREATED)
+async def add_comment(
+    goal_id: str,
+    body: str = Form(""),
+    files: List[UploadFile] = File(default=[]),
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    await _validate_goal_ownership(goal_id, company_id, conn)
+
+    body = (body or "").strip()
+    real_files = [f for f in files if f and f.filename]
+    if not body and not real_files:
+        raise HTTPException(status_code=400, detail="Escreva um comentário ou anexe um arquivo.")
+
+    row = await conn.fetchrow(
+        "INSERT INTO public.goal_comments (goal_id, company_id, author_id, body) VALUES ($1, $2, $3, $4) RETURNING id",
+        goal_id, company_id, user_id, body,
+    )
+    comment_id = str(row["id"])
+
+    if real_files:
+        uploads_dir = f"{settings.UPLOADS_DIR}/{company_id}/goal-comments"
+        os.makedirs(uploads_dir, exist_ok=True)
+        for f in real_files:
+            unique_name = f"{uuid.uuid4()}_{f.filename}"
+            file_path = f"{uploads_dir}/{unique_name}"
+            with open(file_path, "wb") as out:
+                while chunk := await f.read(1024 * 1024):
+                    out.write(chunk)
+            size = os.path.getsize(file_path)
+            await conn.execute(
+                """INSERT INTO public.goal_comment_attachments
+                   (comment_id, original_name, file_path, file_size, mime_type)
+                   VALUES ($1, $2, $3, $4, $5)""",
+                comment_id, f.filename, file_path, size,
+                f.content_type or "application/octet-stream",
+            )
+
+    return await _serialize_comment(comment_id, conn)
+
+
+@router.get("/comments/attachments/{attachment_id}/download")
+async def download_comment_attachment(
+    attachment_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _get_company_id(user_id, conn)
+    row = await conn.fetchrow(
+        """SELECT a.file_path, a.original_name, a.mime_type
+           FROM public.goal_comment_attachments a
+           JOIN public.goal_comments c ON c.id = a.comment_id
+           WHERE a.id = $1 AND c.company_id = $2""",
+        attachment_id, company_id,
+    )
+    if not row or not os.path.exists(row["file_path"]):
+        raise HTTPException(status_code=404, detail="Anexo não encontrado")
+    return FileResponse(
+        row["file_path"],
+        filename=row["original_name"],
+        media_type=row["mime_type"] or "application/octet-stream",
+    )
+
+
+@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_comment(
+    comment_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    comment = await conn.fetchrow(
+        "SELECT id FROM public.goal_comments WHERE id = $1 AND company_id = $2", comment_id, company_id
+    )
+    if not comment:
+        raise HTTPException(status_code=404, detail="Comentário não encontrado")
+
+    atts = await conn.fetch(
+        "SELECT file_path FROM public.goal_comment_attachments WHERE comment_id = $1", comment_id
+    )
+    for a in atts:
+        try:
+            os.remove(a["file_path"])
+        except OSError:
+            pass
+    await conn.execute("DELETE FROM public.goal_comments WHERE id = $1", comment_id)

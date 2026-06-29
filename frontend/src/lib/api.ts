@@ -196,7 +196,7 @@ export const evaluations = {
 
 // ── Goals ─────────────────────────────────────────────────────────────────────
 
-import type { Cycle, Goal, GoalDetail, GoalCreate, DepartmentOverview, MonthlyPlan } from "@/types/goals";
+import type { Cycle, Goal, GoalDetail, GoalCreate, DepartmentOverview, MonthlyPlan, GoalComment } from "@/types/goals";
 
 export const goals = {
   listCycles: () => get<Cycle[]>("/goals/cycles"),
@@ -214,6 +214,25 @@ export const goals = {
   updateActual: (goalId: string, month: number, data: { actual_value: number; comment?: string }) =>
     put<{ ok: boolean }>(`/goals/${goalId}/actuals/${month}`, data),
   clearActual: (goalId: string, month: number) => del(`/goals/${goalId}/actuals/${month}`),
+  listComments: (goalId: string) => get<GoalComment[]>(`/goals/${goalId}/comments`),
+  addComment: async (goalId: string, formData: FormData): Promise<GoalComment> => {
+    const token = localStorage.getItem("talenths_token");
+    const res = await fetch(`${BASE_URL}/goals/${goalId}/comments`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { detail?: string }).detail ?? `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+  deleteComment: (commentId: string) => del(`/goals/comments/${commentId}`),
+  commentAttachmentUrl: (attachmentId: string) => {
+    const token = localStorage.getItem("talenths_token");
+    return { url: `${BASE_URL}/goals/comments/attachments/${attachmentId}/download`, token };
+  },
   closeMonth: (goalId: string, month: number) => post<{ ok: boolean }>(`/goals/${goalId}/close/${month}`),
   reopenMonth: (goalId: string, month: number) => post<{ ok: boolean }>(`/goals/${goalId}/reopen/${month}`),
 };

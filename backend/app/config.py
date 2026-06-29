@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     JWT_EXPIRE_HOURS: int = 24
     ANTHROPIC_API_KEY: str = ""
     FRONTEND_URL: str = "http://localhost:8080"
+    UPLOADS_DIR: str = "/app/uploads"
 
     MS_CLIENT_ID: str = ""
     MS_TENANT_ID: str = ""

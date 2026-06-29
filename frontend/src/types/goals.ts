@@ -74,6 +74,21 @@ export interface GoalDetail extends Goal {
   history: HistoryEntry[];
 }
 
+export interface GoalCommentAttachment {
+  id: string;
+  original_name: string;
+  file_size: number;
+  mime_type: string | null;
+}
+
+export interface GoalComment {
+  id: string;
+  author_name: string | null;
+  body: string;
+  created_at: string;
+  attachments: GoalCommentAttachment[];
+}
+
 export type GoalCreate = {
   cycle_id: string;
   department_id: string;
