@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.4.0",
+    version: "v1.4.1",
     date: "16/06/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Metas: ao atualizar o realizado de um mês, o sistema mostra o planejado ('/ meta') e permite limpar o mês.",
+      },
+      {
+        type: "melhoria",
+        text: "Metas: ao criar uma meta, a opção 'Dividir o valor alvo igualmente entre os meses' virou um marcador que distribui automaticamente.",
+      },
+    ],
+  },
+  {
+    version: "v1.4.0",
+    date: "16/06/2026",
     entries: [
       {
         type: "novidade",
