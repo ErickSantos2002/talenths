@@ -1,20 +1,12 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Download, ArrowLeft } from "lucide-react";
 import { bingo as bingoApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { BingoCard } from "@/components/bingo/BingoCard";
 import type { BingoCard as BingoCardType } from "@/types/bingo";
-
-const PRINT_CSS = `
-@media print {
-  @page { size: A4 landscape; margin: 8mm; }
-  .no-print { display: none !important; }
-  body { background: #fff !important; }
-  .bingo-page { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; page-break-after: always; }
-  .bingo-page:last-child { page-break-after: auto; }
-}
-`;
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -25,6 +17,9 @@ function chunk<T>(arr: T[], size: number): T[][] {
 export default function BingoPrintPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [generating, setGenerating] = useState(false);
+
   const { data: detail, isLoading } = useQuery({
     queryKey: ["bingo-game", gameId],
     queryFn: () => bingoApi.getGame(gameId!),
@@ -34,19 +29,51 @@ export default function BingoPrintPage() {
   const pages = chunk<BingoCardType>(detail?.cards ?? [], 9);
   const pool = detail?.game.number_pool;
 
+  const downloadPdf = async () => {
+    setGenerating(true);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      const pageEls = Array.from(document.querySelectorAll<HTMLElement>(".bingo-page"));
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pw = pdf.internal.pageSize.getWidth();
+      const ph = pdf.internal.pageSize.getHeight();
+      const margin = 6;
+      for (let i = 0; i < pageEls.length; i++) {
+        const canvas = await html2canvas(pageEls[i], { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+        const img = canvas.toDataURL("image/jpeg", 0.92);
+        const availW = pw - margin * 2;
+        const availH = ph - margin * 2;
+        let w = availW;
+        let h = (canvas.height / canvas.width) * w;
+        if (h > availH) { h = availH; w = (canvas.width / canvas.height) * h; }
+        const x = (pw - w) / 2;
+        const y = (ph - h) / 2;
+        if (i > 0) pdf.addPage();
+        pdf.addImage(img, "JPEG", x, y, w, h);
+      }
+      const safe = (detail?.game.name ?? "bingo").replace(/[^\w.-]+/g, "_");
+      pdf.save(`cartelas_${safe}.pdf`);
+    } catch (e) {
+      toast({ title: "Erro ao gerar o PDF", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/40">
-      <style>{PRINT_CSS}</style>
-
-      <div className="no-print sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
         </Button>
         <span className="text-sm text-muted-foreground">
           {detail ? `${detail.cards.length} cartela(s) · ${pages.length} folha(s)` : "Carregando..."}
         </span>
-        <Button onClick={() => window.print()} disabled={isLoading || pages.length === 0}>
-          <Printer className="h-4 w-4 mr-1" /> Imprimir / Salvar PDF
+        <Button onClick={downloadPdf} disabled={isLoading || generating || pages.length === 0}>
+          <Download className="h-4 w-4 mr-1" /> {generating ? "Gerando PDF..." : "Baixar cartelas (PDF)"}
         </Button>
       </div>
 
