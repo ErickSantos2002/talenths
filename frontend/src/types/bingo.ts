@@ -3,6 +3,7 @@ export interface BingoGame {
   near_threshold: number; status: "draft" | "running" | "finished" | "cancelled";
   created_at?: string; started_at?: string | null; finished_at?: string | null;
   participants?: number; draws?: number; winners?: number;
+  pending_tiebreak?: { card_ids: string[]; won_on_draw: number } | null;
 }
 
 export interface BingoCard {

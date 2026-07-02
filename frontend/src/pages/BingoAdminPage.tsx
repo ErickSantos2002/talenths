@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { bingo as bingoApi } from "@/lib/api";
 import type { BingoGame } from "@/types/bingo";
 import { CreateBingoGameDialog } from "@/components/bingo/CreateBingoGameDialog";
+import { BingoLiveGame } from "@/components/bingo/BingoLiveGame";
 
 const STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   draft: { label: "Rascunho", variant: "outline" },
@@ -108,14 +109,7 @@ export default function BingoAdminPage() {
 
       <CreateBingoGameDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={(id) => setOpenGameId(id)} />
 
-      {openGameId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setOpenGameId(null)}>
-          <div className="rounded-xl border bg-card p-6" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm text-muted-foreground">Tela do jogo — em construção (próxima etapa).</p>
-            <Button className="mt-3" variant="outline" onClick={() => setOpenGameId(null)}>Fechar</Button>
-          </div>
-        </div>
-      )}
+      {openGameId && <BingoLiveGame gameId={openGameId} onClose={() => setOpenGameId(null)} />}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>

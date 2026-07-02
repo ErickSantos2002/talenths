@@ -27,7 +27,8 @@ def _serialize_game(row) -> dict:
     for k in ("created_at", "started_at", "finished_at"):
         if d.get(k):
             d[k] = d[k].isoformat()
-    d.pop("pending_tiebreak", None)
+    pt = d.get("pending_tiebreak")
+    d["pending_tiebreak"] = json.loads(pt) if isinstance(pt, str) else pt
     return d
 
 
