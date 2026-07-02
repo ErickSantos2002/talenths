@@ -769,3 +769,18 @@ export const notifications = {
   markRead: (id: string) => patch(`/notifications/${id}/read`),
   delete: (id: string) => del(`/notifications/${id}`),
 };
+
+import type { BingoGame, BingoGameDetail, BingoMyGame, BingoMyGameSummary, DrawResult, TiebreakResult } from "@/types/bingo";
+export const bingo = {
+  listGames: () => get<BingoGame[]>("/bingo/games"),
+  createGame: (data: { name: string; number_pool: number; winners_target: number; near_threshold: number; participant_user_ids: string[] }) =>
+    post<BingoGame>("/bingo/games", data),
+  getGame: (id: string) => get<BingoGameDetail>(`/bingo/games/${id}`),
+  start: (id: string) => post<{ ok: boolean }>(`/bingo/games/${id}/start`),
+  draw: (id: string) => post<DrawResult>(`/bingo/games/${id}/draw`),
+  tiebreak: (id: string) => post<TiebreakResult>(`/bingo/games/${id}/tiebreak`),
+  cancel: (id: string) => post<{ ok: boolean }>(`/bingo/games/${id}/cancel`),
+  deleteGame: (id: string) => del(`/bingo/games/${id}`),
+  my: () => get<BingoMyGameSummary[]>("/bingo/my"),
+  myGame: (id: string) => get<BingoMyGame>(`/bingo/my/${id}`),
+};
