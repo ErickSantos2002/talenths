@@ -29,3 +29,4 @@ dist-ssr
 *.sw?
 .claude/settings.local.json
 /.playwright-mcp
+.superpowers/
