@@ -5,6 +5,7 @@ import {
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
   Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText, Clock,
+  Dices,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -74,6 +75,7 @@ const adminSections: NavSection[] = [
       { title: "Pesquisas", url: "/admin/pesquisas", icon: BarChart2 },
       { title: "Feedbacks", url: "/admin/feedbacks", icon: MessageSquare },
       { title: "Documentos", url: "/admin/documentos", icon: FileText },
+      { title: "Bingo", url: "/admin/bingo", icon: Dices },
     ],
   },
   {
@@ -137,6 +139,7 @@ const personalSections: NavSection[] = [
       { title: "Pesquisas", url: "/pesquisas", icon: BarChart2 },
       { title: "Feedbacks", url: "/meus-feedbacks", icon: MessageSquare },
       { title: "Documentos", url: "/meus-documentos", icon: FileText },
+      { title: "Bingo", url: "/bingo", icon: Dices },
     ],
   },
   {
@@ -435,7 +438,7 @@ export function AdminSidebar() {
             onClick={() => setChangelogOpen(true)}
             className="w-full rounded-md px-2 py-1.5 text-center transition-colors hover:bg-sidebar-accent"
           >
-            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.7.3</p>
+            <p className="text-xs font-semibold text-muted-foreground/60 leading-tight hover:text-muted-foreground transition-colors">TalentHS v1.8.0</p>
             <p className="text-[10px] text-muted-foreground/35 leading-tight">© 2026 Health & Safety Tech</p>
           </button>
         </div>
