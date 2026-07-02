@@ -13,7 +13,7 @@ VALID_POOLS = {30, 60, 90}
 
 
 async def _get_company_id(user_id: str, conn: asyncpg.Connection) -> str:
-    row = await conn.fetchrow("SELECT company_id FROM public.profiles WHERE id = $1", user_id)
+    row = await conn.fetchrow("SELECT company_id FROM public.profiles WHERE user_id = $1", user_id)
     if not row or not row["company_id"]:
         raise HTTPException(status_code=400, detail="Usuário sem empresa")
     return str(row["company_id"])
@@ -139,14 +139,14 @@ async def get_game(game_id: str, user_id: str = Depends(get_current_user_id),
     cards = await conn.fetch(
         """SELECT c.*, p.name AS user_name
            FROM public.bingo_cards c
-           LEFT JOIN public.profiles p ON p.id = c.user_id
+           LEFT JOIN public.profiles p ON p.user_id = c.user_id
            WHERE c.game_id = $1 ORDER BY p.name""", game_id)
     draws = await conn.fetch(
         "SELECT number, draw_order FROM public.bingo_draws WHERE game_id = $1 ORDER BY draw_order", game_id)
     winners = await conn.fetch(
         """SELECT w.*, p.name AS user_name, c.code
            FROM public.bingo_winners w
-           LEFT JOIN public.profiles p ON p.id = w.user_id
+           LEFT JOIN public.profiles p ON p.user_id = w.user_id
            LEFT JOIN public.bingo_cards c ON c.id = w.card_id
            WHERE w.game_id = $1 ORDER BY w.place""", game_id)
 
@@ -299,3 +299,70 @@ async def resolve_tiebreak(game_id: str, user_id: str = Depends(get_current_user
         await conn.execute("UPDATE public.bingo_games SET pending_tiebreak=NULL WHERE id=$1", game_id)
         await _finish_if_done(game, conn)
     return {"rolls": records, "order": ordered, "placed": placed}
+
+
+@router.post("/games/{game_id}/cancel")
+async def cancel_game(game_id: str, user_id: str = Depends(get_current_user_id),
+                      conn: asyncpg.Connection = Depends(get_db)):
+    await require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    res = await conn.execute(
+        "UPDATE public.bingo_games SET status='cancelled', pending_tiebreak=NULL WHERE id=$1 AND company_id=$2",
+        game_id, company_id)
+    if res == "UPDATE 0":
+        raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    return {"ok": True}
+
+
+@router.delete("/games/{game_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_game(game_id: str, user_id: str = Depends(get_current_user_id),
+                      conn: asyncpg.Connection = Depends(get_db)):
+    await require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    game = await conn.fetchrow(
+        "SELECT status FROM public.bingo_games WHERE id=$1 AND company_id=$2", game_id, company_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    if game["status"] == "running":
+        raise HTTPException(status_code=400, detail="Cancele o jogo antes de excluir")
+    await conn.execute("DELETE FROM public.bingo_games WHERE id=$1 AND company_id=$2", game_id, company_id)
+
+
+@router.get("/my")
+async def my_games(user_id: str = Depends(get_current_user_id), conn: asyncpg.Connection = Depends(get_db)):
+    rows = await conn.fetch(
+        """SELECT g.id, g.name, g.status, g.number_pool, g.winners_target
+           FROM public.bingo_games g
+           JOIN public.bingo_cards c ON c.game_id = g.id AND c.user_id = $1
+           WHERE g.status IN ('running','finished') ORDER BY g.created_at DESC""",
+        user_id)
+    return [{"id": str(r["id"]), "name": r["name"], "status": r["status"],
+             "number_pool": r["number_pool"], "winners_target": r["winners_target"]} for r in rows]
+
+
+@router.get("/my/{game_id}")
+async def my_game(game_id: str, user_id: str = Depends(get_current_user_id),
+                  conn: asyncpg.Connection = Depends(get_db)):
+    card = await conn.fetchrow(
+        "SELECT * FROM public.bingo_cards WHERE game_id=$1 AND user_id=$2", game_id, user_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="Você não participa deste jogo")
+    game = await conn.fetchrow("SELECT * FROM public.bingo_games WHERE id=$1", game_id)
+    draws = await conn.fetch(
+        "SELECT number, draw_order FROM public.bingo_draws WHERE game_id=$1 ORDER BY draw_order", game_id)
+    drawn = {d["number"] for d in draws}
+    my_win = await conn.fetchrow(
+        "SELECT place FROM public.bingo_winners WHERE game_id=$1 AND card_id=$2", game_id, card["id"])
+    numbers = list(card["numbers"])
+    layout = card["layout"]
+    if isinstance(layout, str):
+        layout = json.loads(layout)
+    return {
+        "game": {"id": str(game["id"]), "name": game["name"], "status": game["status"],
+                 "number_pool": game["number_pool"], "winners_target": game["winners_target"]},
+        "card": {"code": card["code"], "numbers": numbers, "layout": layout},
+        "drawn": sorted(drawn),
+        "marked": [n for n in numbers if n in drawn],
+        "missing": bingo_logic.missing_count(numbers, drawn),
+        "my_place": my_win["place"] if my_win else None,
+    }
