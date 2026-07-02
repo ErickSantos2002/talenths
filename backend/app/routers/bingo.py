@@ -175,3 +175,127 @@ async def get_game(game_id: str, user_id: str = Depends(get_current_user_id),
         "winners": [_serialize_winner(w) for w in winners],
         "near": near,
     }
+
+
+async def _load_game_locked(game_id, company_id, conn):
+    game = await conn.fetchrow(
+        "SELECT * FROM public.bingo_games WHERE id=$1 AND company_id=$2 FOR UPDATE", game_id, company_id)
+    if not game:
+        raise HTTPException(status_code=404, detail="Jogo não encontrado")
+    return game
+
+
+async def _finish_if_done(game, conn) -> bool:
+    won = await conn.fetchval("SELECT count(*) FROM public.bingo_winners WHERE game_id=$1", game["id"])
+    drawn = await conn.fetchval("SELECT count(*) FROM public.bingo_draws WHERE game_id=$1", game["id"])
+    if won >= game["winners_target"] or drawn >= game["number_pool"]:
+        await conn.execute(
+            "UPDATE public.bingo_games SET status='finished', finished_at=now() WHERE id=$1", game["id"])
+        return True
+    return False
+
+
+@router.post("/games/{game_id}/start")
+async def start_game(game_id: str, user_id: str = Depends(get_current_user_id),
+                     conn: asyncpg.Connection = Depends(get_db)):
+    await require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    async with conn.transaction():
+        game = await _load_game_locked(game_id, company_id, conn)
+        if game["status"] != "draft":
+            raise HTTPException(status_code=400, detail="O jogo já foi iniciado")
+        await conn.execute(
+            "UPDATE public.bingo_games SET status='running', started_at=now() WHERE id=$1", game_id)
+    return {"ok": True}
+
+
+@router.post("/games/{game_id}/draw")
+async def draw_number(game_id: str, user_id: str = Depends(get_current_user_id),
+                      conn: asyncpg.Connection = Depends(get_db)):
+    await require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    async with conn.transaction():
+        game = await _load_game_locked(game_id, company_id, conn)
+        if game["status"] != "running":
+            raise HTTPException(status_code=400, detail="O jogo não está em andamento")
+        if game["pending_tiebreak"]:
+            raise HTTPException(status_code=409, detail="Resolva o desempate antes de sortear")
+
+        draws = await conn.fetch("SELECT number FROM public.bingo_draws WHERE game_id=$1", game_id)
+        drawn = {d["number"] for d in draws}
+        remaining = [n for n in range(1, game["number_pool"] + 1) if n not in drawn]
+        if not remaining:
+            await _finish_if_done(game, conn)
+            raise HTTPException(status_code=400, detail="Não há mais números para sortear")
+
+        pick = secrets.choice(remaining)
+        await conn.execute(
+            """INSERT INTO public.bingo_draws (game_id, company_id, number, draw_order, drawn_by)
+               VALUES ($1,$2,$3,$4,$5)""",
+            game_id, company_id, pick, len(drawn) + 1, user_id)
+        new_drawn = drawn | {pick}
+
+        cards = await conn.fetch("SELECT id, user_id, numbers FROM public.bingo_cards WHERE game_id=$1", game_id)
+        winner_ids = {str(r["card_id"]) for r in
+                      await conn.fetch("SELECT card_id FROM public.bingo_winners WHERE game_id=$1", game_id)}
+        newly = [c for c in cards
+                 if str(c["id"]) not in winner_ids
+                 and pick in c["numbers"]
+                 and bingo_logic.is_complete(list(c["numbers"]), new_drawn)]
+
+        tiebreak = None
+        if len(newly) == 1:
+            place = len(winner_ids) + 1
+            c = newly[0]
+            await conn.execute(
+                """INSERT INTO public.bingo_winners (game_id, company_id, card_id, user_id, place, won_on_draw)
+                   VALUES ($1,$2,$3,$4,$5,$6)""",
+                game_id, company_id, c["id"], c["user_id"], place, pick)
+            await _finish_if_done(game, conn)
+        elif len(newly) >= 2:
+            tiebreak = {"card_ids": [str(c["id"]) for c in newly], "won_on_draw": pick}
+            await conn.execute(
+                "UPDATE public.bingo_games SET pending_tiebreak=$2 WHERE id=$1",
+                game_id, json.dumps(tiebreak))
+    return {"number": pick, "tiebreak": tiebreak}
+
+
+@router.post("/games/{game_id}/tiebreak")
+async def resolve_tiebreak(game_id: str, user_id: str = Depends(get_current_user_id),
+                           conn: asyncpg.Connection = Depends(get_db)):
+    await require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    async with conn.transaction():
+        game = await _load_game_locked(game_id, company_id, conn)
+        pending = game["pending_tiebreak"]
+        if not pending:
+            raise HTTPException(status_code=400, detail="Não há desempate pendente")
+        pending = pending if isinstance(pending, dict) else json.loads(pending)
+        card_ids = pending["card_ids"]
+        won_on_draw = pending["won_on_draw"]
+
+        ordered, records = bingo_logic.rank_tiebreak(card_ids, bingo_logic.roll_d20)
+        for rec in records:
+            await conn.execute(
+                """INSERT INTO public.bingo_tiebreak_rolls (game_id, company_id, card_id, round, roll)
+                   VALUES ($1,$2,$3,$4,$5)""",
+                game_id, company_id, rec["card_id"], rec["round"], rec["roll"])
+
+        next_place = await conn.fetchval(
+            "SELECT count(*) FROM public.bingo_winners WHERE game_id=$1", game_id) + 1
+        target = game["winners_target"]
+        placed = []
+        for cid in ordered:
+            if next_place > target:
+                break
+            card = await conn.fetchrow("SELECT user_id FROM public.bingo_cards WHERE id=$1", cid)
+            await conn.execute(
+                """INSERT INTO public.bingo_winners
+                   (game_id, company_id, card_id, user_id, place, won_on_draw, by_tiebreak)
+                   VALUES ($1,$2,$3,$4,$5,$6,true)""",
+                game_id, company_id, cid, card["user_id"], next_place, won_on_draw)
+            placed.append({"card_id": cid, "place": next_place})
+            next_place += 1
+        await conn.execute("UPDATE public.bingo_games SET pending_tiebreak=NULL WHERE id=$1", game_id)
+        await _finish_if_done(game, conn)
+    return {"rolls": records, "order": ordered, "placed": placed}
