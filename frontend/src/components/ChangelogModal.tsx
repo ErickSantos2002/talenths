@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.8.0",
+    date: "02/07/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Bingo: nova função de bingo para confraternizações! O RH cria jogos (definindo o monte de números, quantos ganhadores e os participantes), o sistema gera uma cartela única para cada pessoa e conduz o sorteio pela tela — com marcação automática, avisos de 'quase lá', ranking de ganhadores e desempate rolando um dado quando dá empate.",
+      },
+      {
+        type: "novidade",
+        text: "Bingo: dá para imprimir as cartelas (9 por folha, em paisagem) para distribuir no papel, além de jogar pelo sistema.",
+      },
+      {
+        type: "novidade",
+        text: "Bingo: cada colaborador acompanha a própria cartela ao vivo em Pessoal › Bingo, vendo os números marcarem sozinhos e o quanto falta para bater.",
+      },
+    ],
+  },
+  {
     version: "v1.7.3",
     date: "29/06/2026",
-    current: true,
     entries: [
       {
         type: "melhoria",
