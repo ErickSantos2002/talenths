@@ -23,7 +23,7 @@ export function CreateBingoGameDialog({ open, onOpenChange, onCreated }: Props) 
   const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
-  const [numberPool, setNumberPool] = useState("30");
+  const [numberPool, setNumberPool] = useState("60");
   const [winnersTarget, setWinnersTarget] = useState("3");
   const [nearThreshold, setNearThreshold] = useState("2");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -124,6 +124,16 @@ export function CreateBingoGameDialog({ open, onOpenChange, onCreated }: Props) 
               </Select>
             </div>
           </div>
+
+          {parseInt(numberPool) === 30 ? (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ⚠️ Com monte de 30, é comum vários baterem a cartela juntos no fim (mais empates). Prefira <b>60</b> ou <b>90</b> para espalhar os números.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Montes maiores espalham os números e reduzem a chance de empates no fim.
+            </p>
+          )}
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">

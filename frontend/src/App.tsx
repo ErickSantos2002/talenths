@@ -17,6 +17,7 @@ import MyProfilePage from "./pages/MyProfilePage";
 import CulturePage from "./pages/CulturePage";
 import GoalsPage from "./pages/GoalsPage";
 import BingoAdminPage from "./pages/BingoAdminPage";
+import BingoPrintPage from "./pages/BingoPrintPage";
 import MyBingoPage from "./pages/MyBingoPage";
 import EvaluationPage from "./pages/EvaluationPage";
 import NineBoxPage from "./pages/NineBoxPage";
@@ -131,6 +132,14 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
                   <BingoAdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/bingo/:gameId/imprimir"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <BingoPrintPage />
                 </ProtectedRoute>
               }
             />
