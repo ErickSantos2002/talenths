@@ -14,6 +14,7 @@ import { bingo as bingoApi } from "@/lib/api";
 import type { BingoGame } from "@/types/bingo";
 import { CreateBingoGameDialog } from "@/components/bingo/CreateBingoGameDialog";
 import { BingoLiveGame } from "@/components/bingo/BingoLiveGame";
+import { BingoPrintSheet } from "@/components/bingo/BingoPrintSheet";
 
 const STATUS: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   draft: { label: "Rascunho", variant: "outline" },
@@ -27,6 +28,7 @@ export default function BingoAdminPage() {
   const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [openGameId, setOpenGameId] = useState<string | null>(null);
+  const [printGameId, setPrintGameId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<BingoGame | null>(null);
 
   const { data: games, isLoading } = useQuery({ queryKey: ["bingo-games"], queryFn: bingoApi.listGames });
@@ -86,7 +88,7 @@ export default function BingoAdminPage() {
                     <Button size="sm" variant="outline" onClick={() => setOpenGameId(g.id)}>
                       <Play className="h-3.5 w-3.5 mr-1" /> Abrir
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => toast({ title: "Impressão", description: "Disponível na próxima etapa." })}>
+                    <Button size="sm" variant="outline" onClick={() => setPrintGameId(g.id)}>
                       <Printer className="h-3.5 w-3.5 mr-1" /> Imprimir
                     </Button>
                     {g.status === "running" && (
@@ -110,6 +112,8 @@ export default function BingoAdminPage() {
       <CreateBingoGameDialog open={createOpen} onOpenChange={setCreateOpen} onCreated={(id) => setOpenGameId(id)} />
 
       {openGameId && <BingoLiveGame gameId={openGameId} onClose={() => setOpenGameId(null)} />}
+
+      {printGameId && <BingoPrintSheet gameId={printGameId} open={!!printGameId} onClose={() => setPrintGameId(null)} />}
 
       <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
