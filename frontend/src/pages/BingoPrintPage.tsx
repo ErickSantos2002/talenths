@@ -66,8 +66,8 @@ export default function BingoPrintPage() {
   return (
     <div className="min-h-screen bg-muted/40">
       <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+        <Button variant="ghost" size="sm" onClick={() => { window.close(); setTimeout(() => navigate("/admin/bingo"), 120); }}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Fechar
         </Button>
         <span className="text-sm text-muted-foreground">
           {detail ? `${detail.cards.length} cartela(s) · ${pages.length} folha(s)` : "Carregando..."}

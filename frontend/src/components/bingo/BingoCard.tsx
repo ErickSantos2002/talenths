@@ -55,17 +55,18 @@ export function BingoCard({
       )}
       <div className="grid grid-cols-10 gap-[3px]">
         {layout.flat().map((v, i) => (
-          <div
-            key={i}
-            className={cn(
-              "aspect-square flex items-center justify-center rounded-[5px] font-bold relative",
-              isPrint ? "text-[13px]" : "text-[15px]",
-              cellClass(v),
-            )}
-          >
-            {v ?? ""}
+          <div key={i} className="relative aspect-square">
+            <div
+              className={cn(
+                "absolute inset-0 flex items-center justify-center rounded-[5px] font-bold leading-none",
+                isPrint ? "text-[13px]" : "text-[15px]",
+                cellClass(v),
+              )}
+            >
+              {v ?? ""}
+            </div>
             {markedSet.has(v as number) && (
-              <span className="absolute top-0 right-0.5 text-[8px] opacity-80">✓</span>
+              <span className="absolute top-0 right-0.5 z-10 text-[8px] font-bold text-white opacity-90">✓</span>
             )}
           </div>
         ))}
