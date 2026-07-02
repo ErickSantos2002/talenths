@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Download, ArrowLeft } from "lucide-react";
 import { bingo as bingoApi } from "@/lib/api";
+import { generateBingoPdf } from "@/lib/bingoPdf";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { BingoCard } from "@/components/bingo/BingoCard";
@@ -30,32 +31,10 @@ export default function BingoPrintPage() {
   const pool = detail?.game.number_pool;
 
   const downloadPdf = async () => {
+    if (!detail) return;
     setGenerating(true);
     try {
-      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
-        import("jspdf"),
-        import("html2canvas"),
-      ]);
-      const pageEls = Array.from(document.querySelectorAll<HTMLElement>(".bingo-page"));
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      const pw = pdf.internal.pageSize.getWidth();
-      const ph = pdf.internal.pageSize.getHeight();
-      const margin = 6;
-      for (let i = 0; i < pageEls.length; i++) {
-        const canvas = await html2canvas(pageEls[i], { scale: 2, backgroundColor: "#ffffff", useCORS: true });
-        const img = canvas.toDataURL("image/jpeg", 0.92);
-        const availW = pw - margin * 2;
-        const availH = ph - margin * 2;
-        let w = availW;
-        let h = (canvas.height / canvas.width) * w;
-        if (h > availH) { h = availH; w = (canvas.width / canvas.height) * h; }
-        const x = (pw - w) / 2;
-        const y = (ph - h) / 2;
-        if (i > 0) pdf.addPage();
-        pdf.addImage(img, "JPEG", x, y, w, h);
-      }
-      const safe = (detail?.game.name ?? "bingo").replace(/[^\w.-]+/g, "_");
-      pdf.save(`cartelas_${safe}.pdf`);
+      await generateBingoPdf(detail);
     } catch (e) {
       toast({ title: "Erro ao gerar o PDF", description: (e as Error).message, variant: "destructive" });
     } finally {
