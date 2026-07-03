@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.8.2",
+    version: "v1.8.3",
     date: "03/07/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Bingo: no jogo ao vivo, clicar no nome de qualquer pessoa (em Participantes, Quase lá ou Ganhadores) abre a cartela dela no estado atual — dá para ver os números marcados e o que falta.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.2",
+    date: "03/07/2026",
     entries: [
       {
         type: "novidade",

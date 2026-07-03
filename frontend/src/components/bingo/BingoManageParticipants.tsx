@@ -10,21 +10,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { BingoCardViewDialog } from "./BingoCardViewDialog";
 import type { BingoCard } from "@/types/bingo";
 
 interface Props {
   gameId: string;
   cards: BingoCard[];
+  numberPool: number;
   winnerCardIds: Set<string>;
   canRemove: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function BingoManageParticipants({ gameId, cards, winnerCardIds, canRemove, open, onOpenChange }: Props) {
+export function BingoManageParticipants({ gameId, cards, numberPool, winnerCardIds, canRemove, open, onOpenChange }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [removing, setRemoving] = useState<BingoCard | null>(null);
+  const [viewCard, setViewCard] = useState<BingoCard | null>(null);
 
   const mutation = useMutation({
     mutationFn: (cardId: string) => bingoApi.removeCard(gameId, cardId),
@@ -55,7 +58,7 @@ export function BingoManageParticipants({ gameId, cards, winnerCardIds, canRemov
                 return (
                   <div key={c.id} className="flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted/40">
                     <span className="flex items-center gap-2">
-                      <span>{c.user_name}</span>
+                      <button className="text-left hover:underline" onClick={() => setViewCard(c)}>{c.user_name}</button>
                       <span className="font-mono text-[10px] text-muted-foreground">#{c.code}</span>
                     </span>
                     {won ? (
@@ -94,6 +97,13 @@ export function BingoManageParticipants({ gameId, cards, winnerCardIds, canRemov
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BingoCardViewDialog
+        open={!!viewCard}
+        onOpenChange={(o) => !o && setViewCard(null)}
+        card={viewCard}
+        numberPool={numberPool}
+      />
     </>
   );
 }

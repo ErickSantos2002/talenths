@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { X, Play, Pause, Dices, Users } from "lucide-react";
 import { BingoTiebreakDialog } from "./BingoTiebreakDialog";
 import { BingoManageParticipants } from "./BingoManageParticipants";
+import { BingoCardViewDialog } from "./BingoCardViewDialog";
 
 const AUTO_MS = 5000;
 
@@ -17,6 +18,7 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
   const queryClient = useQueryClient();
   const [auto, setAuto] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [viewCardId, setViewCardId] = useState<string | null>(null);
   const [winnerModal, setWinnerModal] = useState<{ user_name?: string; place: number } | null>(null);
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -160,13 +162,13 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
                 )}
                 {near1.map((n) => (
                   <div key={n.card_id} className="flex items-center justify-between py-1 text-sm">
-                    <span className="font-medium">{n.user_name}</span>
+                    <button className="font-medium text-left hover:underline" onClick={() => setViewCardId(n.card_id)}>{n.user_name}</button>
                     <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30">falta 1!</Badge>
                   </div>
                 ))}
                 {near2.map((n) => (
                   <div key={n.card_id} className="flex items-center justify-between py-1 text-sm">
-                    <span>{n.user_name}</span>
+                    <button className="text-left hover:underline" onClick={() => setViewCardId(n.card_id)}>{n.user_name}</button>
                     <Badge variant="outline" className="text-blue-400 border-blue-500/40">faltam 2</Badge>
                   </div>
                 ))}
@@ -178,7 +180,7 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
                 {(detail?.winners ?? []).map((w) => (
                   <div key={w.card_id} className="flex items-center gap-2 py-1 text-sm">
                     <span className="text-base">{medal(w.place)}</span>
-                    <span className="font-medium">{w.user_name}</span>
+                    <button className="font-medium text-left hover:underline" onClick={() => setViewCardId(w.card_id)}>{w.user_name}</button>
                     {w.by_tiebreak && <span className="text-[10px] text-muted-foreground">(desempate)</span>}
                   </div>
                 ))}
@@ -201,12 +203,21 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
         <BingoManageParticipants
           gameId={gameId}
           cards={detail.cards}
+          numberPool={pool}
           winnerCardIds={new Set(detail.winners.map((w) => w.card_id))}
           canRemove={game?.status !== "finished" && game?.status !== "cancelled"}
           open={manageOpen}
           onOpenChange={setManageOpen}
         />
       )}
+
+      <BingoCardViewDialog
+        open={!!viewCardId}
+        onOpenChange={(o) => !o && setViewCardId(null)}
+        card={detail?.cards.find((c) => c.id === viewCardId) ?? null}
+        numberPool={pool}
+        place={detail?.winners.find((w) => w.card_id === viewCardId)?.place ?? null}
+      />
 
       <Dialog open={!!winnerModal} onOpenChange={(o) => !o && setWinnerModal(null)}>
         <DialogContent className="max-w-sm">
