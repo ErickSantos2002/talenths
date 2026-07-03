@@ -39,6 +39,7 @@ export interface BingoMyGame {
 export interface DrawResult {
   number: number;
   tiebreak: { card_ids: string[]; won_on_draw: number } | null;
+  winner: { card_id: string; user_name?: string; place: number } | null;
 }
 
 export interface TiebreakResult {

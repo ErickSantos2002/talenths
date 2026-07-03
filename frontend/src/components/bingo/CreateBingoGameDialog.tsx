@@ -106,6 +106,7 @@ export function CreateBingoGameDialog({ open, onOpenChange, onCreated }: Props) 
                   <SelectItem value="30">1 a 30</SelectItem>
                   <SelectItem value="60">1 a 60</SelectItem>
                   <SelectItem value="90">1 a 90</SelectItem>
+                  <SelectItem value="120">1 a 120</SelectItem>
                 </SelectContent>
               </Select>
             </div>

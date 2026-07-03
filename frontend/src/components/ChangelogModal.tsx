@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.8.1",
+    date: "03/07/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Bingo: quando alguém bate a cartela durante o sorteio, aparece um aviso de 'Parabéns' com o nome do ganhador — e o modo automático pausa, para dar tempo de entregar o prêmio antes de continuar.",
+      },
+      {
+        type: "novidade",
+        text: "Bingo: novo tamanho de monte '1 a 120', ideal para grupos grandes (ainda menos chance de empates).",
+      },
+    ],
+  },
+  {
     version: "v1.8.0",
     date: "02/07/2026",
-    current: true,
     entries: [
       {
         type: "novidade",

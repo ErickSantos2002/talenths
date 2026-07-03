@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X, Play, Pause, Dices } from "lucide-react";
 import { BingoTiebreakDialog } from "./BingoTiebreakDialog";
 
@@ -14,6 +15,7 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [auto, setAuto] = useState(false);
+  const [winnerModal, setWinnerModal] = useState<{ user_name?: string; place: number } | null>(null);
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: detail, isLoading } = useQuery({
@@ -34,7 +36,12 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
     mutationFn: () => bingoApi.draw(gameId),
     onSuccess: (r) => {
       invalidate();
-      if (r.tiebreak) setAuto(false);
+      if (r.tiebreak) {
+        setAuto(false);
+      } else if (r.winner) {
+        setAuto(false);
+        setWinnerModal(r.winner);
+      }
     },
     onError: () => setAuto(false),
   });
@@ -180,6 +187,20 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
           onResolved={invalidate}
         />
       )}
+
+      <Dialog open={!!winnerModal} onOpenChange={(o) => !o && setWinnerModal(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">🎉 Parabéns!</DialogTitle>
+          </DialogHeader>
+          <div className="pb-2 text-center">
+            <div className="my-2 text-5xl">{winnerModal ? medal(winnerModal.place) : ""}</div>
+            <p className="text-lg font-bold text-primary">{winnerModal?.user_name}</p>
+            <p className="text-sm text-muted-foreground">bateu a cartela — {winnerModal?.place}º lugar!</p>
+            <Button className="mt-5" onClick={() => setWinnerModal(null)}>Continuar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

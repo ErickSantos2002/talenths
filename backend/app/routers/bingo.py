@@ -9,7 +9,7 @@ from app import bingo_logic
 
 router = APIRouter(prefix="/bingo", tags=["bingo"])
 
-VALID_POOLS = {30, 60, 90}
+VALID_POOLS = {30, 60, 90, 120}
 
 
 async def _get_company_id(user_id: str, conn: asyncpg.Connection) -> str:
@@ -245,6 +245,7 @@ async def draw_number(game_id: str, user_id: str = Depends(get_current_user_id),
                  and bingo_logic.is_complete(list(c["numbers"]), new_drawn)]
 
         tiebreak = None
+        winner_info = None
         if len(newly) == 1:
             place = len(winner_ids) + 1
             c = newly[0]
@@ -252,13 +253,15 @@ async def draw_number(game_id: str, user_id: str = Depends(get_current_user_id),
                 """INSERT INTO public.bingo_winners (game_id, company_id, card_id, user_id, place, won_on_draw)
                    VALUES ($1,$2,$3,$4,$5,$6)""",
                 game_id, company_id, c["id"], c["user_id"], place, pick)
+            prow = await conn.fetchrow("SELECT name FROM public.profiles WHERE user_id=$1", c["user_id"])
+            winner_info = {"card_id": str(c["id"]), "user_name": prow["name"] if prow else None, "place": place}
             await _finish_if_done(game, conn)
         elif len(newly) >= 2:
             tiebreak = {"card_ids": [str(c["id"]) for c in newly], "won_on_draw": pick}
             await conn.execute(
                 "UPDATE public.bingo_games SET pending_tiebreak=$2 WHERE id=$1",
                 game_id, json.dumps(tiebreak))
-    return {"number": pick, "tiebreak": tiebreak}
+    return {"number": pick, "tiebreak": tiebreak, "winner": winner_info}
 
 
 @router.post("/games/{game_id}/tiebreak")
