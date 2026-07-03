@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Play, Pause, Dices } from "lucide-react";
+import { X, Play, Pause, Dices, Users } from "lucide-react";
 import { BingoTiebreakDialog } from "./BingoTiebreakDialog";
+import { BingoManageParticipants } from "./BingoManageParticipants";
 
 const AUTO_MS = 5000;
 
@@ -15,6 +16,7 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [auto, setAuto] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const [winnerModal, setWinnerModal] = useState<{ user_name?: string; place: number } | null>(null);
   const autoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -84,7 +86,14 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
             )}
             {game && <Badge variant="outline">Ganhadores: {detail?.winners.length ?? 0} / {game.winners_target}</Badge>}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+          <div className="flex items-center gap-1">
+            {game && (
+              <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>
+                <Users className="h-4 w-4 mr-1" /> Participantes
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button>
+          </div>
         </div>
 
         {isLoading || !game ? (
@@ -185,6 +194,17 @@ export function BingoLiveGame({ gameId, onClose }: { gameId: string; onClose: ()
           open={true}
           tied={pending.card_ids.map((cid) => ({ card_id: cid, name: nameOfCard(cid) }))}
           onResolved={invalidate}
+        />
+      )}
+
+      {detail && (
+        <BingoManageParticipants
+          gameId={gameId}
+          cards={detail.cards}
+          winnerCardIds={new Set(detail.winners.map((w) => w.card_id))}
+          canRemove={game?.status !== "finished" && game?.status !== "cancelled"}
+          open={manageOpen}
+          onOpenChange={setManageOpen}
         />
       )}
 

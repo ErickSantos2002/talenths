@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.8.1",
+    version: "v1.8.2",
     date: "03/07/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Bingo: agora dá para remover um participante de um jogo já criado (ex.: alguém que precisou sair) pelo botão 'Participantes', sem mexer nas cartelas dos outros — não precisa recriar o jogo nem reimprimir. Não é possível remover quem já ganhou.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.1",
+    date: "03/07/2026",
     entries: [
       {
         type: "novidade",

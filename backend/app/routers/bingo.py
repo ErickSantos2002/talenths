@@ -332,6 +332,38 @@ async def delete_game(game_id: str, user_id: str = Depends(get_current_user_id),
     await conn.execute("DELETE FROM public.bingo_games WHERE id=$1 AND company_id=$2", game_id, company_id)
 
 
+@router.delete("/games/{game_id}/cards/{card_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_card(game_id: str, card_id: str, user_id: str = Depends(get_current_user_id),
+                      conn: asyncpg.Connection = Depends(get_db)):
+    """Remove a cartela de um participante sem alterar as demais."""
+    await require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    async with conn.transaction():
+        game = await _load_game_locked(game_id, company_id, conn)
+        if game["status"] in ("finished", "cancelled"):
+            raise HTTPException(status_code=400, detail="O jogo já foi encerrado")
+        card = await conn.fetchrow(
+            "SELECT id FROM public.bingo_cards WHERE id=$1 AND game_id=$2", card_id, game_id)
+        if not card:
+            raise HTTPException(status_code=404, detail="Cartela não encontrada")
+        won = await conn.fetchval("SELECT 1 FROM public.bingo_winners WHERE card_id=$1", card_id)
+        if won:
+            raise HTTPException(status_code=400, detail="Não dá para remover: esta pessoa já ganhou.")
+        pending = game["pending_tiebreak"]
+        if pending:
+            pj = pending if isinstance(pending, dict) else json.loads(pending)
+            if card_id in pj.get("card_ids", []):
+                raise HTTPException(status_code=400, detail="Resolva o desempate antes de remover.")
+        total = await conn.fetchval("SELECT count(*) FROM public.bingo_cards WHERE game_id=$1", game_id)
+        if total <= 1:
+            raise HTTPException(status_code=400, detail="O jogo precisa de ao menos um participante.")
+        await conn.execute("DELETE FROM public.bingo_cards WHERE id=$1", card_id)
+        remaining = total - 1
+        if game["winners_target"] > remaining:
+            await conn.execute(
+                "UPDATE public.bingo_games SET winners_target=$2 WHERE id=$1", game_id, remaining)
+
+
 @router.get("/my")
 async def my_games(user_id: str = Depends(get_current_user_id), conn: asyncpg.Connection = Depends(get_db)):
     rows = await conn.fetch(

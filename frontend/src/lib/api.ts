@@ -781,6 +781,7 @@ export const bingo = {
   tiebreak: (id: string) => post<TiebreakResult>(`/bingo/games/${id}/tiebreak`),
   cancel: (id: string) => post<{ ok: boolean }>(`/bingo/games/${id}/cancel`),
   deleteGame: (id: string) => del(`/bingo/games/${id}`),
+  removeCard: (gameId: string, cardId: string) => del(`/bingo/games/${gameId}/cards/${cardId}`),
   my: () => get<BingoMyGameSummary[]>("/bingo/my"),
   myGame: (id: string) => get<BingoMyGame>(`/bingo/my/${id}`),
 };
