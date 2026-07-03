@@ -27,7 +27,7 @@ export default function BingoPrintPage() {
     enabled: !!gameId,
   });
 
-  const pages = chunk<BingoCardType>(detail?.cards ?? [], 9);
+  const pages = chunk<BingoCardType>(detail?.cards ?? [], 4);
   const pool = detail?.game.number_pool;
 
   const downloadPdf = async () => {
@@ -74,7 +74,7 @@ export default function BingoPrintPage() {
                   Monte de 1 a {pool} · marque quando seu número for sorteado · cartela cheia (20 números) vence
                 </div>
               </div>
-              <div className="grid flex-1 grid-cols-3 grid-rows-3 gap-3">
+              <div className="grid flex-1 grid-cols-2 grid-rows-2 gap-4">
                 {cards.map((c) => (
                   <BingoCard
                     key={c.id}

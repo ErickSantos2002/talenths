@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.8.3",
+    version: "v1.8.4",
     date: "03/07/2026",
     current: true,
+    entries: [
+      {
+        type: "melhoria",
+        text: "Bingo: cartelas impressas maiores — agora são 4 por folha (2×2) em vez de 9, com números bem maiores dentro das casas, mais fáceis de ler e marcar no papel.",
+      },
+    ],
+  },
+  {
+    version: "v1.8.3",
+    date: "03/07/2026",
     entries: [
       {
         type: "novidade",

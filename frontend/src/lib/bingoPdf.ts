@@ -30,7 +30,7 @@ export async function generateBingoPdf(detail: BingoGameDetail) {
   const PW = pdf.internal.pageSize.getWidth();
   const PH = pdf.internal.pageSize.getHeight();
   const M = 8;
-  const perPage = 9;
+  const perPage = 4;
   const pages = Math.max(1, Math.ceil(cards.length / perPage));
 
   for (let p = 0; p < pages; p++) {
@@ -49,7 +49,7 @@ export async function generateBingoPdf(detail: BingoGameDetail) {
     const gridBottom = PH - M - 4;
     const areaW = PW - 2 * M;
     const areaH = gridBottom - gridTop;
-    const cols = 3, rows = 3, gap = 4;
+    const cols = 2, rows = 2, gap = 6;
     const cardW = (areaW - (cols - 1) * gap) / cols;
     const cardH = (areaH - (rows - 1) * gap) / rows;
 
@@ -79,25 +79,25 @@ function drawCard(pdf: jsPDF, card: BingoCard, x: number, y: number, w: number, 
   let cursorY = y + pad;
 
   // Cabeçalho: logo + nome (esquerda), código (direita)
-  if (logo) { try { pdf.addImage(logo, "PNG", innerX, cursorY, 4.5, 4.5); } catch { /* ignora */ } }
-  pdf.setFont("helvetica", "bold"); pdf.setFontSize(9); pdf.setTextColor(23, 51, 122);
-  pdf.text(card.user_name ?? "-", innerX + (logo ? 6 : 0), cursorY + 3.4);
-  pdf.setFont("helvetica", "normal"); pdf.setFontSize(7); pdf.setTextColor(138, 148, 166);
-  pdf.text(`#${card.code}`, x + w - pad, cursorY + 3.2, { align: "right" });
-  cursorY += 6;
+  if (logo) { try { pdf.addImage(logo, "PNG", innerX, cursorY, 6, 6); } catch { /* ignora */ } }
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(12); pdf.setTextColor(23, 51, 122);
+  pdf.text(card.user_name ?? "-", innerX + (logo ? 7.5 : 0), cursorY + 4.4);
+  pdf.setFont("helvetica", "normal"); pdf.setFontSize(9); pdf.setTextColor(138, 148, 166);
+  pdf.text(`#${card.code}`, x + w - pad, cursorY + 4.2, { align: "right" });
+  cursorY += 8;
   pdf.setDrawColor(228, 232, 239); pdf.setLineWidth(0.2);
   pdf.line(innerX, cursorY - 1, x + w - pad, cursorY - 1);
 
-  const gcols = 10, grows = 3, cgap = 0.7;
+  const gcols = 10, grows = 3, cgap = 0.9;
   const cellW = (innerW - (gcols - 1) * cgap) / gcols;
 
   // Faixas por coluna
-  pdf.setFont("helvetica", "bold"); pdf.setFontSize(4.6); pdf.setTextColor(154, 164, 180);
+  pdf.setFont("helvetica", "bold"); pdf.setFontSize(6); pdf.setTextColor(154, 164, 180);
   for (let c = 0; c < gcols; c++) {
     const rx = innerX + c * (cellW + cgap) + cellW / 2;
-    pdf.text(`${c * per + 1}-${c * per + per}`, rx, cursorY + 2, { align: "center" });
+    pdf.text(`${c * per + 1}-${c * per + per}`, rx, cursorY + 2.6, { align: "center" });
   }
-  cursorY += 3;
+  cursorY += 4;
 
   const gridArea = (y + h - pad) - cursorY;
   const cellH = Math.min(cellW, (gridArea - (grows - 1) * cgap) / grows);
@@ -116,8 +116,9 @@ function drawCard(pdf: jsPDF, card: BingoCard, x: number, y: number, w: number, 
       } else {
         pdf.setFillColor(239, 245, 255); pdf.setDrawColor(195, 214, 247); pdf.setLineWidth(0.25);
         pdf.roundedRect(px, py, cellW, cellH, 0.8, 0.8, "FD");
-        pdf.setFont("helvetica", "bold"); pdf.setFontSize(8); pdf.setTextColor(29, 78, 216);
-        pdf.text(String(val), px + cellW / 2, py + cellH / 2, { align: "center", baseline: "middle" });
+        const s = String(val);
+        pdf.setFont("helvetica", "bold"); pdf.setFontSize(s.length >= 3 ? 16 : 20); pdf.setTextColor(29, 78, 216);
+        pdf.text(s, px + cellW / 2, py + cellH / 2, { align: "center", baseline: "middle" });
       }
     }
   }

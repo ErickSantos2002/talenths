@@ -59,7 +59,7 @@ export function BingoCard({
             <div
               className={cn(
                 "absolute inset-0 flex items-center justify-center rounded-[5px] font-bold leading-none",
-                isPrint ? "text-[13px]" : "text-[15px]",
+                isPrint ? "text-xl" : "text-[15px]",
                 cellClass(v),
               )}
             >
