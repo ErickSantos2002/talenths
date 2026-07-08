@@ -12,7 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Shield, Search } from "lucide-react";
+import { TablePagination } from "@/components/TablePagination";
+import { usePageSize } from "@/hooks/use-page-size";
 import { cn } from "@/lib/utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -176,38 +178,11 @@ function LogsTable({ items }: { items: AuditLog[] }) {
   );
 }
 
-// ── Pagination ────────────────────────────────────────────────────────────────
-
-function Pagination({ page, pages, total, limit, onPage }: {
-  page: number; pages: number; total: number; limit: number; onPage: (p: number) => void;
-}) {
-  const from = (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
-
-  return (
-    <div className="flex items-center justify-between">
-      <p className="text-xs text-muted-foreground">
-        Mostrando {from}–{to} de {total} registros
-      </p>
-      <div className="flex gap-1">
-        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => onPage(page - 1)}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center px-3 text-xs text-muted-foreground">
-          {page} / {pages}
-        </div>
-        <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= pages} onClick={() => onPage(page + 1)}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LogsAdminPage() {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = usePageSize("audit-logs", 50);
   const [filters, setFilters] = useState<Filters>({ q: "", method: "", status: "" });
 
   const handleFilterChange = (f: Filters) => {
@@ -216,8 +191,8 @@ export default function LogsAdminPage() {
   };
 
   const { data, isLoading } = useQuery({
-    queryKey: ["audit-logs", page, filters],
-    queryFn: () => logsApi.list({ page, limit: 50, ...filters }),
+    queryKey: ["audit-logs", page, limit, filters],
+    queryFn: () => logsApi.list({ page, limit, ...filters }),
     placeholderData: (prev) => prev,
   });
 
@@ -241,15 +216,19 @@ export default function LogsAdminPage() {
         ) : data ? (
           <div className="space-y-4">
             <LogsTable items={data.items} />
-            {data.total > 0 && (
-              <Pagination
-                page={data.page}
-                pages={data.pages}
-                total={data.total}
-                limit={data.limit}
-                onPage={setPage}
-              />
-            )}
+            <TablePagination
+              currentPage={data.page}
+              totalPages={data.pages}
+              totalItems={data.total}
+              startIdx={(data.page - 1) * data.limit}
+              endIdx={Math.min(data.page * data.limit, data.total)}
+              itemLabel="registros"
+              onPage={setPage}
+              onPrev={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => Math.min(data.pages, p + 1))}
+              pageSize={limit}
+              onPageSizeChange={(size) => { setLimit(size); setPage(1); }}
+            />
           </div>
         ) : null}
       </div>

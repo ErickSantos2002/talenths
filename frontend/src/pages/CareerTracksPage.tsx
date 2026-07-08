@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { career as careerApi } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { TablePagination } from "@/components/TablePagination";
+import { usePageSize } from "@/hooks/use-page-size";
 import type { CareerTrack, CareerLevel, TeamCareerEntry } from "@/types/career";
 import { cn } from "@/lib/utils";
 import { NINE_BOX_QUADRANTS } from "@/types/evaluations";
@@ -34,7 +35,7 @@ export default function CareerTracksPage() {
   const [assignDialog, setAssignDialog] = useState<{ open: boolean; member?: TeamCareerEntry }>({ open: false });
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [teamPage, setTeamPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [teamPageSize, setTeamPageSize] = usePageSize("career-team", 10);
 
   const { data: tracks, isLoading: tracksLoading } = useQuery({
     queryKey: ["career-tracks"],
@@ -67,9 +68,9 @@ export default function CareerTracksPage() {
   const eligibleCount = team?.filter(m => m.eligible_for_next).length ?? 0;
   const noTrackCount = team?.filter(m => !m.track_id).length ?? 0;
 
-  const totalTeamPages = Math.ceil((team?.length ?? 0) / PAGE_SIZE);
-  const teamStartIdx = (teamPage - 1) * PAGE_SIZE;
-  const teamEndIdx = Math.min(teamStartIdx + PAGE_SIZE, team?.length ?? 0);
+  const totalTeamPages = Math.ceil((team?.length ?? 0) / teamPageSize);
+  const teamStartIdx = (teamPage - 1) * teamPageSize;
+  const teamEndIdx = Math.min(teamStartIdx + teamPageSize, team?.length ?? 0);
   const paginatedTeam = team?.slice(teamStartIdx, teamEndIdx) ?? [];
 
   return (
@@ -197,6 +198,8 @@ export default function CareerTracksPage() {
                   onPage={setTeamPage}
                   onPrev={() => setTeamPage(p => Math.max(1, p - 1))}
                   onNext={() => setTeamPage(p => Math.min(totalTeamPages, p + 1))}
+                  pageSize={teamPageSize}
+                  onPageSizeChange={(size) => { setTeamPageSize(size); setTeamPage(1); }}
                 />
               </div>
             )}

@@ -26,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Combobox } from "@/components/Combobox";
 import { Switch } from "@/components/ui/switch";
 import { TablePagination } from "@/components/TablePagination";
+import { usePageSize } from "@/hooks/use-page-size";
 import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound } from "lucide-react";
 
 type AppRole = "master_admin" | "manager" | "user";
@@ -97,6 +98,7 @@ export default function AdminCollaboratorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [collabPage, setCollabPage] = useState(1);
+  const [collabPageSize, setCollabPageSize] = usePageSize("collaborators", PAGE_SIZE);
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -245,9 +247,9 @@ export default function AdminCollaboratorsPage() {
   // Reset page when search changes
   useEffect(() => { setCollabPage(1); }, [search]);
 
-  const totalCollabPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const collabStartIdx = (collabPage - 1) * PAGE_SIZE;
-  const collabEndIdx = Math.min(collabStartIdx + PAGE_SIZE, filtered.length);
+  const totalCollabPages = Math.ceil(filtered.length / collabPageSize);
+  const collabStartIdx = (collabPage - 1) * collabPageSize;
+  const collabEndIdx = Math.min(collabStartIdx + collabPageSize, filtered.length);
   const paginated = filtered.slice(collabStartIdx, collabEndIdx);
 
   // --- Edit ---
@@ -533,6 +535,9 @@ export default function AdminCollaboratorsPage() {
                       onPage={setCollabPage}
                       onPrev={() => setCollabPage((p) => Math.max(1, p - 1))}
                       onNext={() => setCollabPage((p) => Math.min(totalCollabPages, p + 1))}
+                      pageSize={collabPageSize}
+                      onPageSizeChange={(size) => { setCollabPageSize(size); setCollabPage(1); }}
+                      itemLabel="colaboradores"
                     />
                   </>
                 )}

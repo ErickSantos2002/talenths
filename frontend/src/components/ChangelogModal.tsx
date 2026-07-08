@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.8.5",
+    date: "06/07/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Tabelas: agora você escolhe quantos itens aparecem por página — 10, 30, 50 ou 100 — em Colaboradores, Trilha de Carreira e Logs de Auditoria. A escolha fica salva no navegador para a próxima vez.",
+      },
+    ],
+  },
+  {
     version: "v1.8.4",
     date: "03/07/2026",
-    current: true,
     entries: [
       {
         type: "melhoria",
