@@ -3,13 +3,17 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+for (const v of ['TIDB_HOST','TIDB_USER','TIDB_PASSWORD','TIDB_DATABASE']) {
+  if (!process.env[v]) { console.error(`Defina ${v} antes de rodar.`); process.exit(1); }
+}
+
 // --- Config ---
 const MYSQL_CONFIG = {
-  host: 'gateway02.us-east-1.prod.aws.tidbcloud.com',
+  host: process.env.TIDB_HOST,
   port: 4000,
-  user: '2ViNFbqDmL8xuf6.root',
-  password: '6S7b04aMwKXUViY0Vjm6',
-  database: 'GVBsRzLnRs6ezzdcr36fSC',
+  user: process.env.TIDB_USER,
+  password: process.env.TIDB_PASSWORD,
+  database: process.env.TIDB_DATABASE,
   ssl: { rejectUnauthorized: true },
 };
 
