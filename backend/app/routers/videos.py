@@ -2,15 +2,17 @@ import asyncio
 import os
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from typing import Literal
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app import video_storage
 from app.database import get_pool
 from app.dependencies import get_current_user_id, get_db, require_manager
-from app.video_logic import MAX_FILE_SIZE
+from app.video_logic import MAX_FILE_SIZE, due_at, read_mp4_duration, validate_duration, viewer_status
 
 router = APIRouter(prefix="/videos", tags=["videos"])
 
@@ -181,4 +183,411 @@ async def cancel_upload(
     except FileNotFoundError:
         pass
     await conn.execute("DELETE FROM public.internal_video_uploads WHERE id = $1", row["id"])
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ── Gestão pelo RH ────────────────────────────────────────────────────────────
+
+REPLACED_TITLE = "Vídeo atualizado: assista novamente"
+
+
+class RulesIn(BaseModel):
+    all: bool = False
+    department_ids: list[str] = []
+    user_ids: list[str] = []
+
+
+class CreateVideoBody(BaseModel):
+    upload_id: uuid.UUID
+    title: str = Field(min_length=1, max_length=200)
+    description: str | None = None
+    due_days: int | None = Field(default=None, gt=0)
+    rules: RulesIn = RulesIn()
+
+
+class UpdateVideoBody(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = None
+    due_days: int | None = Field(default=None, gt=0)
+    rules: RulesIn | None = None
+
+
+class ReplaceFileBody(BaseModel):
+    upload_id: uuid.UUID
+    mode: Literal["keep_completed", "reset_all"]
+
+
+_VIDEO_COLUMNS = """id, title, description, file_size, duration_seconds, due_days, file_version,
+                    archived_at, created_at, updated_at"""
+
+
+def _video_out(row) -> dict:
+    out = dict(row)
+    out["id"] = str(out["id"])
+    out["duration_seconds"] = float(out["duration_seconds"])
+    return out
+
+
+async def _get_video(video_id: uuid.UUID, company_id: str, conn: asyncpg.Connection, lock: bool = False):
+    row = await conn.fetchrow(
+        f"""SELECT {_VIDEO_COLUMNS}, file_path FROM public.internal_videos
+            WHERE id = $1 AND company_id = $2::uuid {'FOR UPDATE' if lock else ''}""",
+        video_id, company_id,
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    return row
+
+
+async def _manager_company(user_id: str, conn: asyncpg.Connection) -> str:
+    await require_manager(user_id, conn)
+    return await _get_company_id(user_id, conn)
+
+
+async def _consume_upload(upload_id: uuid.UUID, company_id: str, conn: asyncpg.Connection):
+    row = await conn.fetchrow(
+        """SELECT id, file_path, completed_at, consumed_at FROM public.internal_video_uploads
+           WHERE id = $1 AND company_id = $2::uuid FOR UPDATE""",
+        upload_id, company_id,
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Upload não encontrado")
+    if not row["completed_at"]:
+        raise HTTPException(status_code=400, detail="O envio do arquivo ainda não foi concluído.")
+    if row["consumed_at"]:
+        raise HTTPException(status_code=409, detail="Este arquivo já foi usado em um vídeo.")
+    if not row["file_path"] or not os.path.exists(row["file_path"]):
+        raise HTTPException(status_code=400, detail="Arquivo enviado não encontrado. Envie novamente.")
+    await conn.execute(
+        "UPDATE public.internal_video_uploads SET consumed_at = now() WHERE id = $1", row["id"]
+    )
+    size, duration = await asyncio.to_thread(_file_info, row["file_path"])
+    return row["file_path"], size, duration
+
+
+def _file_info(path: str) -> tuple[int, float]:
+    return os.path.getsize(path), validate_duration(read_mp4_duration(path))
+
+
+def _clean_title(title: str | None) -> str:
+    if not title or not title.strip():
+        raise HTTPException(status_code=400, detail="Informe o título do vídeo.")
+    return title.strip()
+
+
+def _parse_ids(values: list[str]) -> list[uuid.UUID]:
+    try:
+        return sorted({uuid.UUID(v) for v in values})
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Seleção de pessoas ou departamentos inválida.")
+
+
+async def _validated_targets(rules: RulesIn, company_id: str, conn: asyncpg.Connection):
+    dept_ids = _parse_ids(rules.department_ids)
+    user_ids = _parse_ids(rules.user_ids)
+    if dept_ids:
+        found = await conn.fetchval(
+            "SELECT count(*) FROM public.departments WHERE id = ANY($1::uuid[]) AND company_id = $2::uuid",
+            dept_ids, company_id,
+        )
+        if found != len(dept_ids):
+            raise HTTPException(status_code=400, detail="Departamento não encontrado.")
+    if user_ids:
+        found = await conn.fetchval(
+            "SELECT count(*) FROM public.profiles WHERE user_id = ANY($1::uuid[]) AND company_id = $2::uuid",
+            user_ids, company_id,
+        )
+        if found != len(user_ids):
+            raise HTTPException(status_code=400, detail="Colaborador não encontrado.")
+    targets = {("department", d) for d in dept_ids} | {("user", u) for u in user_ids}
+    if rules.all:
+        targets.add(("all", None))
+    return targets
+
+
+async def _save_rules(video_id, wanted: set, conn: asyncpg.Connection) -> int:
+    """Grava o conjunto de regras e materializa só as que são novas (regras só acrescentam)."""
+    existing = {
+        (r["target_type"], r["department_id"] or r["user_id"]): r["id"]
+        for r in await conn.fetch(
+            "SELECT id, target_type, department_id, user_id FROM public.internal_video_rules WHERE video_id = $1",
+            video_id,
+        )
+    }
+    removed = [rid for key, rid in existing.items() if key not in wanted]
+    if removed:
+        await conn.execute("DELETE FROM public.internal_video_rules WHERE id = ANY($1::uuid[])", removed)
+
+    new_ids, readded_users = [], []
+    for target_type, target in wanted - existing.keys():
+        new_ids.append(await conn.fetchval(
+            """INSERT INTO public.internal_video_rules (video_id, target_type, department_id, user_id)
+               VALUES ($1, $2, $3, $4) RETURNING id""",
+            video_id, target_type,
+            target if target_type == "department" else None,
+            target if target_type == "user" else None,
+        ))
+        if target_type == "user":
+            readded_users.append(target)
+    if readded_users:
+        # internal_video_assign nunca limpa excluded: marcar de novo individualmente é o que desfaz a remoção.
+        await conn.execute(
+            """UPDATE public.internal_video_viewers SET excluded = false
+               WHERE video_id = $1 AND user_id = ANY($2::uuid[])""",
+            video_id, readded_users,
+        )
+    if not new_ids:
+        return 0
+    return await conn.fetchval(
+        "SELECT public.internal_video_apply_rules($1, $2::uuid[])", video_id, new_ids
+    )
+
+
+async def _rules_out(video_id, conn: asyncpg.Connection) -> dict:
+    rows = await conn.fetch(
+        "SELECT target_type, department_id, user_id FROM public.internal_video_rules WHERE video_id = $1",
+        video_id,
+    )
+    return {
+        "all": any(r["target_type"] == "all" for r in rows),
+        "department_ids": sorted(str(r["department_id"]) for r in rows if r["target_type"] == "department"),
+        "user_ids": sorted(str(r["user_id"]) for r in rows if r["target_type"] == "user"),
+    }
+
+
+def _viewer_out(row, video, now: datetime) -> dict:
+    duration = float(video["duration_seconds"])
+    watched = float(row["max_watched_s"])
+    due_days = video["due_days"] if row["required"] else None
+    if row["completed_at"]:
+        pct = 100
+    else:
+        pct = min(100, round(watched / duration * 100)) if duration > 0 else 0
+    return {
+        "user_id": str(row["user_id"]) if row["user_id"] else None,
+        "name": row["name"],
+        "department": row["department"],
+        "status": viewer_status(row["completed_at"], watched, row["assigned_at"], due_days, now),
+        "progress_pct": pct,
+        "completed_at": row["completed_at"],
+        "assigned_at": row["assigned_at"],
+        "due_at": due_at(row["assigned_at"], due_days),
+    }
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def create_video(
+    body: CreateVideoBody,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    title = _clean_title(body.title)
+    targets = await _validated_targets(body.rules, company_id, conn)
+    file_path, size, duration = await _consume_upload(body.upload_id, company_id, conn)
+    row = await conn.fetchrow(
+        f"""INSERT INTO public.internal_videos
+              (company_id, title, description, file_path, file_size, duration_seconds, due_days, created_by)
+            VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8::uuid)
+            RETURNING {_VIDEO_COLUMNS}""",
+        company_id, title, body.description, file_path, size, duration, body.due_days, user_id,
+    )
+    await _save_rules(row["id"], targets, conn)
+    return _video_out(row)
+
+
+@router.get("/admin")
+async def list_videos_admin(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    rows = await conn.fetch(
+        """SELECT v.id, v.title, v.duration_seconds, v.due_days, v.archived_at, v.created_at,
+                  count(w.id) AS required_count,
+                  count(w.id) FILTER (WHERE w.completed_at IS NOT NULL) AS completed_count,
+                  count(w.id) FILTER (
+                    WHERE w.completed_at IS NULL AND v.due_days IS NOT NULL
+                      AND now() > w.assigned_at + make_interval(days => v.due_days)
+                  ) AS overdue_count
+           FROM public.internal_videos v
+           LEFT JOIN public.internal_video_viewers w
+             ON w.video_id = v.id AND w.required AND NOT w.excluded AND w.user_id IS NOT NULL
+           WHERE v.company_id = $1::uuid
+           GROUP BY v.id
+           ORDER BY v.created_at DESC""",
+        company_id,
+    )
+    return [
+        {**dict(r), "id": str(r["id"]), "duration_seconds": float(r["duration_seconds"])}
+        for r in rows
+    ]
+
+
+@router.get("/{video_id}/admin")
+async def get_video_admin(
+    video_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    video = await _get_video(video_id, company_id, conn)
+    rows = await conn.fetch(
+        """SELECT w.user_id, w.required, w.excluded, w.assigned_at, w.max_watched_s, w.completed_at,
+                  COALESCE(p.name, w.user_name_snapshot) AS name,
+                  CASE WHEN w.user_id IS NULL THEN w.department_name_snapshot ELSE d.name END AS department
+           FROM public.internal_video_viewers w
+           LEFT JOIN public.profiles p ON p.user_id = w.user_id
+           LEFT JOIN public.departments d ON d.id = p.department_id
+           WHERE w.video_id = $1
+           ORDER BY name""",
+        video_id,
+    )
+    now = datetime.now(timezone.utc)
+    required, voluntary, former = [], [], []
+    for r in rows:
+        if r["user_id"] is None:
+            former.append(_viewer_out(r, video, now))
+        elif r["required"] and not r["excluded"]:
+            required.append(_viewer_out(r, video, now))
+        elif r["max_watched_s"] > 0 or r["completed_at"]:
+            # Removido pelo RH sem nunca ter assistido não é voluntário: some da lista.
+            voluntary.append(_viewer_out(r, video, now))
+    return {
+        "video": _video_out({k: v for k, v in dict(video).items() if k != "file_path"}),
+        "rules": await _rules_out(video_id, conn),
+        "required": required,
+        "voluntary": voluntary,
+        "former": former,
+    }
+
+
+@router.patch("/{video_id}")
+async def update_video(
+    video_id: uuid.UUID,
+    body: UpdateVideoBody,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    await _get_video(video_id, company_id, conn, lock=True)
+    targets = None if body.rules is None else await _validated_targets(body.rules, company_id, conn)
+    fields = body.model_dump(exclude_unset=True, exclude={"rules"})
+    if "title" in fields:
+        fields["title"] = _clean_title(fields["title"])
+    sets = [f"{col} = ${i}" for i, col in enumerate(fields, start=2)]
+    await conn.execute(
+        f"UPDATE public.internal_videos SET {', '.join(sets + ['updated_at = now()'])} WHERE id = $1",
+        video_id, *fields.values(),
+    )
+    if targets is not None:
+        await _save_rules(video_id, targets, conn)
+    return _video_out(await conn.fetchrow(
+        f"SELECT {_VIDEO_COLUMNS} FROM public.internal_videos WHERE id = $1", video_id
+    ))
+
+
+@router.post("/{video_id}/viewers/{target_user_id}/remove")
+async def remove_viewer(
+    video_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    await _get_video(video_id, company_id, conn, lock=True)
+    updated = await conn.fetchval(
+        """UPDATE public.internal_video_viewers SET excluded = true, required = false
+           WHERE video_id = $1 AND user_id = $2 RETURNING id""",
+        video_id, target_user_id,
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Pessoa não está na lista deste vídeo")
+    await conn.execute(
+        "DELETE FROM public.internal_video_rules WHERE video_id = $1 AND target_type = 'user' AND user_id = $2",
+        video_id, target_user_id,
+    )
+    await conn.execute("UPDATE public.internal_videos SET updated_at = now() WHERE id = $1", video_id)
+    return {"ok": True}
+
+
+@router.post("/{video_id}/replace-file")
+async def replace_file(
+    video_id: uuid.UUID,
+    body: ReplaceFileBody,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    video = await _get_video(video_id, company_id, conn, lock=True)
+    file_path, size, duration = await _consume_upload(body.upload_id, company_id, conn)
+    row = await conn.fetchrow(
+        f"""UPDATE public.internal_videos
+            SET file_path = $2, file_size = $3, duration_seconds = $4,
+                file_version = file_version + 1, updated_at = now()
+            WHERE id = $1 RETURNING {_VIDEO_COLUMNS}""",
+        video_id, file_path, size, duration,
+    )
+    # A linha do tempo mudou: progresso parcial não vale mais. assigned_at fica (prazo original).
+    reset_filter = "" if body.mode == "reset_all" else "AND completed_at IS NULL"
+    await conn.execute(
+        f"""WITH reset AS (
+              UPDATE public.internal_video_viewers
+              SET max_watched_s = 0, completed_at = NULL, last_report_at = NULL
+              WHERE video_id = $1 {reset_filter}
+                AND (max_watched_s > 0 OR completed_at IS NOT NULL)
+              RETURNING user_id, required, excluded
+            )
+            INSERT INTO public.notifications (user_id, type, title, message)
+            SELECT user_id, 'video', $2, $3 FROM reset
+            WHERE required AND NOT excluded AND user_id IS NOT NULL""",
+        video_id, REPLACED_TITLE, row["title"],
+    )
+    await asyncio.to_thread(video_storage.remove_file, video["file_path"])
+    return _video_out(row)
+
+
+async def _set_archived(video_id: uuid.UUID, archived: bool, user_id: str, conn: asyncpg.Connection) -> dict:
+    company_id = await _manager_company(user_id, conn)
+    await _get_video(video_id, company_id, conn, lock=True)
+    row = await conn.fetchrow(
+        f"""UPDATE public.internal_videos
+            SET archived_at = CASE WHEN $2 THEN COALESCE(archived_at, now()) END, updated_at = now()
+            WHERE id = $1 RETURNING {_VIDEO_COLUMNS}""",
+        video_id, archived,
+    )
+    if not archived:
+        # Quem entrou ou mudou de departamento enquanto estava arquivado não foi atribuído.
+        await conn.execute("SELECT public.internal_video_apply_rules($1)", video_id)
+    return _video_out(row)
+
+
+@router.post("/{video_id}/archive")
+async def archive_video(
+    video_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    return await _set_archived(video_id, True, user_id, conn)
+
+
+@router.post("/{video_id}/unarchive")
+async def unarchive_video(
+    video_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    return await _set_archived(video_id, False, user_id, conn)
+
+
+@router.delete("/{video_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_video(
+    video_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    video = await _get_video(video_id, company_id, conn, lock=True)
+    await conn.execute("DELETE FROM public.internal_videos WHERE id = $1", video_id)
+    await asyncio.to_thread(video_storage.remove_file, video["file_path"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)

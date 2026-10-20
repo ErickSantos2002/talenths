@@ -71,14 +71,23 @@ def ensure_free_space(company_id: str, needed: int) -> None:
 
 
 async def cleanup_stale_uploads(conn: asyncpg.Connection) -> None:
+    # Concluído e nunca usado num vídeo também vaza: o arquivo final já está fora do tmp.
     rows = await conn.fetch(
         """DELETE FROM public.internal_video_uploads
-           WHERE completed_at IS NULL AND created_at < now() - $1::interval
-           RETURNING id, company_id""",
+           WHERE consumed_at IS NULL
+             AND COALESCE(completed_at, created_at) < now() - $1::interval
+           RETURNING id, company_id, file_path, completed_at""",
         STALE_AFTER,
     )
     for r in rows:
-        try:
-            os.remove(tmp_path(str(r["company_id"]), str(r["id"])))
-        except FileNotFoundError:
-            pass
+        path = r["file_path"] if r["completed_at"] else tmp_path(str(r["company_id"]), str(r["id"]))
+        remove_file(path)
+
+
+def remove_file(path: str | None) -> None:
+    if not path:
+        return
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
