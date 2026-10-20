@@ -53,6 +53,16 @@ def test_interleaved_reports_never_regress():
     assert m == 220
 
 
+def test_evaluate_progress_rejects_non_finite():
+    nan, inf = float("nan"), float("inf")
+    for pos in (nan, inf):
+        d = evaluate_progress(100, T0, T0 + timedelta(seconds=10), pos, 600)
+        assert not d.accepted and d.new_max_s == 100 and not d.completed
+    d = evaluate_progress(nan, T0, T0 + timedelta(seconds=10), 10, 600)
+    assert not d.accepted and d.new_max_s == 0.0
+    assert not evaluate_progress(0, None, T0, 10, nan).accepted
+
+
 def test_viewer_status():
     a = T0
     assert viewer_status(T0, 0, a, 7, T0 + timedelta(days=30)) == "concluido"
@@ -79,6 +89,10 @@ def test_validate_duration_rejects_tiny_or_missing():
         validate_duration(None)
     with pytest.raises(ValueError):
         validate_duration(2.9)
+    with pytest.raises(ValueError):
+        validate_duration(float("nan"))
+    with pytest.raises(ValueError):
+        validate_duration(float("inf"))
     assert validate_duration(3.0) == 3.0
 
 

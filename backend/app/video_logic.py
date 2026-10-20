@@ -1,3 +1,4 @@
+import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Literal
@@ -38,6 +39,10 @@ def evaluate_progress(
     duration_s: float,
 ) -> ProgressDecision:
     """Aceita o relato só se o avanço cabe no tempo real decorrido (anti-pulo)."""
+    if not all(math.isfinite(v) for v in (position_s, max_watched_s, duration_s)):
+        # NaN/inf escapariam das comparações abaixo e envenenariam o máximo salvo.
+        safe_max = max_watched_s if math.isfinite(max_watched_s) else 0.0
+        return ProgressDecision(False, safe_max, False)
     position = min(max(position_s, 0.0), duration_s)
     if position <= max_watched_s:
         # Voltar o vídeo é legítimo e nunca reduz o máximo já assistido.
@@ -95,6 +100,6 @@ def read_mp4_duration(path: str) -> float | None:
 
 
 def validate_duration(duration: float | None) -> float:
-    if duration is None or duration < MIN_DURATION_S:
+    if duration is None or not math.isfinite(duration) or duration < MIN_DURATION_S:
         raise ValueError("Não foi possível ler a duração do vídeo. Envie um MP4 válido.")
     return duration
