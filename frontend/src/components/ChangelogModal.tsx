@@ -22,7 +22,7 @@ const CHANGELOG: ChangelogVersion[] = [
     entries: [
       {
         type: "novidade",
-        text: "Tour de boas-vindas: um passeio guiado pelas principais telas do TalentHS, incluindo onde encontrar os vídeos que você precisa assistir.",
+        text: "Tour de boas-vindas: no primeiro acesso, um passeio guiado mostra as principais telas do TalentHS, incluindo onde encontrar os vídeos que você precisa assistir. Se parar no meio, ele volta na próxima vez que você entrar até ser concluído.",
       },
       {
         type: "novidade",

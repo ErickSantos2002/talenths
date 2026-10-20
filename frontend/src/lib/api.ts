@@ -863,10 +863,6 @@ export const tour = {
     put<TourProgress>(`/tour/progress/${encodeURIComponent(id)}`, { version, step }),
   complete: (id: string, version: number) =>
     post<TourProgress>(`/tour/progress/${encodeURIComponent(id)}/complete`, { version }),
-  dismiss: (id: string, version: number) =>
-    post<TourProgress>(`/tour/progress/${encodeURIComponent(id)}/dismiss`, { version }),
-  declineInvite: (id: string, version: number) =>
-    post<TourProgress>(`/tour/progress/${encodeURIComponent(id)}/decline-invite`, { version }),
 };
 
 export const videos = {

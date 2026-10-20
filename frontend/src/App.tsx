@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { TourProvider } from "@/help/TourProvider";
+import { WelcomeTourModal } from "@/components/WelcomeTourModal";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminCollaboratorsPage from "./pages/AdminCollaboratorsPage";
@@ -504,6 +505,7 @@ const App = () => (
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <WelcomeTourModal />
           </TourProvider>
         </AuthProvider>
       </BrowserRouter>

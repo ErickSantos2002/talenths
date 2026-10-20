@@ -3,8 +3,6 @@ import type { TourProgress } from "@/lib/api";
 import type { AppRole } from "./screens";
 import type { Audience, Tour } from "./tours/types";
 
-export const MAX_INVITE_DECLINES = 3;
-
 export function audienceOf(roles: AppRole[]): Audience {
   return roles.includes("manager") || roles.includes("master_admin") ? "manager" : "collaborator";
 }
@@ -17,10 +15,9 @@ export function resumeStep(progress: TourProgress | null, t: Tour | null): numbe
   return progress.step;
 }
 
-export function shouldInvite(progress: TourProgress | null): boolean {
-  if (!progress) return true;
-  if (progress.completed_at || progress.dismissed_at) return false;
-  return progress.invites_declined < MAX_INVITE_DECLINES;
+// The welcome tour is mandatory: only finishing it releases the person.
+export function mustTakeTour(progress: TourProgress | null): boolean {
+  return !progress?.completed_at;
 }
 
 export function tourStatus(

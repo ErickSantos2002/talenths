@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_INVITE_DECLINES, audienceOf, resumeStep, shouldInvite, tourStatus } from "./tourRules";
+import { audienceOf, mustTakeTour, resumeStep, tourStatus } from "./tourRules";
 import type { Tour } from "./tours/types";
 import type { TourProgress } from "@/lib/api";
 
@@ -43,14 +43,14 @@ describe("resumeStep", () => {
   });
 });
 
-describe("shouldInvite", () => {
-  it("true sem progresso", () => expect(shouldInvite(null)).toBe(true));
-  it("false se concluído, dispensado ou recusas no limite", () => {
-    expect(shouldInvite(prog({ completed_at: "2026-10-02T10:00:00" }))).toBe(false);
-    expect(shouldInvite(prog({ dismissed_at: "2026-10-02T10:00:00" }))).toBe(false);
-    expect(shouldInvite(prog({ invites_declined: MAX_INVITE_DECLINES }))).toBe(false);
+describe("mustTakeTour", () => {
+  it("true sem progresso", () => expect(mustTakeTour(null)).toBe(true));
+  it("true enquanto não concluiu, mesmo dispensado ou com recusas", () => {
+    expect(mustTakeTour(prog({ started_at: "2026-10-02T10:00:00", step: 3 }))).toBe(true);
+    expect(mustTakeTour(prog({ dismissed_at: "2026-10-02T10:00:00", invites_declined: 3 }))).toBe(true);
   });
-  it("true com 2 recusas", () => expect(shouldInvite(prog({ invites_declined: 2 }))).toBe(true));
+  it("false depois de concluído", () =>
+    expect(mustTakeTour(prog({ completed_at: "2026-10-02T10:00:00" }))).toBe(false));
 });
 
 describe("audienceOf", () => {

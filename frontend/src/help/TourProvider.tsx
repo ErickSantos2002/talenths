@@ -36,9 +36,11 @@ interface TourContextValue {
   progress: TourProgress | null;
   loaded: boolean;
   active: boolean;
+  // The mandatory welcome modal was already answered in this visit; it comes
+  // back on the next login or page load until the tour is finished.
+  prompted: boolean;
   startWelcome(): void;
-  declineInvite(): Promise<void>;
-  dismissInvite(): Promise<void>;
+  beginWelcome(): void;
   registerLayout(hooks: LayoutHooks | null): void;
 }
 
@@ -59,6 +61,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [active, setActive] = useState(false);
   const [resume, setResume] = useState<{ tour: Tour; step: number } | null>(null);
+  const [prompted, setPrompted] = useState(false);
 
   const query = useQuery({
     queryKey: [TOUR_QUERY_KEY, user?.id],
@@ -158,6 +161,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   // Logged out with the tour open: close it without saving. The failed
   // completion warning and the resume choice belonged to who left.
+  useEffect(() => setPrompted(false), [user?.id]);
   useEffect(() => {
     if (user) return;
     toast.dismiss(COMPLETE_FAILED_TOAST);
@@ -177,17 +181,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
     else start(welcome, 0);
   }, [welcome, progress, start]);
 
-  const declineInvite = useCallback(async () => {
+  // From the mandatory modal: resume straight from where the person stopped,
+  // without the "continue or restart" question.
+  const beginWelcome = useCallback(() => {
     if (!welcome) return;
-    await tourApi.declineInvite(welcome.id, welcome.version);
-    await reload();
-  }, [welcome, reload]);
-
-  const dismissInvite = useCallback(async () => {
-    if (!welcome) return;
-    await tourApi.dismiss(welcome.id, welcome.version);
-    await reload();
-  }, [welcome, reload]);
+    setPrompted(true);
+    start(welcome, resumeStep(progress, welcome) ?? 0);
+  }, [welcome, progress, start]);
 
   const registerLayout = useCallback((hooks: LayoutHooks | null) => {
     layoutRef.current = hooks;
@@ -198,10 +198,10 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<TourContextValue>(
     () => ({
-      welcome, progress, loaded: query.isSuccess, active,
-      startWelcome, declineInvite, dismissInvite, registerLayout,
+      welcome, progress, loaded: query.isSuccess, active, prompted,
+      startWelcome, beginWelcome, registerLayout,
     }),
-    [welcome, progress, query.isSuccess, active, startWelcome, declineInvite, dismissInvite, registerLayout],
+    [welcome, progress, query.isSuccess, active, prompted, startWelcome, beginWelcome, registerLayout],
   );
   const layoutValue = useMemo<TourLayoutContextValue>(
     () => ({ registerLayout, unregisterLayout, expandedByTour }),

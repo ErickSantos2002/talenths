@@ -3,6 +3,15 @@
 **Data:** 20/10/2026 · **Status:** rascunho para aprovação · **Versões alvo:** v1.10.0 (fase 1),
 v1.11.0 (fase 2), v1.12.0 (fase 3) — cada fase é funcionalidade nova (minor)
 
+> **Revisão do Erick (20/10/2026, antes do deploy da v1.10.0) — substitui o "convite":**
+> o tour de boas-vindas é **obrigatório**. Ao entrar no sistema, quem ainda não concluiu vê um
+> **modal** sem fechar e sem adiar, com um só botão ("Começar o tour" ou "Continuar de onde
+> parou", que retoma direto no passo salvo). A pessoa pode fechar o tour no meio (X/Esc) para
+> resolver algo urgente; o modal volta na **próxima entrada** (novo login ou recarregar a
+> página) até concluir. Saem o cartão de convite, "Agora não" e "Não mostrar mais". Onde este
+> documento fala em convite, recusas, dispensa ou "nunca bloqueia", vale esta revisão. As rotas
+> `dismiss`/`decline-invite` do backend ficam, sem uso no frontend.
+
 ## Intenção
 
 O TalentHS cresceu (mais de 20 telas só para o colaborador) e acabou de ganhar a tela de

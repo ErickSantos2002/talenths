@@ -13,7 +13,6 @@ import {
   ShieldCheck, Lightbulb, Heart, Zap,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TourInvite } from "@/components/TourInvite";
 
 // ─── Hook: dispara true uma vez quando o elemento entra na viewport ───────────
 function useReveal(ref: React.RefObject<Element>, threshold = 0.15) {
@@ -519,7 +518,6 @@ export default function ApresentacaoEmpresaPage() {
   if (isLoading) {
     return (
       <AdminLayout>
-        <TourInvite />
         <div className="space-y-4 p-6">
           <Skeleton className="h-10 w-72" />
           <Skeleton className="h-48 w-full" />
@@ -553,7 +551,6 @@ export default function ApresentacaoEmpresaPage() {
 
   return (
     <AdminLayout>
-      <TourInvite />
       <div className="-m-6 overflow-x-hidden lg:-m-8">
         <ViewMode presentation={p} />
       </div>
