@@ -191,8 +191,11 @@ Referência: `docshs/backend/app/services/percurso_treinamento.py:176-249` e
 - **Envio:** `POST /videos/{id}/progress {position_s}` a cada 10 s, e também em pause,
   `visibilitychange`, `pagehide` e ao sair da página.
 - **Servidor guarda só o máximo assistido** e aceita avanço até
-  `max + min(tempo_decorrido, 30 s) × 1,1 + folga` (folga de 15 s no primeiro envio, nunca
-  maior que o tempo decorrido depois). Acima disso → 409 com o máximo atual e o player volta.
+  `max + min(tempo_decorrido + 2 s, 30 s) × 1,1` (no primeiro envio, `max + 15 s`). Um envio
+  que avançaria o máximo chegando a menos de 5 s do último aceito é um no-op: responde 200
+  com o máximo atual e não mexe em `last_report_at` (o flush de uma pausa é creditado no
+  próximo envio normal; um script a 1 Hz fica preso em ~1,54×). Acima do limite → 409 com o
+  máximo atual e o player volta.
 - **Conclusão:** `max_watched_s ≥ duration_seconds − 2 s` → grava `completed_at`.
 - Assistir sem estar obrigado cria/atualiza a linha com `required = false`.
 

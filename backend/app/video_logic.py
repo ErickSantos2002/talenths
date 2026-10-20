@@ -11,7 +11,8 @@ MIN_DURATION_S = 3.0
 _FIRST_REPORT_SLACK_S = 15.0
 _MAX_ELAPSED_S = 30.0
 _PLAYBACK_RATE = 1.1
-_REPORT_SLACK_S = 5.0
+_ELAPSED_SLACK_S = 2.0
+_MIN_REPORT_INTERVAL_S = 5.0
 
 # Alinhada a docshs/backend/app/services/video_formato.py. QuickTime ("qt  ") fica de fora.
 _MP4_BRANDS = frozenset({
@@ -25,6 +26,8 @@ class ProgressDecision:
     accepted: bool
     new_max_s: float
     completed: bool
+    # False = relato aceito sem efeito: last_report_at não pode andar, senão a janela recomeça.
+    records_report: bool = True
 
 
 def is_completed(max_watched_s: float, duration_s: float) -> bool:
@@ -52,11 +55,11 @@ def evaluate_progress(
         limit = max_watched_s + _FIRST_REPORT_SLACK_S
     else:
         elapsed = max((now - last_report_at).total_seconds(), 0.0)
-        limit = (
-            max_watched_s
-            + min(elapsed, _MAX_ELAPSED_S) * _PLAYBACK_RATE
-            + min(_REPORT_SLACK_S, elapsed)
-        )
+        if elapsed < _MIN_REPORT_INTERVAL_S:
+            # Relatos curtos somariam a folga fixa várias vezes (1 Hz chegava a ~2.1x).
+            # O flush de uma pausa cai aqui e é creditado no próximo relato normal.
+            return ProgressDecision(True, max_watched_s, is_completed(max_watched_s, duration_s), False)
+        limit = max_watched_s + min(elapsed + _ELAPSED_SLACK_S, _MAX_ELAPSED_S) * _PLAYBACK_RATE
 
     if position > limit:
         return ProgressDecision(False, max_watched_s, is_completed(max_watched_s, duration_s))

@@ -15,17 +15,81 @@ def test_first_report_allows_15s_slack():
     assert not evaluate_progress(0, None, T0, 16, 600).accepted
 
 
-def test_report_after_10s_allows_elapsed_times_1_1_plus_slack():
-    # limite = max + min(elapsed,30)*1.1 + min(5, elapsed)
-    d = evaluate_progress(100, T0, T0 + timedelta(seconds=10), 116, 600)
-    assert d.accepted and d.new_max_s == 116
-    assert not evaluate_progress(100, T0, T0 + timedelta(seconds=10), 116.5, 600).accepted
+def test_report_after_10s_allows_elapsed_plus_2_times_1_1():
+    # limite = max + min(elapsed + 2, 30) * 1.1 = 100 + 12 * 1.1
+    d = evaluate_progress(100, T0, T0 + timedelta(seconds=10), 113.2, 600)
+    assert d.accepted and d.new_max_s == 113.2 and d.records_report
+    assert not evaluate_progress(100, T0, T0 + timedelta(seconds=10), 113.3, 600).accepted
 
 
 def test_elapsed_capped_at_30s():
-    # parado 10 min: limite = 100 + 30*1.1 + 5 = 138
-    assert evaluate_progress(100, T0, T0 + timedelta(minutes=10), 138, 600).accepted
-    assert not evaluate_progress(100, T0, T0 + timedelta(minutes=10), 139, 600).accepted
+    # parado 10 min: limite = 100 + 30 * 1.1 = 133
+    assert evaluate_progress(100, T0, T0 + timedelta(minutes=10), 133, 600).accepted
+    assert not evaluate_progress(100, T0, T0 + timedelta(minutes=10), 133.5, 600).accepted
+
+
+def test_report_under_5s_that_advances_is_noop():
+    d = evaluate_progress(100, T0, T0 + timedelta(seconds=4.9), 103, 600)
+    assert d.accepted and d.new_max_s == 100 and not d.completed
+    assert not d.records_report
+
+
+def test_report_at_5s_is_evaluated_normally():
+    # limite = 100 + 7 * 1.1 = 107.7
+    d = evaluate_progress(100, T0, T0 + timedelta(seconds=5), 107.7, 600)
+    assert d.accepted and d.new_max_s == 107.7 and d.records_report
+    assert not evaluate_progress(100, T0, T0 + timedelta(seconds=5), 108, 600).accepted
+
+
+def test_rewind_under_5s_still_accepted():
+    d = evaluate_progress(300, T0, T0 + timedelta(seconds=1), 20, 600)
+    assert d.accepted and d.new_max_s == 300 and d.records_report
+
+
+def _simulate(max_s, last, now, position, duration):
+    d = evaluate_progress(max_s, last, now, position, duration)
+    if d.accepted and d.records_report:
+        return d.new_max_s, now, d.completed
+    return max_s, last, d.completed
+
+
+def test_greedy_1hz_reporter_capped():
+    # Script que relata todo segundo a maior posição possível: o teto real é
+    # (5 + 2) * 1.1 / 5 = 1.54x, longe dos ~2.1x da regra antiga.
+    duration, m, last, completed_at = 600.0, 0.0, None, None
+    for second in range(0, 2000):
+        now = T0 + timedelta(seconds=second)
+        if last is None:
+            greedy = m + 15
+        else:
+            elapsed = (now - last).total_seconds()
+            greedy = m + min(elapsed + 2, 30) * 1.1
+        m, last, completed = _simulate(m, last, now, greedy, duration)
+        if completed:
+            completed_at = second
+            break
+    assert completed_at is not None
+    assert completed_at >= duration / 1.6
+
+
+def test_normal_10s_cadence_at_1x_completes():
+    duration, m, last, completed = 600.0, 0.0, None, False
+    for second in range(10, 700, 10):
+        m, last, completed = _simulate(m, last, T0 + timedelta(seconds=second), float(second), duration)
+        assert m == min(float(second), duration)
+        if completed:
+            break
+    assert completed and second == 600
+
+
+def test_pause_flush_under_5s_credited_on_next_report():
+    m, last = 100.0, T0
+    # Pausa 3 s depois do relato: o flush do pause vira no-op...
+    m, last, _ = _simulate(m, last, T0 + timedelta(seconds=3), 103, 600)
+    assert m == 100 and last == T0
+    # ...e o próximo relato normal (retoma após 2 min, assiste mais 10 s) leva tudo.
+    m, last, _ = _simulate(m, last, T0 + timedelta(seconds=133), 113, 600)
+    assert m == 113 and last == T0 + timedelta(seconds=133)
 
 
 def test_rewind_accepted_keeps_max():

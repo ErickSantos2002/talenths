@@ -776,6 +776,8 @@ async def report_progress(
                 status_code=409,
                 content={"detail": "Avanço além do assistido.", "max_watched_s": current_max},
             )
+        if not decision.records_report:
+            return {"max_watched_s": decision.new_max_s, "completed": decision.completed}
         await conn.execute(
             """UPDATE public.internal_video_viewers
                SET max_watched_s = $2, last_report_at = $3::timestamptz,

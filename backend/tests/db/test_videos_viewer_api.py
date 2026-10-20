@@ -29,6 +29,14 @@ async def _set_duration(db, video_id, seconds):
     )
 
 
+async def _age_last_report(db, video_id, user_id, seconds):
+    await db.execute(
+        """UPDATE public.internal_video_viewers SET last_report_at = last_report_at - make_interval(secs => $3)
+           WHERE video_id = $1::uuid AND user_id = $2::uuid""",
+        video_id, user_id, seconds,
+    )
+
+
 async def _stream_url(c, video_id) -> str:
     r = await c.post(f"/videos/{video_id}/stream-token")
     assert r.status_code == 200, r.text
@@ -173,11 +181,29 @@ async def test_progress_skip_returns_409_with_server_max(db, client_as, sample_m
     r = await c.post(f"/videos/{video['id']}/progress", json={"position_s": 10})
     assert r.status_code == 200, r.text
     assert r.json() == {"max_watched_s": 10.0, "completed": False}
+    await _age_last_report(db, video["id"], user, 20)
 
     r = await c.post(f"/videos/{video['id']}/progress", json={"position_s": 200})
     assert r.status_code == 409
     assert r.json()["max_watched_s"] == 10.0 and r.json()["detail"]
     assert float((await _viewer(db, video["id"], user))["max_watched_s"]) == 10.0
+
+
+async def test_progress_under_5s_is_noop_and_keeps_last_report_at(db, client_as, sample_mp4):
+    company, manager, user = await _setup(db)
+    video = await _create(client_as(manager), sample_mp4, _rules(user_ids=[user]))
+    await _set_duration(db, video["id"], 600)
+    c = client_as(user)
+
+    assert (await c.post(f"/videos/{video['id']}/progress", json={"position_s": 10})).status_code == 200
+    before = await _viewer(db, video["id"], user)
+
+    r = await c.post(f"/videos/{video['id']}/progress", json={"position_s": 12})
+    assert r.status_code == 200, r.text
+    assert r.json() == {"max_watched_s": 10.0, "completed": False}
+    after = await _viewer(db, video["id"], user)
+    assert float(after["max_watched_s"]) == 10.0
+    assert after["last_report_at"] == before["last_report_at"]
 
 
 async def test_progress_rejects_nan_and_inf(db, client_as, sample_mp4):
