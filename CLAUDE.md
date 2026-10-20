@@ -244,6 +244,11 @@ O tour de boas-vindas e a página `/ajuda` ficam em `frontend/src/help/`.
 - **Tela citada num tour muda no mesmo commit que o tour** (e, a partir da fase 2, que o guia): mexeu num cabeçalho com `data-tour` ou no menu, confira o passo que aponta para ele.
 - **Deploy:** migração 030 (`backend/scripts/aplicar_030.py`, rodada pelo Erick) → backend → frontend.
 - **Contratos em `src/help/**/*.test.ts`** — rotas, âncoras e textos dos tours são verificados por testes; rode `bun run test` antes de commitar.
+- **Capturas dos guias** ficam em `frontend/public/capturas/<nome>.webp` (**nunca** em `public/ajuda/` — o nginx redirecionaria `/ajuda` → `/ajuda/`) e são listadas em `frontend/scripts/captures.config.ts`. Só dado fictício, de um banco só delas. Para refazer:
+  1. `bash backend/scripts/captures-db.sh` — recria o `talenths_capturas` no `pg-teste` (migrações + o DDL que só existe em produção: testes configuráveis e `profiles.job_title`);
+  2. suba o backend na **8011** contra esse banco e o frontend na **8091** com `VITE_API_URL=http://localhost:8011` (comandos no topo de `frontend/scripts/captures.ts`);
+  3. `bun run --cwd frontend capturas` (ou `-- --only nome1,nome2`). O script roda a semente (`backend/scripts/seed_captures.py`: "Empresa Exemplo", contas `ana@`/`bruno@`/`gestor@`/`admin@exemplo.com.br`, senha `exemplo123`, tour de boas-vindas já concluído), entra por conta e grava as imagens (tema claro, 1280×800, WebP 0.82);
+  4. **abra e olhe** cada imagem antes de commitar. `src/help/captures.contract.test.ts` barra nome fora de kebab-case, imagem órfã e captura sem arquivo.
 
 ---
 

@@ -1,0 +1,59 @@
+// As telas fotografadas para os guias da Ajuda. Cada captura vira
+// `public/capturas/<name>.webp` e os guias citam a imagem por esse caminho
+// (`![Tela X](/capturas/<name>.webp)`). Mudou uma tela citada? Refaça a captura
+// no mesmo commit: `bun run capturas -- --only <name>`.
+//
+// Contas e ids vêm de `backend/scripts/seed_captures.py` — só dado fictício.
+
+export type Account = "ana" | "bruno" | "gestor" | "admin";
+
+/** E-mail de cada conta fictícia da semente (todas com a mesma senha). */
+export const ACCOUNTS: Record<Account, string> = {
+  ana: "ana@exemplo.com.br", // colaboradora
+  bruno: "bruno@exemplo.com.br", // colaborador com ponto habilitado
+  gestor: "gestor@exemplo.com.br", // manager
+  admin: "admin@exemplo.com.br", // master_admin
+};
+
+/** A senha das contas da semente (`CAPTURES_PASSWORD` nos dois lados). */
+export const PASSWORD = process.env.CAPTURES_PASSWORD ?? "exemplo123";
+
+/** Os ids que a semente imprime na última linha da saída. */
+export interface Ids {
+  company: string;
+  users: Record<Account | "carla" | "diego" | "eduarda" | "felipe" | "helena" | "igor", string>;
+  video: string;
+  test: string;
+  attempt: string;
+  bingo_game: string;
+  survey: string;
+  eval_cycle: string;
+  goals_cycle: string;
+}
+
+export interface Capture {
+  /** kebab-case; vira o nome do arquivo */
+  name: string;
+  account: Account;
+  route: (ids: Ids) => string;
+  /** valor de `data-tour` do elemento a clicar antes da foto */
+  click?: string;
+  width?: number;
+  height?: number;
+}
+
+export const CAPTURES: Capture[] = [
+  // Telas do tour de boas-vindas (colaborador) e o guia "O tour de boas-vindas" (/ajuda).
+  { name: "dashboard", account: "ana", route: () => "/dashboard" },
+  { name: "meus-videos", account: "ana", route: () => "/meus-videos" },
+  { name: "comunicados", account: "ana", route: () => "/comunicados" },
+  { name: "minha-avaliacao", account: "ana", route: () => "/minha-avaliacao" },
+  { name: "meus-testes", account: "ana", route: () => "/meus-testes" },
+  { name: "meu-perfil", account: "ana", route: () => "/meu-perfil" },
+  { name: "ajuda", account: "ana", route: () => "/ajuda" },
+
+  // Telas do tour de boas-vindas (gestor).
+  { name: "admin-colaboradores", account: "gestor", route: () => "/admin/colaboradores" },
+  { name: "admin-videos", account: "gestor", route: () => "/admin/videos" },
+  { name: "admin-relatorios", account: "gestor", route: () => "/admin/relatorios" },
+];
