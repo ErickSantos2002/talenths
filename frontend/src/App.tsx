@@ -62,6 +62,7 @@ import AdminTesteTentativasPage from "./pages/AdminTesteTentativasPage";
 import MeusTestesPage from "./pages/MeusTestesPage";
 import RealizarTestePage from "./pages/RealizarTestePage";
 import ResultadoTestePage from "./pages/ResultadoTestePage";
+import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 
@@ -493,6 +494,14 @@ const App = () => (
               }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route
+              path="/ajuda"
+              element={
+                <ProtectedRoute>
+                  <HelpPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </TourProvider>

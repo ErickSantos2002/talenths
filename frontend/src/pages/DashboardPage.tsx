@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { profiles, departments, feedbacks, documents } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { TourInvite } from "@/components/TourInvite";
 import { PendingVideosCard } from "@/components/videos/PendingVideosCard";
 
 function StatCard({
@@ -86,6 +87,8 @@ function CollaboratorDashboard({ profile }: { profile: any }) {
           Bem-vindo ao seu painel. Acesse rapidamente tudo que é seu.
         </p>
       </div>
+
+      <TourInvite />
 
       <PendingVideosCard />
 
@@ -168,6 +171,8 @@ export default function DashboardPage() {
             Bem-vindo de volta, {profile?.name?.split(" ")[0] ?? "Usuário"}. Aqui está um resumo da empresa.
           </p>
         </div>
+
+        <TourInvite />
 
         <PendingVideosCard />
 
