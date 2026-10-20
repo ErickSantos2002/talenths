@@ -114,7 +114,12 @@ async function loadGuides(): Promise<Guide[]> {
   return Object.entries(RAW_GUIDES).map(([path, raw]) => parseGuide(path, raw));
 }
 
-export function useGuides(enabled: boolean): { guides: Guide[] | undefined; isLoading: boolean; isError: boolean } {
+export function useGuides(enabled: boolean): {
+  guides: Guide[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+} {
   const query = useQuery({
     queryKey: ["help-guides"],
     queryFn: loadGuides,
@@ -122,5 +127,5 @@ export function useGuides(enabled: boolean): { guides: Guide[] | undefined; isLo
     staleTime: Infinity,
     gcTime: Infinity,
   });
-  return { guides: query.data, isLoading: query.isLoading, isError: query.isError };
+  return { guides: query.data, isLoading: query.isLoading, isError: query.isError, refetch: () => void query.refetch() };
 }

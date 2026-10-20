@@ -1,8 +1,26 @@
-import { describe, it, expect } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
+import { describe, it, expect, vi } from "vitest";
 import {
-  MODULES, findGuide, guidesFor, guidesForPath, normalize, searchGuides, type Guide,
+  MODULES, findGuide, guidesFor, guidesForPath, normalize, searchGuides, useGuides, type Guide,
 } from "./guides";
 import { parseGuide } from "./guideParser";
+
+const parserFlag = vi.hoisted(() => ({ failNext: false }));
+vi.mock("./guideParser", async (orig) => {
+  const real = await orig<typeof import("./guideParser")>();
+  return {
+    ...real,
+    parseGuide: (path: string, raw: string) => {
+      if (parserFlag.failNext) {
+        parserFlag.failNext = false;
+        throw new Error("falha simulada");
+      }
+      return real.parseGuide(path, raw);
+    },
+  };
+});
 import type { ScreenContext } from "./screens";
 
 const P = "/src/help/guides/primeiros-passos/exemplo.md";
@@ -149,5 +167,20 @@ describe("bundled guides", () => {
     const { RAW_GUIDES } = await import("./guidesBundle");
     const guides = Object.entries(RAW_GUIDES).map(([p, t]) => parseGuide(p, t));
     expect(guides.find((g) => g.slug === "o-tour-de-boas-vindas")?.module).toBe("primeiros-passos");
+  });
+});
+
+describe("useGuides", () => {
+  it("exposes refetch that recovers from a failed load", async () => {
+    parserFlag.failNext = true;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useGuides(true), { wrapper });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(typeof result.current.refetch).toBe("function");
+    result.current.refetch();
+    await waitFor(() => expect(result.current.guides?.length).toBeGreaterThan(0));
+    expect(result.current.isError).toBe(false);
   });
 });

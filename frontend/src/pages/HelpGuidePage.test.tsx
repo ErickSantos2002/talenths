@@ -58,9 +58,11 @@ describe("HelpGuidePage", () => {
   });
 
   it("does not leak a guide of another role", () => {
+    const before = document.title;
     renderAt("/ajuda/administracao/videos-do-rh");
     expect(screen.getByText("Guia não encontrado")).toBeTruthy();
     expect(screen.queryByText("Vídeos do RH")).toBeNull();
+    expect(document.title).toBe(before);
     expect(screen.getByRole("link", { name: "Voltar para a Ajuda" }).getAttribute("href")).toBe("/ajuda");
   });
 
