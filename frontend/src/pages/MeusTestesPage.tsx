@@ -45,8 +45,8 @@ export default function MeusTestesPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8" data-tour="my-tests">
-        <div className="flex items-center gap-2">
+      <div className="space-y-8">
+        <div className="flex items-center gap-2" data-tour="my-tests">
           <ClipboardList className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-semibold">Meus Testes</h1>
         </div>

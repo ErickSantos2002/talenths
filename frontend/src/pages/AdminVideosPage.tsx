@@ -32,8 +32,8 @@ export default function AdminVideosPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6" data-tour="admin-videos">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between" data-tour="admin-videos">
           <div className="flex items-center gap-2">
             <Video className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-semibold">Vídeos</h1>

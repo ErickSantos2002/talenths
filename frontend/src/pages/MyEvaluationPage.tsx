@@ -42,9 +42,9 @@ export default function MyEvaluationPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6" data-tour="my-evaluation">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3" data-tour="my-evaluation">
           <div className="flex items-center gap-3">
             <ClipboardCheck className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">Minha Avaliação</h1>

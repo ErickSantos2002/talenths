@@ -17,13 +17,13 @@ export const COLLABORATOR_STEPS: TourStep[] = [
     route: "/meus-videos",
     element: "my-videos",
     title: "Vídeos",
-    text: "Aqui ficam os vídeos que o RH pede para você assistir, em **Obrigatórios**, e os demais, na **Biblioteca**. Clique em **Assistir** para abrir um vídeo.",
+    text: "Veja abaixo os vídeos que o RH pede para você assistir, em **Obrigatórios**, e os demais, na **Biblioteca**. Clique em **Assistir** para abrir um vídeo.",
   },
   {
     route: "/comunicados",
     element: "announcements",
     title: "Comunicados",
-    text: "Os avisos da empresa aparecem aqui, junto com aniversários e tempo de casa.",
+    text: "Confira aqui os avisos da empresa, junto com aniversários e tempo de casa.",
   },
   {
     route: "/minha-avaliacao",
@@ -35,7 +35,7 @@ export const COLLABORATOR_STEPS: TourStep[] = [
     route: "/meus-testes",
     element: "my-tests",
     title: "Meus Testes",
-    text: "Os testes que o RH aplica aparecem aqui. Você também vê os que já fez.",
+    text: "Faça aqui os testes que o RH aplicar. Consulte também os que você já concluiu.",
   },
   {
     route: "/meu-perfil",
@@ -47,7 +47,7 @@ export const COLLABORATOR_STEPS: TourStep[] = [
     route: "/meu-perfil",
     element: "notifications",
     title: "Notificações",
-    text: "O sino avisa quando chega algo novo para você. Clique nele para ver as notificações.",
+    text: "Fique de olho no sino: ele avisa quando chega algo novo para você. Clique nele para ver as notificações.",
   },
 ];
 
@@ -62,7 +62,7 @@ export const ADMIN_STEPS: TourStep[] = [
     route: "/admin/colaboradores",
     element: "admin-collaborators",
     title: "Colaboradores",
-    text: "Cadastre e gerencie as pessoas e os departamentos da empresa. Clique em **Adicionar Colaborador** para incluir alguém.",
+    text: "Clique em **Adicionar Colaborador** para cadastrar alguém; deixe a senha em branco para enviar um convite por e-mail.",
   },
   {
     route: "/admin/videos",

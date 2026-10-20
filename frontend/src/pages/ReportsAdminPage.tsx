@@ -83,8 +83,8 @@ export default function ReportsAdminPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6" data-tour="admin-reports">
-        <div className="flex items-center gap-3">
+      <div className="space-y-6">
+        <div className="flex items-center gap-3" data-tour="admin-reports">
           <FileDown className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
