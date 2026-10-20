@@ -1,7 +1,7 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import { Link } from "react-router-dom";
 
-const INTERNAL = /^\/(?!\/)\S*$/;
+const INTERNAL = /^\/(?![/\\])\S*$/;
 const EXTERNAL = /^https:\/\/\S+$/;
 const CAPTURA = /^\/capturas\/[a-z0-9]+(?:-[a-z0-9]+)*\.webp$/;
 

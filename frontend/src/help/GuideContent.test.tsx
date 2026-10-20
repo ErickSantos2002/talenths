@@ -62,6 +62,29 @@ describe("GuideContent", () => {
     expect(img.getAttribute("loading")).toBe("lazy");
   });
 
+  it.each([
+    ["protocol-relative", "[x](//evil.com)"],
+    ["uppercase scheme", "[x](HTTPS://exemplo.com)"],
+    ["reference javascript", "[r]\n\n[r]: javascript:alert(1)"],
+  ])("link %s não vira <a>", (_n, md) => {
+    const { container } = setup(md);
+    expect(container.querySelector("a")).toBeNull();
+  });
+
+  it("barra invertida chega codificada (%5C) e nunca vira host externo", () => {
+    const { container } = setup("[x](/\\evil.com)");
+    const href = container.querySelector("a")?.getAttribute("href");
+    expect(href).toBe("/%5Cevil.com");
+  });
+
+  it.each(["![q](/capturas/ok.webp?y)", "![q](/capturas/ok.webp/../x)"])(
+    "imagem %s não vira <img>",
+    (md) => {
+      const { container } = setup(md);
+      expect(container.querySelector("img")).toBeNull();
+    },
+  );
+
   it("imagem externa, fora do padrão ou sem alt não vira <img>", () => {
     const { container } = setup(
       "![externa](https://x.com/a.webp) ![traversal](/capturas/../a.webp) ![](/capturas/ok.webp) ![png](/capturas/ok.png)",
