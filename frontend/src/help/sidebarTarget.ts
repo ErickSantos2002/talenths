@@ -39,3 +39,28 @@ export async function prepareSafely(hooks: LayoutHooks | null, element: string |
     return unchanged;
   }
 }
+
+// Same cookie that ui/sidebar writes and AdminLayout reads on mount.
+const SIDEBAR_COOKIE = "sidebar:state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+
+function writeCollapsedCookie() {
+  document.cookie = `${SIDEBAR_COOKIE}=false; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+}
+
+// The tour may end with no layout mounted (logout lands on /login, which has
+// no sidebar): then only the cookie carries the collapsed state to the next
+// AdminLayout.
+export function restoreSidebar(
+  hooks: LayoutHooks | null,
+  expandedByTour: { current: boolean },
+  writeCookie: () => void = writeCollapsedCookie,
+): void {
+  if (hooks) {
+    hooks.restore();
+    return;
+  }
+  if (!expandedByTour.current) return;
+  expandedByTour.current = false;
+  writeCookie();
+}

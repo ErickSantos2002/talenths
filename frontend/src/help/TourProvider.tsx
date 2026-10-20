@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { tour as tourApi, type TourProgress } from "@/lib/api";
 import { createProgressQueue } from "./progressQueue";
 import { screenName } from "./screens";
-import { prepareSafely, type LayoutHooks } from "./sidebarTarget";
+import { prepareSafely, restoreSidebar, type LayoutHooks } from "./sidebarTarget";
 import { TourEngine } from "./tourEngine";
 import { audienceOf, resumeStep } from "./tourRules";
 import { WELCOME_TOURS } from "./tours/welcome";
@@ -142,7 +142,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   // Tour over (finished, closed, or logged out): the sidebar goes back to how
   // the person left it, through whichever layout is mounted now.
   useEffect(() => {
-    if (!active) layoutRef.current?.restore();
+    if (!active) restoreSidebar(layoutRef.current, expandedByTour);
   }, [active]);
 
   const start = useCallback(

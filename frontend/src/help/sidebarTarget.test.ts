@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { MOBILE_MENU_TEXT, prepareSafely, sidebarTarget, type LayoutHooks } from "./sidebarTarget";
+import { describe, expect, it, vi } from "vitest";
+import { MOBILE_MENU_TEXT, prepareSafely, restoreSidebar, sidebarTarget, type LayoutHooks } from "./sidebarTarget";
 
 describe("sidebarTarget", () => {
   it("points menu steps to the mobile button on the phone", () => {
@@ -57,5 +57,41 @@ describe("prepareSafely", () => {
   it("uses the layout's answer when it succeeds", async () => {
     const hooks: LayoutHooks = { prepare: async () => ({ element: "menu-mobile", extraText: "t" }), restore: () => {} };
     expect(await prepareSafely(hooks, "menu")).toEqual({ element: "menu-mobile", extraText: "t" });
+  });
+});
+
+describe("restoreSidebar", () => {
+  const noop: LayoutHooks["prepare"] = async () => ({});
+
+  it("hands the restore to the mounted layout", () => {
+    const restore = vi.fn();
+    const writeCookie = vi.fn();
+    restoreSidebar({ prepare: noop, restore }, { current: true }, writeCookie);
+    expect(restore).toHaveBeenCalledOnce();
+    expect(writeCookie).not.toHaveBeenCalled();
+  });
+
+  // Logout mid-tour: /login has no sidebar, so the layout is already gone
+  // when the tour closes; the next login must not find the menu expanded.
+  it("with no layout mounted, writes the collapsed cookie if the tour expanded the menu", () => {
+    const expandedByTour = { current: true };
+    const writeCookie = vi.fn();
+    restoreSidebar(null, expandedByTour, writeCookie);
+    expect(writeCookie).toHaveBeenCalledOnce();
+    expect(expandedByTour.current).toBe(false);
+    restoreSidebar(null, expandedByTour, writeCookie);
+    expect(writeCookie).toHaveBeenCalledOnce();
+  });
+
+  it("with no layout mounted, leaves the cookie alone if the tour did not expand the menu", () => {
+    const writeCookie = vi.fn();
+    restoreSidebar(null, { current: false }, writeCookie);
+    expect(writeCookie).not.toHaveBeenCalled();
+  });
+
+  it("the default writer stores the collapsed state in the sidebar cookie", () => {
+    document.cookie = "sidebar:state=true; path=/";
+    restoreSidebar(null, { current: true });
+    expect(document.cookie).toContain("sidebar:state=false");
   });
 });
