@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { ChangelogModal } from "@/components/ChangelogModal";
-import {
-  LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
-  GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
-  BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
-  Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText, Clock,
-  Dices, Video,
-} from "lucide-react";
+import { ChevronRight, LogOut, Sun, Moon, Monitor } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
 import { useSystemTheme } from "@/hooks/use-system-theme";
@@ -21,139 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { menuSections, type Screen, type Section } from "@/help/screens";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface NavItem {
-  title: string;
-  url: string;
-  icon: React.ElementType;
-}
-
-interface NavSection {
-  key: string;
-  label: string;
-  items: NavItem[];
-}
-
-// ── Admin sections ────────────────────────────────────────────────────────────
-
-const adminSections: NavSection[] = [
-  {
-    key: "pessoas",
-    label: "Pessoas",
-    items: [
-      { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
-    ],
-  },
-  {
-    key: "desempenho",
-    label: "Desempenho",
-    items: [
-      { title: "Metas", url: "/admin/metas", icon: Target },
-      { title: "Avaliação", url: "/admin/avaliacao", icon: ClipboardList },
-      { title: "Mapa 9Box", url: "/admin/9box", icon: Grid3X3 },
-      { title: "Testes", url: "/admin/testes", icon: ClipboardCheck },
-    ],
-  },
-  {
-    key: "desenvolvimento",
-    label: "Desenvolvimento",
-    items: [
-      { title: "Trilha de Carreira", url: "/admin/trilhas", icon: GitBranch },
-      { title: "PDI da Equipe", url: "/admin/pdi", icon: BookOpen },
-      { title: "Universidade", url: "/admin/universidade", icon: GraduationCap },
-      { title: "Workshops", url: "/admin/workshops", icon: CalendarDays },
-    ],
-  },
-  {
-    key: "comunicacao",
-    label: "Comunicação",
-    items: [
-      { title: "Comunicados", url: "/admin/comunicados", icon: Megaphone },
-      { title: "Onboarding", url: "/admin/onboarding", icon: ListChecks },
-      { title: "Pesquisas", url: "/admin/pesquisas", icon: BarChart2 },
-      { title: "Feedbacks", url: "/admin/feedbacks", icon: MessageSquare },
-      { title: "Documentos", url: "/admin/documentos", icon: FileText },
-      { title: "Vídeos", url: "/admin/videos", icon: Video },
-      { title: "Bingo", url: "/admin/bingo", icon: Dices },
-    ],
-  },
-  {
-    key: "rh",
-    label: "Gestão de RH",
-    items: [
-      { title: "Ausências", url: "/admin/ausencias", icon: CalendarOff },
-      { title: "Benefícios", url: "/admin/beneficios", icon: Gift },
-      { title: "Ponto Eletrônico", url: "/admin/ponto", icon: Clock },
-      { title: "Tabela Salarial", url: "/admin/tabela-salarial", icon: DollarSign },
-    ],
-  },
-  {
-    key: "sistema",
-    label: "Sistema",
-    items: [
-      { title: "Minha Empresa", url: "/admin/empresa", icon: Building2 },
-      { title: "Relatórios", url: "/admin/relatorios", icon: FileDown },
-    ],
-  },
-];
-
-// Logs is added to "sistema" only for master_admin — handled at render time
-
-// ── Personal sections ─────────────────────────────────────────────────────────
-
-const personalSections: NavSection[] = [
-  {
-    key: "meu-espaco",
-    label: "Meu Espaço",
-    items: [
-      { title: "Meu Perfil", url: "/meu-perfil", icon: UserPen },
-      { title: "Nossa Cultura", url: "/cultura", icon: HeartHandshake },
-      { title: "Regras Internas", url: "/regras-internas", icon: ScrollText },
-      { title: "Calendário", url: "/calendario", icon: CalendarDays },
-    ],
-  },
-  {
-    key: "desempenho-pessoal",
-    label: "Desempenho",
-    items: [
-      { title: "Minha Avaliação", url: "/minha-avaliacao", icon: ClipboardCheck },
-      { title: "Meus Testes", url: "/meus-testes", icon: ClipboardList },
-    ],
-  },
-  {
-    key: "desenvolvimento-pessoal",
-    label: "Desenvolvimento",
-    items: [
-      { title: "Minha Trilha", url: "/minha-trilha", icon: GitBranch },
-      { title: "Meu PDI", url: "/meu-pdi", icon: BookOpen },
-      { title: "Minha Universidade", url: "/minha-universidade", icon: GraduationCap },
-      { title: "Workshops", url: "/workshops", icon: CalendarDays },
-    ],
-  },
-  {
-    key: "comunicacao-pessoal",
-    label: "Comunicação",
-    items: [
-      { title: "Comunicados", url: "/comunicados", icon: Megaphone },
-      { title: "Pesquisas", url: "/pesquisas", icon: BarChart2 },
-      { title: "Feedbacks", url: "/meus-feedbacks", icon: MessageSquare },
-      { title: "Documentos", url: "/meus-documentos", icon: FileText },
-      { title: "Vídeos", url: "/meus-videos", icon: Video },
-      { title: "Bingo", url: "/bingo", icon: Dices },
-    ],
-  },
-  {
-    key: "rh-pessoal",
-    label: "RH",
-    items: [
-      { title: "Minhas Ausências", url: "/minhas-ausencias", icon: CalendarOff },
-      { title: "Meus Benefícios", url: "/meus-beneficios", icon: Gift },
-      { title: "Meu Onboarding", url: "/meu-onboarding", icon: ListChecks },
-    ],
-  },
-];
 
 // ── State helpers ─────────────────────────────────────────────────────────────
 
@@ -176,24 +40,26 @@ function saveSectionState(state: Record<string, boolean>) {
 
 // ── NavItem component ─────────────────────────────────────────────────────────
 
-function NavItem({ item }: { item: NavItem }) {
+function NavItem({ item }: { item: Screen }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = location.pathname === item.url || location.pathname.startsWith(item.url + "/");
+  const { title, icon: Icon, tour } = item.menu!;
+  const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
 
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
-        tooltip={item.title}
+        tooltip={title}
+        data-tour={tour}
         isActive={isActive}
-        onClick={() => navigate(item.url)}
+        onClick={() => navigate(item.path)}
         className={cn(
           "flex items-center gap-3 text-sm font-medium text-sidebar-foreground/80 transition-all",
           isActive && "bg-primary/10 text-primary font-semibold shadow-[inset_-2px_0_0_hsl(var(--primary))]"
         )}
       >
-        <item.icon className="h-4 w-4 shrink-0" />
-        <span className="truncate">{item.title}</span>
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className="truncate">{title}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
@@ -203,11 +69,13 @@ function NavItem({ item }: { item: NavItem }) {
 
 function CollapsibleSection({
   section,
+  items,
   isOpen,
   onToggle,
   collapsed,
 }: {
-  section: NavSection;
+  section: Section;
+  items: Screen[];
   isOpen: boolean;
   onToggle: () => void;
   collapsed: boolean;
@@ -218,7 +86,7 @@ function CollapsibleSection({
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
-            {section.items.map((item) => <NavItem key={item.url} item={item} />)}
+            {items.map((item) => <NavItem key={item.path} item={item} />)}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
@@ -247,7 +115,7 @@ function CollapsibleSection({
         <CollapsibleContent>
           <SidebarGroupContent className="pt-0.5 pb-1">
             <SidebarMenu>
-              {section.items.map((item) => <NavItem key={item.url} item={item} />)}
+              {items.map((item) => <NavItem key={item.path} item={item} />)}
             </SidebarMenu>
           </SidebarGroupContent>
         </CollapsibleContent>
@@ -259,16 +127,13 @@ function CollapsibleSection({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function AdminSidebar() {
-  const { hasRole, signOut, profile } = useAuth();
+  const { roles, signOut, profile } = useAuth();
   const { theme, setTheme } = useTheme();
   const systemTheme = useSystemTheme();
   const effectiveTheme = theme === "system" ? systemTheme : theme;
   const navigate = useNavigate();
   const { state: sidebarState } = useSidebar();
   const collapsed = sidebarState === "collapsed";
-
-  const isAdmin = hasRole("master_admin") || hasRole("manager");
-  const isMasterAdmin = hasRole("master_admin");
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(loadSectionState);
   const [changelogOpen, setChangelogOpen] = useState(false);
@@ -281,27 +146,13 @@ export function AdminSidebar() {
     });
   };
 
-  // Build admin sections with conditional Logs item
-  const builtAdminSections: NavSection[] = adminSections.map((section) => {
-    if (section.key === "sistema" && isMasterAdmin) {
-      return {
-        ...section,
-        items: [...section.items, { title: "Logs", url: "/admin/logs", icon: Shield }],
-      };
-    }
-    return section;
-  });
-
-  // "Meu Ponto" só aparece para quem o RH habilitou
-  const builtPersonalSections: NavSection[] = personalSections.map((section) => {
-    if (section.key === "rh-pessoal" && profile?.timeclock_enabled) {
-      return {
-        ...section,
-        items: [...section.items, { title: "Meu Ponto", url: "/meu-ponto", icon: Clock }],
-      };
-    }
-    return section;
-  });
+  const ctx = {
+    roles,
+    timeclockEnabled: !!profile?.timeclock_enabled,
+  };
+  const mainSections = menuSections("main", ctx);
+  const companySections = menuSections("company", ctx);
+  const personalSections = menuSections("personal", ctx);
 
   const ThemeIcon = effectiveTheme === "dark" ? Moon : Sun;
 
@@ -344,7 +195,7 @@ export function AdminSidebar() {
         </div>
       </div>
 
-      <SidebarContent className="gap-0">
+      <SidebarContent className="gap-0" data-tour="menu">
         {/* Dashboard */}
         <SidebarGroup className={collapsed ? undefined : "pb-1"}>
           {!collapsed && (
@@ -354,15 +205,16 @@ export function AdminSidebar() {
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              <NavItem item={{ title: "Apresentação", url: "/apresentacao", icon: Presentation }} />
-              <NavItem item={{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }} />
+              {mainSections.flatMap(({ items }) => items).map((item) => (
+                <NavItem key={item.path} item={item} />
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Admin sections */}
-        {isAdmin && (
-          <>
+        {companySections.length > 0 && (
+          <div data-tour="menu-company">
             {!collapsed && (
               <div className="mx-3 my-1 border-t border-sidebar-border" />
             )}
@@ -371,16 +223,17 @@ export function AdminSidebar() {
                 Empresa
               </p>
             )}
-            {builtAdminSections.map((section) => (
+            {companySections.map(({ section, items }) => (
               <CollapsibleSection
                 key={section.key}
                 section={section}
+                items={items}
                 isOpen={!!openSections[section.key]}
                 onToggle={() => toggleSection(section.key)}
                 collapsed={collapsed}
               />
             ))}
-          </>
+          </div>
         )}
 
         {/* Personal sections */}
@@ -392,10 +245,11 @@ export function AdminSidebar() {
             Pessoal
           </p>
         )}
-        {builtPersonalSections.map((section) => (
+        {personalSections.map(({ section, items }) => (
           <CollapsibleSection
             key={section.key}
             section={section}
+            items={items}
             isOpen={!!openSections[section.key]}
             onToggle={() => toggleSection(section.key)}
             collapsed={collapsed}
