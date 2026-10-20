@@ -2,17 +2,27 @@ import asyncio
 import os
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 import asyncpg
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from app import video_storage
+from app.config import settings
 from app.database import get_pool
 from app.dependencies import get_current_user_id, get_db, require_manager
-from app.video_logic import MAX_FILE_SIZE, due_at, read_mp4_duration, validate_duration, viewer_status
+from app.video_logic import (
+    MAX_FILE_SIZE,
+    due_at,
+    evaluate_progress,
+    read_mp4_duration,
+    validate_duration,
+    viewer_status,
+)
 
 router = APIRouter(prefix="/videos", tags=["videos"])
 
@@ -362,14 +372,17 @@ async def _rules_out(video_id, conn: asyncpg.Connection) -> dict:
     }
 
 
+def _progress_pct(watched: float, duration: float, completed_at) -> int:
+    if completed_at:
+        return 100
+    return min(100, round(watched / duration * 100)) if duration > 0 else 0
+
+
 def _viewer_out(row, video, now: datetime) -> dict:
     duration = float(video["duration_seconds"])
     watched = float(row["max_watched_s"])
     due_days = video["due_days"] if row["required"] else None
-    if row["completed_at"]:
-        pct = 100
-    else:
-        pct = min(100, round(watched / duration * 100)) if duration > 0 else 0
+    pct = _progress_pct(watched, duration, row["completed_at"])
     return {
         "user_id": str(row["user_id"]) if row["user_id"] else None,
         "name": row["name"],
@@ -605,3 +618,169 @@ async def delete_video(
         await conn.execute("DELETE FROM public.internal_videos WHERE id = $1", video_id)
     await asyncio.to_thread(video_storage.remove_file, video["file_path"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ── Colaborador ───────────────────────────────────────────────────────────────
+# /mine e /stream/{token} ficam antes de GET /{video_id}.
+
+STREAM_TOKEN_TYPE = "video_stream"
+STREAM_TOKEN_TTL = timedelta(minutes=10)
+_STATUS_ORDER = {"atrasado": 0, "pendente": 1, "em_andamento": 1, "concluido": 2}
+_NEVER = datetime.max.replace(tzinfo=timezone.utc)
+
+
+class ProgressBody(BaseModel):
+    position_s: float = Field(ge=0, allow_inf_nan=False)
+
+
+_MY_VIDEO_QUERY = """
+    SELECT v.id, v.title, v.description, v.duration_seconds, v.due_days, v.file_version,
+           COALESCE(w.required AND NOT w.excluded, false) AS is_required,
+           w.assigned_at, COALESCE(w.max_watched_s, 0) AS max_watched_s, w.completed_at
+    FROM public.internal_videos v
+    LEFT JOIN public.internal_video_viewers w ON w.video_id = v.id AND w.user_id = $2::uuid
+    WHERE v.company_id = $1::uuid AND v.archived_at IS NULL"""
+
+
+def _my_video_out(row, now: datetime) -> dict:
+    duration = float(row["duration_seconds"])
+    watched = float(row["max_watched_s"])
+    due_days = row["due_days"] if row["is_required"] else None
+    assigned_at = row["assigned_at"] or now
+    return {
+        "id": str(row["id"]),
+        "title": row["title"],
+        "description": row["description"],
+        "duration_seconds": duration,
+        "status": viewer_status(row["completed_at"], watched, assigned_at, due_days, now),
+        "progress_pct": _progress_pct(watched, duration, row["completed_at"]),
+        "due_at": due_at(assigned_at, due_days),
+        "completed_at": row["completed_at"],
+    }
+
+
+async def _get_my_video(video_id: uuid.UUID, user_id: str, conn: asyncpg.Connection):
+    company_id = await _get_company_id(user_id, conn)
+    row = await conn.fetchrow(f"{_MY_VIDEO_QUERY} AND v.id = $3", company_id, user_id, video_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Vídeo não encontrado")
+    return row
+
+
+@router.get("/mine")
+async def list_my_videos(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _get_company_id(user_id, conn)
+    rows = await conn.fetch(f"{_MY_VIDEO_QUERY} ORDER BY v.created_at DESC", company_id, user_id)
+    now = datetime.now(timezone.utc)
+    required, library = [], []
+    for r in rows:
+        (required if r["is_required"] else library).append(_my_video_out(r, now))
+    required.sort(key=lambda v: (_STATUS_ORDER[v["status"]], v["due_at"] or _NEVER))
+    return {"required": required, "library": library}
+
+
+def _stream_not_found() -> HTTPException:
+    return HTTPException(status_code=404, detail="Vídeo não encontrado")
+
+
+@router.get("/stream/{token}")
+async def stream_video(token: str, open_conn=Depends(get_conn_opener)):
+    # Sem get_db_public: dependência de request só sai depois do corpo inteiro enviado,
+    # e isso prenderia uma conexão do pool por espectador durante o vídeo todo.
+    try:
+        claims = jwt.decode(
+            token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM],
+            options={"require": ["exp"]},
+        )
+        if claims.get("typ") != STREAM_TOKEN_TYPE:
+            raise _stream_not_found()
+        video_id, user_id = uuid.UUID(claims["vid"]), uuid.UUID(claims["uid"])
+        version = int(claims["ver"])
+    except (jwt.InvalidTokenError, KeyError, TypeError, ValueError):
+        raise _stream_not_found()
+    async with open_conn(str(user_id)) as conn:
+        row = await conn.fetchrow(
+            """SELECT v.file_path, v.file_version FROM public.internal_videos v
+               JOIN public.profiles p ON p.company_id = v.company_id AND p.user_id = $2
+               WHERE v.id = $1 AND v.archived_at IS NULL""",
+            video_id, user_id,
+        )
+    if not row or row["file_version"] != version or not os.path.isfile(row["file_path"]):
+        raise _stream_not_found()
+    return FileResponse(row["file_path"], media_type="video/mp4", headers={"Cache-Control": "no-store"})
+
+
+@router.get("/{video_id}")
+async def get_my_video(
+    video_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    row = await _get_my_video(video_id, user_id, conn)
+    return {**_my_video_out(row, datetime.now(timezone.utc)), "max_watched_s": float(row["max_watched_s"])}
+
+
+@router.post("/{video_id}/stream-token")
+async def create_stream_token(
+    video_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    row = await _get_my_video(video_id, user_id, conn)
+    # Sem "sub" de propósito: get_current_user_id recusa, então não serve como login.
+    token = jwt.encode(
+        {
+            "typ": STREAM_TOKEN_TYPE,
+            "vid": str(row["id"]),
+            "uid": str(user_id),
+            "ver": row["file_version"],
+            "exp": datetime.now(timezone.utc) + STREAM_TOKEN_TTL,
+        },
+        settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM,
+    )
+    return {"url": f"/videos/stream/{token}"}
+
+
+@router.post("/{video_id}/progress")
+async def report_progress(
+    video_id: uuid.UUID,
+    body: ProgressBody,
+    user_id: str = Depends(get_current_user_id),
+    open_conn=Depends(get_conn_opener),
+):
+    # Commit antes de responder: o próximo relato (outra aba, outro worker) já vê este.
+    async with open_conn(user_id) as conn:
+        video = await _get_my_video(video_id, user_id, conn)
+        await conn.execute(
+            """INSERT INTO public.internal_video_viewers (video_id, user_id, required)
+               VALUES ($1, $2::uuid, false) ON CONFLICT (video_id, user_id) DO NOTHING""",
+            video["id"], user_id,
+        )
+        viewer = await conn.fetchrow(
+            """SELECT id, max_watched_s, last_report_at, completed_at FROM public.internal_video_viewers
+               WHERE video_id = $1 AND user_id = $2::uuid FOR UPDATE""",
+            video["id"], user_id,
+        )
+        current_max = float(viewer["max_watched_s"])
+        if viewer["completed_at"]:
+            return {"max_watched_s": current_max, "completed": True}
+        now = datetime.now(timezone.utc)
+        decision = evaluate_progress(
+            current_max, viewer["last_report_at"], now, body.position_s, float(video["duration_seconds"])
+        )
+        if not decision.accepted:
+            return JSONResponse(
+                status_code=409,
+                content={"detail": "Avanço além do assistido.", "max_watched_s": current_max},
+            )
+        await conn.execute(
+            """UPDATE public.internal_video_viewers
+               SET max_watched_s = $2, last_report_at = $3::timestamptz,
+                   completed_at = CASE WHEN $4 THEN $3::timestamptz END
+               WHERE id = $1""",
+            viewer["id"], decision.new_max_s, now, decision.completed,
+        )
+    return {"max_watched_s": decision.new_max_s, "completed": decision.completed}

@@ -23,7 +23,11 @@ def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> str:
     payload = decode_token(credentials.credentials)
-    return payload["sub"]
+    # Tokens de uso restrito (ex.: reprodução de vídeo) não têm "sub" e não valem como login.
+    sub = payload.get("sub")
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+    return sub
 
 
 async def get_db(

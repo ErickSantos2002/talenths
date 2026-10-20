@@ -1,6 +1,10 @@
+import math
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.middleware.audit import AuditMiddleware
 
 from app.config import settings
@@ -50,6 +54,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+def _json_safe(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return str(value)
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(v) for v in value]
+    return value
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    # O 422 padrão ecoa o "input": um NaN/inf recusado quebraria o JSON e viraria 500.
+    return JSONResponse(status_code=422, content={"detail": _json_safe(jsonable_encoder(exc.errors()))})
+
+
 app.add_middleware(AuditMiddleware)
 _frontend_origin = settings.FRONTEND_URL.rstrip("/")
 app.add_middleware(
@@ -63,6 +84,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Range", "Accept-Ranges", "Content-Length"],
 )
 
 app.include_router(auth_router)
