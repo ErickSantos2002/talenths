@@ -52,7 +52,9 @@ async def test_full_upload_flow(db, client_as, sample_mp4):
     assert r.status_code == 200
     body = r.json()
     assert body["duration_seconds"] > 0 and body["file_size"] == len(sample_mp4)
-    row = await db.fetchrow("SELECT file_path, completed_at FROM public.internal_video_uploads")
+    row = await db.fetchrow(
+        "SELECT file_path, completed_at FROM public.internal_video_uploads WHERE id = $1::uuid", info["upload_id"]
+    )
     assert row["completed_at"] and open(row["file_path"], "rb").read() == sample_mp4
 
 
@@ -85,7 +87,9 @@ async def test_cancel_deletes_tmp(db, client_as, sample_mp4):
     r = await c.delete(f"/videos/uploads/{info['upload_id']}")
     assert r.status_code == 204
     assert not os.path.exists(tmp)
-    assert await db.fetchval("SELECT count(*) FROM public.internal_video_uploads") == 0
+    assert await db.fetchval(
+        "SELECT count(*) FROM public.internal_video_uploads WHERE id = $1::uuid", info["upload_id"]
+    ) == 0
 
 
 async def test_stale_uploads_are_cleaned_on_start(db, client_as):

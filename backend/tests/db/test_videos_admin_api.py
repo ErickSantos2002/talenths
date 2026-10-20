@@ -72,7 +72,11 @@ async def test_create_assigns_by_rules_and_notifies(db, client_as, sample_mp4):
         assert row["required"] is True
         assert await _video_notes(db, u) == ["Novo vídeo para assistir"]
     assert await _viewer(db, video["id"], outsider) is None
-    consumed = await db.fetchval("SELECT consumed_at FROM public.internal_video_uploads")
+    consumed = await db.fetchval(
+        """SELECT u.consumed_at FROM public.internal_video_uploads u
+           JOIN public.internal_videos v ON v.file_path = u.file_path WHERE v.id = $1::uuid""",
+        video["id"],
+    )
     assert consumed is not None
 
     detail = (await c.get(f"/videos/{video['id']}/admin")).json()
@@ -330,9 +334,9 @@ async def test_delete_removes_file(db, client_as, sample_mp4):
 
     assert (await c.delete(f"/videos/{vid}")).status_code == 204
     assert not os.path.exists(path)
-    assert await db.fetchval("SELECT count(*) FROM public.internal_videos") == 0
-    assert await db.fetchval("SELECT count(*) FROM public.internal_video_viewers") == 0
-    assert await db.fetchval("SELECT count(*) FROM public.internal_video_rules") == 0
+    assert await db.fetchval("SELECT count(*) FROM public.internal_videos WHERE id = $1::uuid", vid) == 0
+    assert await db.fetchval("SELECT count(*) FROM public.internal_video_viewers WHERE video_id = $1::uuid", vid) == 0
+    assert await db.fetchval("SELECT count(*) FROM public.internal_video_rules WHERE video_id = $1::uuid", vid) == 0
     assert (await c.get(f"/videos/{vid}/admin")).status_code == 404
 
 
@@ -341,7 +345,12 @@ async def test_stale_completed_unconsumed_upload_is_cleaned(db, client_as, sampl
     c = client_as(manager)
     stale = await _upload(c, sample_mp4)
     kept = await _upload(c, sample_mp4)
-    await _create(c, sample_mp4, _rules())  # consome um terceiro upload
+    consumed_video = await _create(c, sample_mp4, _rules())  # consome um terceiro upload
+    consumed = str(await db.fetchval(
+        """SELECT u.id FROM public.internal_video_uploads u
+           JOIN public.internal_videos v ON v.file_path = u.file_path WHERE v.id = $1::uuid""",
+        consumed_video["id"],
+    ))
     await db.execute(
         "UPDATE public.internal_video_uploads SET created_at = now() - interval '25 hours', completed_at = now() - interval '25 hours' WHERE id = $1::uuid",
         stale)
@@ -350,8 +359,9 @@ async def test_stale_completed_unconsumed_upload_is_cleaned(db, client_as, sampl
         "UPDATE public.internal_video_uploads SET created_at = now() - interval '25 hours', completed_at = now() - interval '1 hour' WHERE id = $1::uuid",
         kept)
     await db.execute(
-        "UPDATE public.internal_video_uploads SET created_at = now() - interval '30 hours', completed_at = now() - interval '30 hours' WHERE consumed_at IS NOT NULL")
-    consumed_path = await db.fetchval("SELECT file_path FROM public.internal_video_uploads WHERE consumed_at IS NOT NULL")
+        "UPDATE public.internal_video_uploads SET created_at = now() - interval '30 hours', completed_at = now() - interval '30 hours' WHERE id = $1::uuid",
+        consumed)
+    consumed_path = await db.fetchval("SELECT file_path FROM public.internal_video_uploads WHERE id = $1::uuid", consumed)
 
     assert (await c.post("/videos/uploads", json={"total_size": 10})).status_code == 201
     assert not os.path.exists(stale_path)
