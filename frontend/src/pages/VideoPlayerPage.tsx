@@ -119,6 +119,7 @@ function VideoPlayer({ id }: { id: string }) {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", onPageHide);
+      reporter.dispose();
       void reporter.flush(true);
     };
   }, [reporter]);
