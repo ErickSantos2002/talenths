@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS public.internal_videos (
   title text NOT NULL,
   description text,
   file_path text NOT NULL,
-  file_size bigint NOT NULL,
-  duration_seconds numeric NOT NULL,
+  file_size bigint NOT NULL CHECK (file_size > 0),
+  duration_seconds numeric NOT NULL CHECK (duration_seconds > 0),
   due_days int CHECK (due_days > 0),          -- nulo = sem prazo
   file_version int NOT NULL DEFAULT 1,
   archived_at timestamptz,                    -- nulo = ativo
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.internal_video_viewers (
   required bool NOT NULL DEFAULT false,
   excluded bool NOT NULL DEFAULT false,
   assigned_at timestamptz NOT NULL DEFAULT now(),
-  max_watched_s numeric NOT NULL DEFAULT 0,
+  max_watched_s numeric NOT NULL DEFAULT 0 CHECK (max_watched_s >= 0),
   last_report_at timestamptz,
   completed_at timestamptz,
   UNIQUE (video_id, user_id)
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS public.internal_video_uploads (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   created_by uuid,
-  total_size bigint NOT NULL,
+  total_size bigint NOT NULL CHECK (total_size > 0),
   parts_received int[] NOT NULL DEFAULT '{}',
   file_path text,
   completed_at timestamptz,

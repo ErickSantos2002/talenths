@@ -1,3 +1,5 @@
+import asyncpg
+
 from tests.db.conftest import make_company, make_department, make_user
 
 
@@ -198,3 +200,29 @@ async def test_deleted_user_row_survives_with_snapshot(db):
     assert rows[0]["user_id"] is None
     assert rows[0]["user_name_snapshot"] == "Fulano"
     assert rows[0]["department_name_snapshot"] == "RH"
+
+
+async def _violates_check(db, sql, *args) -> bool:
+    try:
+        async with db.transaction():
+            await db.execute(sql, *args)
+    except asyncpg.CheckViolationError:
+        return True
+    return False
+
+
+async def test_size_duration_and_progress_checks(db):
+    company = await make_company(db)
+    user = await make_user(db, company)
+    insert_video = """INSERT INTO public.internal_videos (company_id, title, file_path, file_size, duration_seconds)
+                      VALUES ($1, 'T', 'x.mp4', $2, $3)"""
+    assert await _violates_check(db, insert_video, company, 1000, 0)
+    assert await _violates_check(db, insert_video, company, 0, 600)
+    video = await make_video(db, company)
+    assert await _violates_check(
+        db, "INSERT INTO public.internal_video_viewers (video_id, user_id, max_watched_s) VALUES ($1, $2, -1)",
+        video, user,
+    )
+    assert await _violates_check(
+        db, "INSERT INTO public.internal_video_uploads (company_id, total_size) VALUES ($1, 0)", company
+    )
