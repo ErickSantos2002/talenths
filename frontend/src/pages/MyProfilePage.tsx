@@ -96,7 +96,7 @@ export default function MyProfilePage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6" data-tour="my-profile">
         <div className="flex items-center gap-3">
           <UserPen className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold">Meu Perfil</h1>

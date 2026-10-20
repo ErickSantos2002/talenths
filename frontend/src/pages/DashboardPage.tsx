@@ -78,7 +78,7 @@ function CollaboratorDashboard({ profile }: { profile: any }) {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div data-tour="dashboard-header">
         <h1 className="text-3xl font-bold tracking-tight">
           Olá, {profile?.name?.split(" ")[0] ?? "Colaborador"} 👋
         </h1>
@@ -162,7 +162,7 @@ export default function DashboardPage() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-        <div>
+        <div data-tour="dashboard-header">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-muted-foreground">
             Bem-vindo de volta, {profile?.name?.split(" ")[0] ?? "Usuário"}. Aqui está um resumo da empresa.

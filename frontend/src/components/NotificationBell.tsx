@@ -61,6 +61,7 @@ export function NotificationBell() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          data-tour="notifications"
           variant="ghost"
           size="icon"
           className="relative h-9 w-9"

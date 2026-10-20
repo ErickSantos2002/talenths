@@ -80,7 +80,7 @@ export default function MeusVideosPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-8" data-tour="my-videos">
         <div className="flex items-center gap-3">
           <Video className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold tracking-tight">Vídeos</h1>

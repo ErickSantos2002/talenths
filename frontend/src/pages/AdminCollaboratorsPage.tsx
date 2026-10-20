@@ -402,7 +402,7 @@ export default function AdminCollaboratorsPage() {
 
   return (
     <AdminLayout>
-      <div className="animate-fade-in space-y-5">
+      <div className="animate-fade-in space-y-5" data-tour="admin-collaborators">
 
         {/* Header */}
         <div>
