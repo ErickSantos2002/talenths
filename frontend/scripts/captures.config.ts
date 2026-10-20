@@ -61,6 +61,21 @@ export const CAPTURES: Capture[] = [
   { name: "calendario", account: "ana", route: () => "/calendario" },
   { name: "resultado-teste", account: "ana", route: (ids) => `/meus-testes/tentativas/${ids.attempt}` },
 
+  // Guias de Desenvolvimento, Comunicação e RH.
+  { name: "minha-trilha", account: "ana", route: () => "/minha-trilha" },
+  { name: "meu-pdi", account: "ana", route: () => "/meu-pdi" },
+  { name: "minha-universidade", account: "ana", route: () => "/minha-universidade" },
+  { name: "workshops", account: "ana", route: () => "/workshops" },
+  { name: "pesquisas", account: "ana", route: () => "/pesquisas" },
+  { name: "meus-feedbacks", account: "ana", route: () => "/meus-feedbacks" },
+  { name: "meus-documentos", account: "ana", route: () => "/meus-documentos" },
+  { name: "video", account: "ana", route: (ids) => `/videos/${ids.video}` },
+  { name: "bingo", account: "ana", route: () => "/bingo" },
+  { name: "minhas-ausencias", account: "ana", route: () => "/minhas-ausencias" },
+  { name: "meus-beneficios", account: "ana", route: () => "/meus-beneficios" },
+  { name: "meu-onboarding", account: "ana", route: () => "/meu-onboarding" },
+  { name: "meu-ponto", account: "bruno", route: () => "/meu-ponto" },
+
   // Telas do tour de boas-vindas (gestor).
   { name: "admin-colaboradores", account: "gestor", route: () => "/admin/colaboradores" },
   { name: "admin-videos", account: "gestor", route: () => "/admin/videos" },

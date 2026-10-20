@@ -28,6 +28,8 @@ import asyncio
 import json
 import os
 import random
+import shutil
+import subprocess
 import sys
 import uuid
 from datetime import date, datetime, time, timedelta, timezone
@@ -44,6 +46,8 @@ BRT = timezone(timedelta(hours=-3))
 WELCOME_TOURS = {"boas-vindas-colaborador": 2, "boas-vindas-gestor": 2}
 # Tabela que a 001 já semeia (o teste DISC antigo) e que não é dado de pessoa.
 KEEP = {"scenario_blocks"}
+# O mesmo UPLOADS_DIR do backend das capturas (topo de frontend/scripts/captures.ts).
+UPLOADS_DIR = os.environ.get("CAPTURES_UPLOADS_DIR", "/tmp/talenths-uploads-capturas")
 
 
 def db_name(url: str) -> str:
@@ -55,6 +59,22 @@ def allowed(url: str) -> bool:
     `?host=` levariam a conexão para outro banco com o caminho dizendo outra coisa."""
     parts = urlparse(url)
     return parts.scheme in ("postgresql", "postgres") and not parts.query and "capturas" in db_name(url)
+
+
+def placeholder_video(path: str, seconds: int, title: str) -> bool:
+    """Um MP4 leve (fundo liso com o título, 1 quadro por segundo) para o player da
+    captura abrir de verdade. Sem ffmpeg, o vídeo fica sem arquivo, como os outros."""
+    if not shutil.which("ffmpeg"):
+        return False
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = title.replace(":", r"\:").replace("'", "")
+    result = subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"color=c=0x0f766e:s=1280x720:r=1:d={seconds}",
+         "-vf", f"drawtext=text='{text}':fontcolor=white:fontsize=56:x=(w-tw)/2:y=(h-th)/2",
+         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path],
+        capture_output=True,
+    )
+    return result.returncode == 0
 
 
 def hash_pw(plain: str) -> str:
@@ -443,7 +463,7 @@ class Seeder:
         for title, area, offset, st, seats in rows:
             start = self.at(self.days(offset), 14)
             wid = await self.ins("workshops", company_id=self.company_id, title=title, area=area,
-                                 description=f"Workshop de {title.lower()}.", location="Sala de treinamento",
+                                 description=f"Workshop de {title.lower()}.", location="Auditório",
                                  starts_at=start, ends_at=start + timedelta(hours=3), max_seats=seats,
                                  status=st, created_by=self.users["gestor"])
             self.workshop_ids.append(wid)
@@ -457,13 +477,13 @@ class Seeder:
 
     async def announcements(self) -> None:
         rows = [
-            ("Semana de segurança começa dia 22", "evento",
+            ("Semana de segurança começa dia 22", "Evento",
              "Palestras, oficinas e um café especial na quinta. Confira a programação no Calendário.", 2),
-            ("Novo convênio com academia", "beneficios",
+            ("Novo convênio com academia", "Benefícios",
              "A partir deste mês, todos têm desconto na rede de academias parceira. Veja em Meus Benefícios.", 6),
-            ("Autoavaliação aberta", "rh",
+            ("Autoavaliação aberta", "RH",
              "O ciclo de avaliação do semestre começou. Faça a sua autoavaliação até o fim do prazo.", 9),
-            ("Bem-vindo, Igor!", "geral", "O Igor chegou ao time Comercial. Dê as boas-vindas!", 18),
+            ("Bem-vindo, Igor!", "Geral", "O Igor chegou ao time Comercial. Dê as boas-vindas!", 18),
         ]
         for title, cat, content, ago in rows:
             when = self.now - timedelta(days=ago)
@@ -471,7 +491,7 @@ class Seeder:
                            category=cat, status="published", published_at=when, created_by=self.users["gestor"],
                            created_at=when, updated_at=when)
         await self.ins("announcements", company_id=self.company_id, title="Confraternização de fim de ano",
-                       content="Rascunho: local e data a confirmar.", category="evento", status="draft",
+                       content="Rascunho: local e data a confirmar.", category="Evento", status="draft",
                        created_by=self.users["gestor"])
 
     async def onboarding(self) -> None:
@@ -481,11 +501,11 @@ class Seeder:
                  ("Receber notebook e acessos", "manager", 2),
                  ("Fazer o tour de boas-vindas do TalentHS", "user", 3),
                  ("Almoço com o time", "manager", 5),
-                 ("Concluir o treinamento de NR-35", "user", 15)]
+                 ("Concluir o curso de NR-35", "user", 15)]
         for pos, (title, role, due) in enumerate(tasks):
             await self.ins("onboarding_template_tasks", template_id=tid, title=title, responsible_role=role,
                            due_days=due, position=pos)
-        for key, started, done in (("igor", self.days(-20), 3), ("ana", self.days(-60), 5)):
+        for key, started, done in (("igor", self.days(-20), 3), ("ana", self.days(-8), 3)):
             cid = await self.ins("onboarding_checklists", company_id=self.company_id, user_id=self.users[key],
                                  template_id=tid, template_name="Integração padrão", started_at=started,
                                  created_by=self.users["gestor"])
@@ -493,7 +513,7 @@ class Seeder:
                 finished = pos < done
                 await self.ins("onboarding_checklist_tasks", checklist_id=cid, title=title, responsible_role=role,
                                due_date=started + timedelta(days=due), position=pos,
-                               completed_at=self.now - timedelta(days=15 - pos) if finished else None,
+                               completed_at=self.at(started + timedelta(days=pos), 10) if finished else None,
                                completed_by=self.users[key] if finished else None)
 
     async def surveys(self) -> None:
@@ -568,8 +588,13 @@ class Seeder:
                 ("Novidades do sistema de propostas", "O que mudou na tela de propostas.", 300, None, None)]
         self.video_ids = []
         for n, (title, desc, dur, due, target) in enumerate(rows):
+            path = f"/nao-existe/capturas/video-{n + 1}.mp4"
+            # O "Uso correto dos EPIs" é o da captura do player: esse ganha arquivo.
+            real = f"{UPLOADS_DIR}/{self.company_id}/videos/capturas-{n + 1}.mp4"
+            if n == 1 and placeholder_video(real, dur, title):
+                path = real
             vid = await self.ins("internal_videos", company_id=self.company_id, title=title, description=desc,
-                                 file_path=f"/nao-existe/capturas/video-{n + 1}.mp4", file_size=50_000_000 + n,
+                                 file_path=path, file_size=50_000_000 + n,
                                  duration_seconds=dur, due_days=due, created_by=self.users["gestor"],
                                  created_at=self.now - timedelta(days=20 - n * 4))
             self.video_ids.append(vid)

@@ -21,19 +21,13 @@ const guides = entries.flatMap(([path, raw]) => {
   }
 });
 
-// Menu screens (outside /admin) that must already have a guide. Grows module by
-// module until it is every non-admin menu screen.
-const COVERED_SCREENS = [
-  "/apresentacao",
-  "/dashboard",
-  "/ajuda",
-  "/meu-perfil",
-  "/cultura",
-  "/regras-internas",
-  "/calendario",
-  "/minha-avaliacao",
-  "/meus-testes",
-];
+// Every menu screen must have a guide. Admin screens come in Task 7, which
+// drops the /admin/ exclusion.
+const COVERED_SCREENS = SCREENS.filter((s) => s.menu && !s.path.startsWith("/admin/")).map((s) => s.path);
+
+// Captures no guide cites yet: the manager welcome-tour screens, kept for the
+// admin guides (Task 7).
+const NOT_IN_GUIDES = new Set(["admin-colaboradores", "admin-videos", "admin-relatorios"]);
 
 const REQUIRED_SECTIONS = ["## Para que serve", "## Passo a passo", "## Dúvidas comuns"];
 
@@ -60,14 +54,6 @@ describe("guides contract", () => {
 
   it("every guide parses", () => {
     expect(parseErrors).toEqual([]);
-  });
-
-  it("the covered list only names non-admin menu screens", () => {
-    for (const path of COVERED_SCREENS) {
-      const screen = SCREENS.find((s) => s.path === path);
-      expect(screen?.menu, path).toBeTruthy();
-      expect(path.startsWith("/admin/"), path).toBe(false);
-    }
   });
 
   it.each(COVERED_SCREENS)("%s has at least one guide that cites it in telas", (path) => {
@@ -111,5 +97,20 @@ describe("guides contract", () => {
       }
     }
     expect(problems).toEqual([]);
+  });
+
+  it("every capture is cited by some guide (except the listed tour-only ones)", () => {
+    const cited = new Set(
+      guides.flatMap(({ guide }) =>
+        links(guide.body)
+          .filter((l) => l.image)
+          .map((l) => /^\/capturas\/([a-z0-9-]+)\.webp$/.exec(l.href)?.[1])
+          .filter(Boolean),
+      ),
+    );
+    const orphans = CAPTURES.map((c) => c.name).filter((n) => !cited.has(n) && !NOT_IN_GUIDES.has(n));
+    expect(orphans).toEqual([]);
+    const stale = [...NOT_IN_GUIDES].filter((n) => cited.has(n) || !CAPTURE_NAMES.has(n));
+    expect(stale, "NOT_IN_GUIDES lista captura já citada ou inexistente").toEqual([]);
   });
 });
