@@ -28,7 +28,7 @@ Quando o RH liberar um teste para você, ou quando quiser rever a nota e as resp
 
 1. Clique em **Iniciar** no teste que quer fazer.
 
-   Atenção: se depois de **Iniciar** aparecer uma mensagem de erro ou o teste não abrir, não clique de novo. Cada clique em **Iniciar** conta uma tentativa. Avise o RH.
+   Atenção: se depois de **Iniciar** aparecer uma mensagem de erro e as perguntas não abrirem, avise o RH. Você não perde tentativas por isso: clicar de novo reabre a mesma tentativa, sem contar outra.
 
 2. Leia as instruções, que aparecem acima da primeira pergunta, e responda: clique na opção certa, em mais de uma opção quando a pergunta permitir, num número da escala ou escreva a resposta no campo **Sua resposta...**.
 3. Clique em **Próxima** para seguir ou em **Anterior** para voltar. A barra no topo mostra o seu avanço.
@@ -54,7 +54,7 @@ Para sair, clique em **Voltar para Meus Testes**.
 
 - Testes com **Resultado imediato** são corrigidos na hora, e a nota aparece assim que você envia.
 - Testes com **Avaliação manual** ou **Avaliação mista** podem ficar como **Aguardando avaliação** até o RH corrigir. Quando o resultado sai, você recebe uma notificação no sino.
-- Se o teste tem limite de tentativas, cada vez que você clica em **Iniciar** conta uma tentativa. Depois da última, não é possível fazer o teste de novo.
+- Se o teste tem limite de tentativas, uma tentativa conta quando você inicia o teste pela primeira vez. Enquanto ela estiver em andamento, **Iniciar** ou **Continuar** reabrem a mesma tentativa. Depois de enviar a última tentativa, não é possível fazer o teste de novo.
 
 ## Dúvidas comuns
 
@@ -64,6 +64,6 @@ Para sair, clique em **Voltar para Meus Testes**.
 
 **O teste que eu esperava não aparece em Disponíveis.** O RH pode ter liberado o teste só para algumas pessoas ou departamentos, ou você já usou todas as tentativas. Fale com o RH.
 
-**Cliquei em Iniciar e apareceu um erro.** Não tente de novo: cada clique em **Iniciar** conta uma tentativa, mesmo quando o teste não abre. Avise o RH, que acompanha as suas tentativas.
+**Cliquei em Iniciar e as perguntas não abriram.** Avise o RH. A tentativa fica em aberto e não se perde: um novo clique reabre a mesma tentativa, sem contar outra.
 
 **A tela mostra "Nenhum teste disponível no momento".** Não há nenhum teste liberado para você agora.

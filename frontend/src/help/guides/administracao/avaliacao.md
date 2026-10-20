@@ -57,6 +57,6 @@ Na **Avaliação de Desempenho** você conduz os ciclos de avaliação: cria o c
 
 **Avaliei alguém e quero corrigir.** Clique em **Avaliar** de novo e envie a avaliação completa. A nova substitui a anterior. Depois, clique em **Calcular Notas** para atualizar a nota.
 
-**Cliquei em Avaliar na minha própria linha e deu erro.** A tabela também lista você, mas ninguém avalia a si mesmo como gestor: aparece "Não é possível avaliar a si mesmo como gestor". A sua autoavaliação é feita em [Minha Avaliação](/ajuda/desempenho/minha-avaliacao).
+**Avaliei a minha própria linha e o envio deu erro.** A tabela também lista você. O formulário abre, mas ao clicar em **Enviar Avaliação** aparece "Não é possível avaliar a si mesmo como gestor": ninguém avalia a si mesmo como gestor. A sua autoavaliação é feita em [Minha Avaliação](/ajuda/desempenho/minha-avaliacao).
 
 **Posso calcular as notas mais de uma vez?** Sim. Cada cálculo refaz as notas e a posição no 9Box com as avaliações enviadas até aquele momento.
