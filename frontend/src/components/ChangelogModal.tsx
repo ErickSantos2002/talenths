@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.9.0",
+    version: "v1.10.0",
     date: "20/10/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Tour de boas-vindas: um passeio guiado pelas principais telas do TalentHS, incluindo onde encontrar os vídeos que você precisa assistir.",
+      },
+      {
+        type: "novidade",
+        text: "Nova página Ajuda no menu, de onde você refaz o tour quando quiser.",
+      },
+    ],
+  },
+  {
+    version: "v1.9.0",
+    date: "20/10/2026",
     entries: [
       {
         type: "novidade",
