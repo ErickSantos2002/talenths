@@ -2,6 +2,7 @@ import os
 import uuid
 
 import asyncpg
+import httpx
 import pytest
 
 
@@ -51,3 +52,35 @@ async def make_user(db, company_id, department_id=None, name="Fulano", role="use
             role, company_id, user_id,
         )
     return user_id
+
+
+@pytest.fixture
+def sample_mp4() -> bytes:
+    path = os.path.join(os.path.dirname(__file__), "..", "fixtures", "sample-5s.mp4")
+    with open(path, "rb") as f:
+        return f.read()
+
+
+@pytest.fixture
+def client_as(db, tmp_path, monkeypatch):
+    """Cliente HTTP que age como `user_id`, usando a conexão (em transação) do teste."""
+    from app.config import settings
+    from app.dependencies import get_current_user_id, get_db, get_db_public
+    from app.main import app
+
+    monkeypatch.setattr(settings, "UPLOADS_DIR", str(tmp_path))
+    clients = []
+
+    def make(user_id: str) -> httpx.AsyncClient:
+        async def _db():
+            yield db
+
+        app.dependency_overrides[get_db] = _db
+        app.dependency_overrides[get_db_public] = _db
+        app.dependency_overrides[get_current_user_id] = lambda: user_id
+        client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
+        clients.append(client)
+        return client
+
+    yield make
+    app.dependency_overrides.clear()
