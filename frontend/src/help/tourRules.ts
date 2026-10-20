@@ -1,0 +1,33 @@
+import { format } from "date-fns";
+import type { TourProgress } from "@/lib/api";
+import type { AppRole } from "./screens";
+import type { Audience, Tour } from "./tours/types";
+
+export const MAX_INVITE_DECLINES = 3;
+
+export function audienceOf(roles: AppRole[]): Audience {
+  return roles.includes("manager") || roles.includes("master_admin") ? "manager" : "collaborator";
+}
+
+export function resumeStep(progress: TourProgress | null, t: Tour | null): number | null {
+  if (!progress || !t) return null;
+  if (progress.completed_at || !progress.started_at) return null;
+  if (progress.version !== t.version) return null;
+  if (progress.step === 0 || progress.step >= t.steps.length) return null;
+  return progress.step;
+}
+
+export function shouldInvite(progress: TourProgress | null): boolean {
+  if (!progress) return true;
+  if (progress.completed_at || progress.dismissed_at) return false;
+  return progress.invites_declined < MAX_INVITE_DECLINES;
+}
+
+export function tourStatus(
+  progress: TourProgress | null,
+  t: Tour,
+): { kind: "done"; date: string } | { kind: "stopped"; step: number; total: number } | { kind: "not-started" } {
+  if (!progress || !progress.started_at) return { kind: "not-started" };
+  if (progress.completed_at) return { kind: "done", date: format(new Date(progress.completed_at), "dd/MM/yyyy") };
+  return { kind: "stopped", step: progress.step + 1, total: t.steps.length };
+}

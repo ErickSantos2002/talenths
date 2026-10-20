@@ -847,6 +847,28 @@ export class ProgressRejected extends Error {
   }
 }
 
+export interface TourProgress {
+  tour: string;
+  version: number;
+  step: number;
+  started_at: string | null;
+  completed_at: string | null;
+  dismissed_at: string | null;
+  invites_declined: number;
+}
+
+export const tour = {
+  list: () => get<TourProgress[]>("/tour/progress"),
+  advance: (id: string, version: number, step: number) =>
+    put<TourProgress>(`/tour/progress/${encodeURIComponent(id)}`, { version, step }),
+  complete: (id: string, version: number) =>
+    post<TourProgress>(`/tour/progress/${encodeURIComponent(id)}/complete`, { version }),
+  dismiss: (id: string, version: number) =>
+    post<TourProgress>(`/tour/progress/${encodeURIComponent(id)}/dismiss`, { version }),
+  declineInvite: (id: string, version: number) =>
+    post<TourProgress>(`/tour/progress/${encodeURIComponent(id)}/decline-invite`, { version }),
+};
+
 export const videos = {
   start: (total_size: number) => post<UploadStart>("/videos/uploads", { total_size }),
   complete: (uploadId: string) => post<UploadComplete>(`/videos/uploads/${encodeURIComponent(uploadId)}/complete`),
