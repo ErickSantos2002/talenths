@@ -6,7 +6,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { GuideContent } from "@/help/GuideContent";
+import { LazyGuideContent } from "@/help/LazyGuideContent";
 import { MODULES, findGuide, guidesFor, useGuides } from "@/help/guides";
 
 export default function HelpGuidePage() {
@@ -66,7 +66,7 @@ export default function HelpGuidePage() {
             <div className="grid gap-8 lg:grid-cols-[1fr_16rem]">
               <article className="space-y-4">
                 <h1 className="text-2xl font-bold">{guide.title}</h1>
-                <GuideContent body={guide.body} />
+                <LazyGuideContent body={guide.body} />
               </article>
               {siblings.length > 0 && (
                 <aside className="space-y-2">

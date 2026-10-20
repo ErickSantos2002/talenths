@@ -47,10 +47,10 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("HelpGuidePage", () => {
-  it("renders the guide, breadcrumb, siblings and document title", () => {
+  it("renders the guide, breadcrumb, siblings and document title", async () => {
     renderAt("/ajuda/desempenho/minha-avaliacao");
     expect(screen.getByRole("heading", { level: 1, name: "Minha Avaliação" })).toBeTruthy();
-    expect(screen.getByText("Texto da avaliação")).toBeTruthy();
+    expect(await screen.findByText("Texto da avaliação")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Ajuda" }).getAttribute("href")).toBe("/ajuda");
     expect(screen.getByText("Mais sobre Desempenho")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Meus Testes" }).getAttribute("href")).toBe("/ajuda/desempenho/meus-testes");

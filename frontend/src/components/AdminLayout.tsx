@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { HelpButton } from "@/help/HelpButton";
 import { TourLayoutBridge } from "@/help/TourLayoutBridge";
 
 interface AdminLayoutProps {
@@ -21,6 +22,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <AdminSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-12 items-center justify-end border-b border-border bg-background px-3 md:px-6 lg:px-8">
+            <HelpButton />
             <NotificationBell />
           </header>
           <main className="flex-1 overflow-x-hidden p-6 lg:p-8">{children}</main>

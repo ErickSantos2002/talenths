@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canOpen, SCREENS } from "../screens";
-import { WELCOME_TOURS } from "./welcome";
+import { FINAL_STEPS, WELCOME_TOURS } from "./welcome";
 
 const sources = import.meta.glob("/src/**/*.tsx", {
   query: "?raw",
@@ -54,10 +54,19 @@ describe("welcome tours contract", () => {
     const c = WELCOME_TOURS.collaborator.steps;
     const m = WELCOME_TOURS.manager.steps;
     expect(m.length).toBeGreaterThan(c.length);
-    const head = c.slice(0, -1);
+    const head = c.slice(0, -FINAL_STEPS.length);
     expect(m.slice(0, head.length)).toEqual(head);
     expect(c[c.length - 1].route).toBe("/ajuda");
-    expect(m[m.length - 1]).toEqual(c[c.length - 1]);
+    expect(m.slice(-FINAL_STEPS.length)).toEqual(FINAL_STEPS);
+  });
+
+  it("ends at the help button (since 2) and both tours are version 2", () => {
+    for (const [, t] of tours) {
+      const last = t.steps[t.steps.length - 1];
+      expect(last.element).toBe("help-button");
+      expect(last.since).toBe(2);
+      expect(t.version).toBe(2);
+    }
   });
 
   it("texts are short", () => {

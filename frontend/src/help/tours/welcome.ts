@@ -85,17 +85,24 @@ export const FINAL_STEPS: TourStep[] = [
     title: "Ajuda",
     text: "Para ver este tour de novo, abra **Ajuda** no menu e clique em **Fazer o tour de boas-vindas**.",
   },
+  {
+    route: "/ajuda",
+    element: "help-button",
+    title: "Ajuda desta tela",
+    text: "Clique no **?** no topo da página sempre que tiver dúvida. Ele abre o guia da tela em que você está.",
+    since: 2,
+  },
 ];
 
 export const WELCOME_TOURS: Record<Audience, Tour> = {
   collaborator: {
     id: "boas-vindas-colaborador",
-    version: 1,
+    version: 2,
     steps: [...COLLABORATOR_STEPS, ...FINAL_STEPS],
   },
   manager: {
     id: "boas-vindas-gestor",
-    version: 1,
+    version: 2,
     steps: [...COLLABORATOR_STEPS, ...ADMIN_STEPS, ...FINAL_STEPS],
   },
 };
