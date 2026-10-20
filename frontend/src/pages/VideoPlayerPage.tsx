@@ -8,16 +8,30 @@ import { VideoStatusBadge } from "@/components/videos/VideoStatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { clampSeek, nextMaxWatched } from "@/lib/videoPlayback";
+import { acceptTimeUpdate, clampSeek, nextMaxWatched } from "@/lib/videoPlayback";
 import { createProgressReporter } from "@/lib/videoProgressReporter";
 import { formatDateTime, formatDuration } from "@/lib/videoFormat";
 
 const REPORT_INTERVAL_MS = 10_000;
-// The player may rest slightly past the max when pausing; less than this is not a skip.
-const SEEK_TOLERANCE_S = 1;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Float noise only: a seek must not credit anything beyond what was watched.
+const SEEK_TOLERANCE_S = 0.05;
 
 export default function VideoPlayerPage() {
   const { id = "" } = useParams();
+  if (!UUID_RE.test(id)) {
+    return (
+      <AdminLayout>
+        <Alert variant="destructive">
+          <AlertDescription>Vídeo não encontrado ou indisponível.</AlertDescription>
+        </Alert>
+      </AdminLayout>
+    );
+  }
+  return <VideoPlayer key={id} id={id} />;
+}
+
+function VideoPlayer({ id }: { id: string }) {
   const queryClient = useQueryClient();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const maxRef = useRef(0);
@@ -34,13 +48,6 @@ export default function VideoPlayerPage() {
     refetchOnWindowFocus: false,
     retry: false,
   });
-
-  useEffect(() => {
-    if (!video) return;
-    maxRef.current = nextMaxWatched(maxRef.current, video.max_watched_s);
-    completedRef.current = video.completed_at != null;
-    setShownMax(maxRef.current);
-  }, [video]);
 
   const fetchSrc = useCallback(
     async (keepPosition: boolean) => {
@@ -85,6 +92,14 @@ export default function VideoPlayerPage() {
       }),
     [id, queryClient],
   );
+
+  useEffect(() => {
+    if (!video) return;
+    maxRef.current = nextMaxWatched(maxRef.current, video.max_watched_s);
+    completedRef.current = video.completed_at != null;
+    reporter.resetLastSent(video.max_watched_s);
+    setShownMax(maxRef.current);
+  }, [video, reporter]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -146,7 +161,7 @@ export default function VideoPlayerPage() {
                     const el = e.currentTarget;
                     if (resumeRef.current) {
                       el.currentTime = resumeRef.current.time;
-                      if (resumeRef.current.playing) void el.play();
+                      if (resumeRef.current.playing) el.play().catch(() => undefined);
                       resumeRef.current = null;
                     } else if (!completedRef.current && maxRef.current > 0) {
                       el.currentTime = Math.min(maxRef.current, el.duration || maxRef.current);
@@ -154,9 +169,10 @@ export default function VideoPlayerPage() {
                   }}
                   onTimeUpdate={(e) => {
                     const el = e.currentTarget;
-                    if (!el.seeking && el.currentTime <= maxRef.current + SEEK_TOLERANCE_S + 1) {
-                      maxRef.current = nextMaxWatched(maxRef.current, el.currentTime);
-                    }
+                    if (completedRef.current) return;
+                    const { max, snapTo } = acceptTimeUpdate(el.currentTime, maxRef.current, el.seeking);
+                    maxRef.current = max;
+                    if (snapTo !== null) el.currentTime = snapTo;
                   }}
                   onSeeking={(e) => {
                     const el = e.currentTarget;

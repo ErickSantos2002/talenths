@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration, formatDueDays, isEmptyAudience, toggleId } from "./videoFormat";
+import { formatDate, formatDateTime, formatDuration, formatDueDays, isEmptyAudience, toggleId } from "./videoFormat";
 
 describe("videoFormat", () => {
   it("formats durations as mm:ss and h:mm:ss", () => {
@@ -30,8 +30,7 @@ describe("videoFormat", () => {
 });
 
 describe("formatDateTime", () => {
-  it("formata DD/MM/AAAA HH:mm", async () => {
-    const { formatDateTime, formatDate } = await import("./videoFormat");
+  it("formata DD/MM/AAAA HH:mm", () => {
     const iso = new Date(2026, 9, 5, 8, 7).toISOString();
     expect(formatDateTime(iso)).toBe("05/10/2026 08:07");
     expect(formatDate(iso)).toBe("05/10/2026");

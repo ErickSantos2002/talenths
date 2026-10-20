@@ -849,28 +849,28 @@ export class ProgressRejected extends Error {
 
 export const videos = {
   start: (total_size: number) => post<UploadStart>("/videos/uploads", { total_size }),
-  complete: (uploadId: string) => post<UploadComplete>(`/videos/uploads/${uploadId}/complete`),
-  cancel: (uploadId: string) => del(`/videos/uploads/${uploadId}`),
+  complete: (uploadId: string) => post<UploadComplete>(`/videos/uploads/${encodeURIComponent(uploadId)}/complete`),
+  cancel: (uploadId: string) => del(`/videos/uploads/${encodeURIComponent(uploadId)}`),
   create: (data: CreateVideoInput) => post<VideoCore>("/videos", data),
   listAdmin: () => get<AdminVideo[]>("/videos/admin"),
-  getAdmin: (id: string) => get<AdminVideoDetail>(`/videos/${id}/admin`),
-  update: (id: string, data: UpdateVideoInput) => patch<VideoCore>(`/videos/${id}`, data),
+  getAdmin: (id: string) => get<AdminVideoDetail>(`/videos/${encodeURIComponent(id)}/admin`),
+  update: (id: string, data: UpdateVideoInput) => patch<VideoCore>(`/videos/${encodeURIComponent(id)}`, data),
   removeViewer: (id: string, userId: string) =>
-    post<{ ok: boolean }>(`/videos/${id}/viewers/${userId}/remove`),
+    post<{ ok: boolean }>(`/videos/${encodeURIComponent(id)}/viewers/${encodeURIComponent(userId)}/remove`),
   replaceFile: (id: string, upload_id: string, mode: "keep_completed" | "reset_all") =>
-    post<VideoCore>(`/videos/${id}/replace-file`, { upload_id, mode }),
-  archive: (id: string) => post<VideoCore>(`/videos/${id}/archive`),
-  unarchive: (id: string) => post<VideoCore>(`/videos/${id}/unarchive`),
-  remove: (id: string) => del(`/videos/${id}`),
+    post<VideoCore>(`/videos/${encodeURIComponent(id)}/replace-file`, { upload_id, mode }),
+  archive: (id: string) => post<VideoCore>(`/videos/${encodeURIComponent(id)}/archive`),
+  unarchive: (id: string) => post<VideoCore>(`/videos/${encodeURIComponent(id)}/unarchive`),
+  remove: (id: string) => del(`/videos/${encodeURIComponent(id)}`),
   listMine: () => get<{ required: MyVideo[]; library: MyVideo[] }>("/videos/mine"),
-  get: (id: string) => get<MyVideo & { max_watched_s: number }>(`/videos/${id}`),
+  get: (id: string) => get<MyVideo & { max_watched_s: number }>(`/videos/${encodeURIComponent(id)}`),
   streamUrl: async (id: string) => {
-    const { url } = await post<{ url: string }>(`/videos/${id}/stream-token`);
+    const { url } = await post<{ url: string }>(`/videos/${encodeURIComponent(id)}/stream-token`);
     return `${BASE_URL}${url}`;
   },
   reportProgress: async (id: string, position_s: number) => {
     const token = getToken();
-    const res = await fetch(`${BASE_URL}/videos/${id}/progress`, {
+    const res = await fetch(`${BASE_URL}/videos/${encodeURIComponent(id)}/progress`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -896,7 +896,7 @@ export const videos = {
   // Fire-and-forget for pagehide: keepalive lets the request outlive the page; no 401 redirect.
   reportProgressKeepalive: (id: string, position_s: number) => {
     const token = getToken();
-    void fetch(`${BASE_URL}/videos/${id}/progress`, {
+    void fetch(`${BASE_URL}/videos/${encodeURIComponent(id)}/progress`, {
       method: "POST",
       keepalive: true,
       headers: {
