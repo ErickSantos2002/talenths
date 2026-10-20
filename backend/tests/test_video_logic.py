@@ -34,6 +34,20 @@ def test_report_under_5s_that_advances_is_noop():
     assert not d.records_report
 
 
+def test_end_of_video_report_3s_after_tick_completes():
+    # O vídeo acaba 3 s depois do último tick: o flush do ended precisa concluir,
+    # senão nenhum relato posterior acontece (player parado).
+    d = evaluate_progress(597, T0, T0 + timedelta(seconds=3), 600, 600)
+    assert d.accepted and d.new_max_s == 600 and d.completed and d.records_report
+
+
+def test_completion_under_5s_still_bounded_by_elapsed():
+    # limite = 500 + 5 * 1.1 = 505.5: pular até o fim continua sem efeito.
+    d = evaluate_progress(500, T0, T0 + timedelta(seconds=3), 600, 600)
+    assert d.accepted and d.new_max_s == 500 and not d.completed
+    assert not d.records_report
+
+
 def test_report_at_5s_is_evaluated_normally():
     # limite = 100 + 7 * 1.1 = 107.7
     d = evaluate_progress(100, T0, T0 + timedelta(seconds=5), 107.7, 600)

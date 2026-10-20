@@ -206,6 +206,28 @@ async def test_progress_under_5s_is_noop_and_keeps_last_report_at(db, client_as,
     assert after["last_report_at"] == before["last_report_at"]
 
 
+async def test_progress_end_of_video_3s_after_tick_completes(db, client_as, sample_mp4):
+    company, manager, user = await _setup(db)
+    video = await _create(client_as(manager), sample_mp4, _rules(user_ids=[user]))
+    await _set_duration(db, video["id"], 600)
+    await db.execute(
+        """UPDATE public.internal_video_viewers
+           SET max_watched_s = 590, last_report_at = now() - interval '20 seconds'
+           WHERE video_id = $1::uuid AND user_id = $2::uuid""",
+        video["id"], user)
+    c = client_as(user)
+
+    r = await c.post(f"/videos/{video['id']}/progress", json={"position_s": 597})
+    assert r.json() == {"max_watched_s": 597.0, "completed": False}
+    await _age_last_report(db, video["id"], user, 3)
+
+    r = await c.post(f"/videos/{video['id']}/progress", json={"position_s": 600})
+    assert r.status_code == 200, r.text
+    assert r.json() == {"max_watched_s": 600.0, "completed": True}
+    row = await _viewer(db, video["id"], user)
+    assert row["completed_at"] is not None and float(row["max_watched_s"]) == 600.0
+
+
 async def test_progress_rejects_nan_and_inf(db, client_as, sample_mp4):
     company, manager, user = await _setup(db)
     video = await _create(client_as(manager), sample_mp4, _rules(user_ids=[user]))

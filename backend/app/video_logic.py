@@ -51,16 +51,19 @@ def evaluate_progress(
         # Voltar o vídeo é legítimo e nunca reduz o máximo já assistido.
         return ProgressDecision(True, max_watched_s, is_completed(max_watched_s, duration_s))
 
+    too_soon = False
     if last_report_at is None:
         limit = max_watched_s + _FIRST_REPORT_SLACK_S
     else:
         elapsed = max((now - last_report_at).total_seconds(), 0.0)
-        if elapsed < _MIN_REPORT_INTERVAL_S:
-            # Relatos curtos somariam a folga fixa várias vezes (1 Hz chegava a ~2.1x).
-            # O flush de uma pausa cai aqui e é creditado no próximo relato normal.
-            return ProgressDecision(True, max_watched_s, is_completed(max_watched_s, duration_s), False)
         limit = max_watched_s + min(elapsed + _ELAPSED_SLACK_S, _MAX_ELAPSED_S) * _PLAYBACK_RATE
+        too_soon = elapsed < _MIN_REPORT_INTERVAL_S
 
+    # Relatos curtos somariam a folga fixa várias vezes (1 Hz chegava a ~2.1x): viram
+    # no-op e o avanço é creditado no próximo relato normal. A exceção é o fim do vídeo,
+    # porque depois do ended não vem relato nenhum; o ganho extra cabe uma vez só.
+    if too_soon and (not is_completed(position, duration_s) or position > limit):
+        return ProgressDecision(True, max_watched_s, is_completed(max_watched_s, duration_s), False)
     if position > limit:
         return ProgressDecision(False, max_watched_s, is_completed(max_watched_s, duration_s))
     return ProgressDecision(True, position, is_completed(position, duration_s))
