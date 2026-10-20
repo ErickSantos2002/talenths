@@ -17,7 +17,7 @@ Nas suas primeiras semanas na empresa, sempre que concluir uma tarefa da integra
 ## Passo a passo
 
 1. No menu, em **RH**, clique em **Meu Onboarding**. Abaixo do título aparece o nome do seu roteiro de integração.
-2. No topo, veja quantas tarefas já foram concluídas e o percentual de avanço.
+2. No topo, veja quantas tarefas já foram concluídas e o percentual de avanço. Quando todas estiverem concluídas, esse quadro dá lugar ao aviso **Onboarding concluído!**.
 3. Em **Suas tarefas**, veja o que você precisa fazer e o prazo de cada tarefa.
 4. Quando concluir uma tarefa, clique no círculo à esquerda dela. A tarefa fica marcada e riscada. Clicou por engano? Clique de novo para desmarcar.
 5. Em **Tarefas do RH**, acompanhe as tarefas que o RH faz para você, com a etiqueta **RH**. Elas são marcadas pelo RH.

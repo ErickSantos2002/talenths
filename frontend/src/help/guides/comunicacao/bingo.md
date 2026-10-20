@@ -40,4 +40,4 @@ Você não precisa clicar em nada: a tela se atualiza sozinha a cada poucos segu
 
 **Preciso marcar os números na tela?** Não. Os números sorteados são marcados sozinhos na sua cartela.
 
-**O código no canto da cartela serve para quê?** É a identificação da sua cartela, por exemplo **#EX001**. Ele ajuda o gestor a conferir a cartela se houver dúvida na hora do prêmio.
+**O código no canto da cartela serve para quê?** É a identificação da sua cartela, por exemplo **#EX001**.

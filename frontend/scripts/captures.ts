@@ -13,6 +13,10 @@
 //   FRONTEND_URL=http://localhost:8091 UPLOADS_DIR=/tmp/talenths-uploads-capturas \
 //   .venv/bin/python -m uvicorn app.main:app --port 8011
 //
+//   (O UPLOADS_DIR do backend tem de ser o mesmo CAPTURES_UPLOADS_DIR da semente —
+//   os dois têm padrão /tmp/talenths-uploads-capturas: é lá que a semente grava o
+//   MP4 do player da captura `video`.)
+//
 //   # 3. o frontend, apontado para esse backend
 //   VITE_API_URL=http://localhost:8011 bun run --cwd frontend dev -- --port 8091 --strictPort
 //
@@ -21,7 +25,10 @@
 // de `captures.config.ts`, espera a rede ficar ociosa, fotografa e converte o
 // PNG em WebP no canvas do próprio Chrome.
 //
-// Ambiente (opcional): CAPTURES_DATABASE_URL, TALENTHS_PYTHON (o Python com
+// Pré-requisitos: Chrome e ffmpeg (com libx264 e drawtext, para o MP4 do player;
+// sem ele a semente avisa e a captura `video` sai com o player vazio).
+//
+// Ambiente (opcional): CAPTURES_DATABASE_URL, CAPTURES_UPLOADS_DIR, TALENTHS_PYTHON (o Python com
 // asyncpg e bcrypt — padrão backend/.venv/bin/python), CHROME (padrão
 // /usr/bin/google-chrome), CAPTURES_PASSWORD.
 //
@@ -77,6 +84,9 @@ function seed(): Ids {
     stderr: "pipe",
   });
   if (r.exitCode !== 0) throw new Error(`A semente falhou (${r.exitCode}):\n${r.stderr.toString()}`);
+  // Avisos da semente (ex.: ffmpeg ausente) não podem sumir num run que "deu certo".
+  const warnings = r.stderr.toString().trim();
+  if (warnings) console.warn(warnings);
   return JSON.parse(r.stdout.toString().trim().split("\n").at(-1)!) as Ids;
 }
 

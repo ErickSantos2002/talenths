@@ -9,6 +9,11 @@ pessoas `@exemplo.com.br` — nada de dado real nas imagens.
 abrir conexão, qualquer banco cujo nome não contenha `capturas` — e confere de
 novo o `current_database()` depois de conectar.
 
+Precisa do `ffmpeg` (com libx264 e drawtext) para gerar o MP4 do player da
+captura `video`, gravado em `CAPTURES_UPLOADS_DIR` (padrão
+`/tmp/talenths-uploads-capturas`) — que tem de ser o mesmo `UPLOADS_DIR` do
+backend das capturas. Sem ffmpeg a semente roda, mas avisa no stderr.
+
 O banco nasce do `backend/scripts/captures-db.sh`. Uso:
 
     CAPTURES_DATABASE_URL=postgresql://erick:dev123@localhost:5432/talenths_capturas \\
@@ -63,8 +68,11 @@ def allowed(url: str) -> bool:
 
 def placeholder_video(path: str, seconds: int, title: str) -> bool:
     """Um MP4 leve (fundo liso com o título, 1 quadro por segundo) para o player da
-    captura abrir de verdade. Sem ffmpeg, o vídeo fica sem arquivo, como os outros."""
+    captura abrir de verdade. Sem ffmpeg (ou se ele falhar), avisa no stderr e o
+    vídeo fica sem arquivo, como os outros — e a captura `video` sai com o player vazio."""
     if not shutil.which("ffmpeg"):
+        print("AVISO: ffmpeg não encontrado — o vídeo da captura `video` fica sem arquivo "
+              "(player vazio em 0:00). Instale o ffmpeg e refaça a captura.", file=sys.stderr)
         return False
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = title.replace(":", r"\:").replace("'", "")
@@ -72,9 +80,13 @@ def placeholder_video(path: str, seconds: int, title: str) -> bool:
         ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"color=c=0x0f766e:s=1280x720:r=1:d={seconds}",
          "-vf", f"drawtext=text='{text}':fontcolor=white:fontsize=56:x=(w-tw)/2:y=(h-th)/2",
          "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path],
-        capture_output=True,
+        capture_output=True, text=True,
     )
-    return result.returncode == 0
+    if result.returncode != 0:
+        print(f"AVISO: o ffmpeg falhou ({result.returncode}) ao gerar {path} — a captura `video` "
+              f"sai com o player vazio.\n{result.stderr.strip()}", file=sys.stderr)
+        return False
+    return True
 
 
 def hash_pw(plain: str) -> str:
