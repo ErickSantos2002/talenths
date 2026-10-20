@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  MODULES, findGuide, guidesFor, guidesForPath, normalize, parseGuide, searchGuides, type Guide,
+  MODULES, findGuide, guidesFor, guidesForPath, normalize, searchGuides, type Guide,
 } from "./guides";
+import { parseGuide } from "./guideParser";
 import type { ScreenContext } from "./screens";
 
 const P = "/src/help/guides/primeiros-passos/exemplo.md";

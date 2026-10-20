@@ -64,6 +64,7 @@ import MeusTestesPage from "./pages/MeusTestesPage";
 import RealizarTestePage from "./pages/RealizarTestePage";
 import ResultadoTestePage from "./pages/ResultadoTestePage";
 import HelpPage from "./pages/HelpPage";
+import HelpGuidePage from "./pages/HelpGuidePage";
 import NotFound from "./pages/NotFound";
 import AuthCallback from "./pages/AuthCallback";
 
@@ -500,6 +501,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <HelpPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ajuda/:module/:slug"
+              element={
+                <ProtectedRoute>
+                  <HelpGuidePage />
                 </ProtectedRoute>
               }
             />

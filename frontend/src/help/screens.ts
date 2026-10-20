@@ -138,6 +138,7 @@ export const SCREENS: Screen[] = [
   item("/meus-documentos", "Documentos", FileText, "comunicacao-pessoal", ALL),
   item("/meus-videos", "Vídeos", Video, "comunicacao-pessoal", ALL),
   hidden("/videos/:id", "Vídeo", ALL),
+  hidden("/ajuda/:module/:slug", "Guia de ajuda", ALL),
   item("/bingo", "Bingo", Dices, "comunicacao-pessoal", ALL),
 
   item("/minhas-ausencias", "Minhas Ausências", CalendarOff, "rh-pessoal", ALL),
