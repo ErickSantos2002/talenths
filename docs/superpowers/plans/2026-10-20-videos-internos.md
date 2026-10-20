@@ -487,6 +487,29 @@ git commit -m "feat(videos): meus videos, player e card de pendencias"
 
 ---
 
+### Task 8b: Sino de notificações visível no layout
+
+Contexto: o E2E mostrou que `components/NotificationBell.tsx` só é importado por `components/Navbar.tsx`, e o `Navbar` não é montado em lugar nenhum — nenhuma notificação do sistema aparece. Decisão do Erick (20/10): ligar o sino no topo para todos.
+
+**Files:**
+- Modify: o layout que envolve as páginas autenticadas (achar onde `AdminLayout`/cabeçalho é renderizado) — montar `NotificationBell` no cabeçalho, visível para todos os papéis, em desktop e mobile.
+- Modify: `frontend/src/components/NotificationBell.tsx` só no que for preciso para funcionar ali (ex.: migrar para React Query com `refetchInterval` de 60 s e invalidar ao marcar como lida; tipo `video` com ícone e clique levando a `/meus-videos`).
+- Não apagar `Navbar.tsx` (fora do escopo); não mexer em outros consumidores.
+
+**Interfaces:**
+- Consumes: `notifications.list()`, `PATCH /notifications/{id}/read`, `DELETE /notifications/{id}` (já existentes em `lib/api.ts`).
+
+- [ ] **Step 1: Montar o sino no cabeçalho e ajustar o componente**
+- [ ] **Step 2: Verificar** — `cd frontend && bun run test && bun run build`; lint dos arquivos tocados sem erro novo.
+- [ ] **Step 3: Commit**
+
+```bash
+git add frontend/src
+git commit -m "feat(notificacoes): sino de notificacoes visivel no topo"
+```
+
+---
+
 ### Task 9: Changelog v1.9.0, script de migração e checagem de deploy
 
 **Files:**
@@ -499,6 +522,7 @@ Changelog `entries`:
 - `{ type: "novidade", text: "Nova página de Vídeos: o RH publica vídeos de integração e apresentação da empresa e escolhe quem precisa assistir." }`
 - `{ type: "novidade", text: "Em Meus Vídeos você vê os vídeos que precisa assistir, com prazo, e todos os vídeos da empresa." }`
 - `{ type: "novidade", text: "O RH acompanha quem já assistiu até o fim, quem está pendente e quem está atrasado." }`
+- `{ type: "melhoria", text: "O sino de notificações agora aparece no topo da tela, com os avisos do sistema." }`
 
 Também nesta task: trocar o comentário da linha 1 de `029_internal_videos.sql` para "vídeos internos de integração e apresentação da empresa, com atribuição obrigatória" (a 029 ainda não foi aplicada em produção — só no banco de teste), e conferir que nenhum texto de UI fala em "treinamento"/"curso".
 
