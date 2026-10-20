@@ -30,14 +30,16 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 
 1. Clique em **Adicionar Colaborador**.
 2. Preencha **Nome** e **Email**, que são obrigatórios. **CPF**, **Telefone**, **Data de Nascimento**, **Data de Admissão**, **Departamento** e **Cargo** são opcionais.
-3. Em **Senha**, defina a senha do primeiro acesso. Se deixar em branco, a tela avisa que um convite foi enviado por e-mail para a pessoa criar a senha.
+3. Em **Senha**, defina a senha do primeiro acesso e passe essa senha para a pessoa.
+
+   Atenção: preencha sempre a **Senha**. Se ficar em branco, a tela avisa que um convite foi enviado por e-mail, mas nenhum e-mail é enviado, e a pessoa fica sem como entrar.
 4. Em **Função**, escolha **Colaborador** ou **Gerente**.
 5. Clique em **Criar Colaborador**.
 
 **Para editar os dados de uma pessoa:**
 
 1. Na linha da pessoa, clique no lápis.
-2. Altere o que precisar e clique em **Salvar**.
+2. Altere o que precisar e clique em **Salvar**. Apagar o conteúdo de **CPF**, **Telefone**, **Cargo** ou das datas, ou trocar o **Departamento** por **Sem departamento**, não tem efeito: o dado antigo continua.
 3. Para que a pessoa registre o ponto pelo sistema, ligue **Bater ponto pelo sistema** e informe a **Jornada diária (horas)**.
 
 **Para redefinir a senha:** na linha da pessoa, clique na chave, digite a **Nova senha** e clique em **Redefinir Senha**. Depois, passe a nova senha para a pessoa.
@@ -50,7 +52,7 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 
 ## O que acontece depois
 
-- Quem foi cadastrado já aparece na lista e pode entrar no TalentHS.
+- Quem foi cadastrado já aparece na lista e pode entrar no TalentHS com a senha que você definiu.
 - A pessoa passa a aparecer nas outras telas de gestão, como Avaliação, PDI da Equipe e Onboarding.
 - Quem tem **Bater ponto pelo sistema** ligado passa a ver a tela **Meu Ponto** no menu.
 - Ao excluir um departamento, as pessoas dele ficam sem departamento.
@@ -63,4 +65,4 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 
 **Apareceu "Campos obrigatórios".** Confira o nome e o e-mail. Se preencheu CPF ou telefone, eles precisam estar completos, com 11 dígitos.
 
-**A pessoa não recebeu o convite por e-mail.** Redefina a senha pela chave, na linha dela, e passe a nova senha para a pessoa.
+**Cadastrei sem senha e a pessoa não recebeu nenhum e-mail.** O TalentHS não envia esse e-mail. Clique na chave, na linha da pessoa, defina a senha em **Redefinir Senha** e passe a senha para ela.

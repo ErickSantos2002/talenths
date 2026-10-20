@@ -27,6 +27,9 @@ Quando o RH liberar um teste para você, ou quando quiser rever a nota e as resp
 ### Fazer um teste
 
 1. Clique em **Iniciar** no teste que quer fazer.
+
+   Atenção: se depois de **Iniciar** aparecer uma mensagem de erro ou o teste não abrir, não clique de novo. Cada clique em **Iniciar** conta uma tentativa. Avise o RH.
+
 2. Leia as instruções, que aparecem acima da primeira pergunta, e responda: clique na opção certa, em mais de uma opção quando a pergunta permitir, num número da escala ou escreva a resposta no campo **Sua resposta...**.
 3. Clique em **Próxima** para seguir ou em **Anterior** para voltar. A barra no topo mostra o seu avanço.
 4. Na última pergunta, clique em **Enviar teste**.
@@ -60,5 +63,7 @@ Para sair, clique em **Voltar para Meus Testes**.
 **Saí no meio do teste. Como volto?** O teste fica em **Em andamento**, no topo da tela **Meus Testes**. Clique em **Continuar** para voltar a ele e terminar.
 
 **O teste que eu esperava não aparece em Disponíveis.** O RH pode ter liberado o teste só para algumas pessoas ou departamentos, ou você já usou todas as tentativas. Fale com o RH.
+
+**Cliquei em Iniciar e apareceu um erro.** Não tente de novo: cada clique em **Iniciar** conta uma tentativa, mesmo quando o teste não abre. Avise o RH, que acompanha as suas tentativas.
 
 **A tela mostra "Nenhum teste disponível no momento".** Não há nenhum teste liberado para você agora.

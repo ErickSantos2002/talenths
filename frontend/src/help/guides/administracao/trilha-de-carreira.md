@@ -20,7 +20,9 @@ Na **Trilha de Carreira** você desenha os caminhos de crescimento da empresa, c
 
 1. No menu, no bloco **Empresa**, em **Desenvolvimento**, clique em **Trilha de Carreira**.
 2. No topo, veja o resumo: **Colaboradores**, **Sem trilha** e **Elegíveis para promoção**.
-3. Na aba **Equipe**, veja a trilha, o nível e a última nota de cada pessoa. Uma estrela verde ao lado do nível indica que a pessoa está elegível para promoção.
+3. Na aba **Equipe**, veja a trilha, o nível e a última nota de cada pessoa. Uma estrela verde ao lado do nível marca quem o sistema aponta como elegível para promoção.
+
+   Atenção: a estrela e o número de **Elegíveis para promoção** são só uma indicação aproximada. A conta pode incluir quem nem tem trilha e não confere os critérios do próximo nível. Antes de decidir uma promoção, confira a nota da pessoa e os critérios do próximo nível, na aba **Trilhas & Níveis**.
 
 ![Trilha de Carreira com o resumo da equipe e a tabela de colaboradores com trilha, nível e nota](/capturas/admin-trilhas.webp)
 
@@ -33,9 +35,9 @@ Na **Trilha de Carreira** você desenha os caminhos de crescimento da empresa, c
 
 **Para criar uma trilha e os níveis:**
 
-1. Clique em **Nova Trilha**, preencha o **Nome** e, se quiser, a **Descrição (opcional)**. Clique em **Salvar**.
+1. Clique em **Nova Trilha**, preencha o **Nome** e, se quiser, a **Descrição (opcional)**. Clique em **Salvar**. A janela pode abrir com os valores de uma trilha aberta antes; confira os campos antes de salvar.
 2. Abra a aba **Trilhas & Níveis** e clique na trilha para ver os níveis dela.
-3. Clique em **Adicionar Nível**. Preencha **Nome do nível** e **Posição (ordem)**. A posição define a ordem dos níveis na trilha.
+3. Clique em **Adicionar Nível**. Preencha **Nome do nível** e **Posição (ordem)**. A posição define a ordem dos níveis na trilha. Essa janela também pode abrir com os valores de um nível aberto antes; confira os campos.
 4. Se quiser, descreva o que se espera do nível em **Descrição das expectativas**.
 5. Em **Critérios para chegar neste nível**, defina os que valem: **Nota mínima de avaliação**, **Meses mínimos no nível anterior** e um ou mais quadrantes em **Quadrante 9Box exigido**.
 6. Clique em **Salvar**.

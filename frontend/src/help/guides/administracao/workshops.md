@@ -42,6 +42,8 @@ Para mudar a situação ou outro dado, clique no lápis do cartão, altere e cli
 2. Clique em **Presença**.
 3. Marque quem compareceu e clique em **Salvar presenças**.
 
+Atenção: a lista de presença sempre abre com todos desmarcados, mesmo que você já tenha registrado presenças antes. Quem ficar desmarcado ao salvar passa a constar como **Ausente**. Ao reabrir a **Presença**, marque de novo todos que compareceram antes de clicar em **Salvar presenças**.
+
 ## O que acontece depois
 
 - Com **Inscrições abertas**, os colaboradores se inscrevem pela tela [Workshops](/ajuda/desenvolvimento/workshops).
@@ -52,5 +54,7 @@ Para mudar a situação ou outro dado, clique no lápis do cartão, altere e cli
 **Não vejo o botão Presença.** Ele só aparece em workshops com **Inscrições encerradas** ou **Realizado**.
 
 **Abri a presença e não há ninguém.** Ninguém se inscreveu no workshop. A tela mostra "Nenhum inscrito ainda".
+
+**Reabri a presença e todos estão desmarcados.** A lista não mostra as presenças já salvas. Marque de novo todos que compareceram e salve; quem ficar desmarcado vira **Ausente**.
 
 **Excluí um workshop por engano.** A lixeira exclui na hora, sem confirmação, e a exclusão não pode ser desfeita.

@@ -19,7 +19,7 @@ Em **Testes** você monta os testes que os colaboradores fazem pelo TalentHS: es
 ## Passo a passo
 
 1. No menu, no bloco **Empresa**, em **Desempenho**, clique em **Testes**.
-2. Veja a lista de testes. Cada um mostra a situação (**Rascunho**, **Publicado** ou **Arquivado**), o modo de avaliação, o número de perguntas, o total de pontos e quantas tentativas já houve.
+2. Veja a lista de testes. Cada um mostra a situação (**Rascunho** ou **Publicado**; testes antigos podem aparecer como **Arquivado**), o modo de avaliação, o número de perguntas, o total de pontos e quantas tentativas já houve.
 
 ![Lista de testes com um rascunho e dois testes publicados](/capturas/admin-testes.webp)
 
@@ -62,7 +62,11 @@ Em **Testes** você monta os testes que os colaboradores fazem pelo TalentHS: es
 
 ## Dúvidas comuns
 
-**Não consigo editar um teste publicado.** Testes publicados ou arquivados não podem ser editados. Para mudar, use o botão de duplicar, na lista: a cópia é criada como rascunho, com "[Cópia]" no título.
+**Não consigo editar um teste publicado.** Testes publicados não podem ser editados. Para mudar, use o botão de duplicar, na lista: a cópia é criada como rascunho, com "[Cópia]" no título.
+
+**Como tiro um teste publicado do ar?** Por esta tela, não há como: o botão **Arquivar** fica no editor, que só abre para rascunhos. Fale com o administrador do sistema.
+
+**Numa tentativa, a pergunta de verdadeiro ou falso mostra "Resposta: —".** A resposta foi registrada; a tela de tentativas é que não a exibe. A pontuação da pergunta aparece logo abaixo, em **Auto**.
 
 **Não vejo a lixeira de um teste.** Só rascunhos podem ser excluídos.
 
