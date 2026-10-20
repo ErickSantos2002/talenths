@@ -170,6 +170,10 @@ async function main() {
         await page.locator(`[data-tour="${capture.click}"]`).first().click();
         await waitIdle(page, capture.name, 5000);
       }
+      for (const step of capture.steps ?? []) {
+        await page.getByRole(step.role, step.name ? { name: step.name } : {}).first().click();
+        await waitIdle(page, capture.name, 5000);
+      }
       // Animações de entrada e skeletons terminam.
       await page.waitForTimeout(800);
       const webp = await toWebp(converter, await page.screenshot({ type: "png" }));

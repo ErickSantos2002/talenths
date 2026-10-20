@@ -760,16 +760,32 @@ class Seeder:
              'Seu resultado em "Normas de segurança no trabalho" está disponível.'),
         ):
             await self.ins("notifications", user_id=self.users[key], type=kind, title=title, message=msg)
-        actions = [("POST", "/auth/login", "Login"), ("PUT", "/companies/presentation", "Atualizou a apresentação"),
-                   ("POST", "/communications/announcements", "Publicou comunicado"),
-                   ("POST", "/videos", "Publicou vídeo"), ("PUT", "/absences/requests", "Aprovou ausência")]
-        for n, (method, path, action) in enumerate(actions * 2):
-            who = "gestor" if n % 3 else "admin"
+        # Linhas como as que app/middleware/audit.py grava: rótulo de _ACTION_MAP, caminho real
+        # (com o id) e o status da resposta — a exclusão de benefício em uso responde 409.
+        absence = await self.conn.fetchval(
+            "SELECT id FROM public.absence_requests WHERE status = 'approved' ORDER BY start_date LIMIT 1")
+        catalog = await self.conn.fetchval(
+            "SELECT id FROM public.benefit_catalog WHERE company_id = $1 ORDER BY name LIMIT 1", self.company_id)
+        feedback = await self.conn.fetchval(
+            "SELECT id FROM public.feedback_requests WHERE company_id = $1 ORDER BY title LIMIT 1", self.company_id)
+        actions = [
+            ("gestor", "PUT", f"/absences/{absence}/approve", "Ausência aprovada", 200),
+            ("gestor", "POST", "/videos", "Vídeo criado", 201),
+            ("gestor", "POST", "/communications/announcements", "Comunicado publicado", 201),
+            ("admin", "PUT", f"/collaborators/{self.users['igor']}", "Colaborador atualizado", 200),
+            ("gestor", "POST", "/benefits/assign", "Benefício atribuído a colaborador", 201),
+            ("gestor", "DELETE", f"/benefits/catalog/{catalog}", "Benefício removido do catálogo", 409),
+            ("ana", "POST", "/absences/request", "Solicitação de ausência criada", 201),
+            ("bruno", "POST", f"/feedbacks/{feedback}/respond", "Criação", 201),
+            ("gestor", "POST", "/workshops", "Workshop criado", 201),
+            ("admin", "POST", "/departments", "Departamento criado", 201),
+        ]
+        for n, (who, method, path, action, status) in enumerate(actions):
             await self.conn.execute(
                 """INSERT INTO public.audit_logs (user_id, user_name, company_id, method, path, action, status_code,
                                                   ip_address, created_at)
-                   VALUES ($1, $2, $3, $4, $5, $6, 200, '192.0.2.10', now() - make_interval(hours => $7))""",
-                self.users[who], self.names[who], self.company_id, method, path, action, n * 5 + 1,
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, '192.0.2.10', now() - make_interval(hours => $8))""",
+                self.users[who], self.names[who], self.company_id, method, path, action, status, n * 5 + 1,
             )
 
     async def run(self) -> dict:

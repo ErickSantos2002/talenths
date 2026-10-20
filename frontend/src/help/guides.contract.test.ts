@@ -21,13 +21,12 @@ const guides = entries.flatMap(([path, raw]) => {
   }
 });
 
-// Every menu screen must have a guide. Admin screens come in Task 7, which
-// drops the /admin/ exclusion.
-const COVERED_SCREENS = SCREENS.filter((s) => s.menu && !s.path.startsWith("/admin/")).map((s) => s.path);
+// Every menu screen must have a guide.
+const COVERED_SCREENS = SCREENS.filter((s) => s.menu).map((s) => s.path);
 
-// Captures no guide cites yet: the manager welcome-tour screens, kept for the
-// admin guides (Task 7).
-const NOT_IN_GUIDES = new Set(["admin-videos", "admin-relatorios"]);
+// Captures that only a tour or the help page use, each with its reason. Empty:
+// every capture is cited by a guide.
+const NOT_IN_GUIDES = new Set<string>([]);
 
 const REQUIRED_SECTIONS = ["## Para que serve", "## Passo a passo", "## Dúvidas comuns"];
 

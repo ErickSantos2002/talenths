@@ -40,6 +40,12 @@ export interface Capture {
   route: (ids: Ids) => string;
   /** valor de `data-tour` do elemento a clicar antes da foto */
   click?: string;
+  /**
+   * Cliques depois de `click`, pelo papel e nome acessíveis (o nome casa por trecho; sem nome,
+   * o primeiro do papel), para abrir uma aba, escolher num seletor ou abrir um detalhe que a
+   * URL não abre.
+   */
+  steps?: { role: "button" | "tab" | "combobox" | "option" | "row"; name?: string }[];
   width?: number;
   height?: number;
 }
@@ -97,4 +103,47 @@ export const CAPTURES: Capture[] = [
   { name: "admin-comunicados", account: "gestor", route: () => "/admin/comunicados" },
   { name: "admin-onboarding", account: "gestor", route: () => "/admin/onboarding" },
   { name: "admin-pesquisas", account: "gestor", route: () => "/admin/pesquisas" },
+  { name: "admin-feedbacks", account: "gestor", route: () => "/admin/feedbacks" },
+  { name: "admin-documentos", account: "gestor", route: () => "/admin/documentos" },
+  {
+    name: "admin-video-detalhe",
+    account: "gestor",
+    route: () => "/admin/videos",
+    steps: [{ role: "row", name: "Técnicas de negociação" }],
+  },
+  { name: "admin-bingo", account: "gestor", route: () => "/admin/bingo" },
+  { name: "admin-bingo-jogo", account: "gestor", route: () => "/admin/bingo", steps: [{ role: "button", name: "Abrir" }] },
+  { name: "admin-bingo-imprimir", account: "gestor", route: (ids) => `/admin/bingo/${ids.bingo_game}/imprimir` },
+  { name: "admin-ausencias", account: "gestor", route: () => "/admin/ausencias" },
+  {
+    name: "admin-beneficios",
+    account: "gestor",
+    route: () => "/admin/beneficios",
+    steps: [{ role: "tab", name: "Colaboradores" }],
+  },
+  { name: "admin-ponto", account: "gestor", route: () => "/admin/ponto" },
+  { name: "admin-ponto-solicitacoes", account: "gestor", route: () => "/admin/ponto", steps: [{ role: "tab", name: "Solicitações" }] },
+  {
+    name: "admin-tabela-salarial",
+    account: "gestor",
+    route: () => "/admin/tabela-salarial",
+    steps: [
+      { role: "combobox" },
+      { role: "option", name: "Pesquisa salarial Exemplo" },
+    ],
+  },
+  {
+    name: "admin-tabela-salarial-posicionamento",
+    account: "gestor",
+    route: () => "/admin/tabela-salarial",
+    steps: [
+      { role: "combobox" },
+      { role: "option", name: "Pesquisa salarial Exemplo" },
+      { role: "tab", name: "Posicionamento" },
+    ],
+  },
+  { name: "admin-empresa", account: "gestor", route: () => "/admin/empresa" },
+
+  // Logs só abrem para o master_admin.
+  { name: "admin-logs", account: "admin", route: () => "/admin/logs" },
 ];
