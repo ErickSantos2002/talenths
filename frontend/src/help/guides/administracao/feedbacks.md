@@ -48,4 +48,4 @@ Atenção: com **Por departamento** ou **Colaborador específico**, o botão **C
 
 **Posso alterar ou apagar um feedback?** Não por esta tela. Depois de criado, o feedback fica na lista como foi enviado.
 
-**Um feedback para um departamento ou uma pessoa aparece só com "Departamento" ou "Colaborador" no cartão.** Ele foi criado sem escolher o departamento ou a pessoa e não chega a ninguém. Crie de novo, com a escolha feita.
+**Um feedback para um departamento ou uma pessoa aparece só com "Departamento" ou "Colaborador" no cartão.** Ele foi criado sem escolher o departamento ou a pessoa, ou o departamento ou a pessoa foram removidos depois. Nos dois casos, ele não chega a mais ninguém. Se ainda precisar das respostas, crie de novo, com a escolha feita.

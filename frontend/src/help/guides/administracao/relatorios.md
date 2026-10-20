@@ -19,7 +19,7 @@ Em **Relatórios** você baixa os dados do TalentHS em planilhas CSV, que abrem 
 
 1. No menu, no bloco **Empresa**, em **Sistema**, clique em **Relatórios**.
 2. Veja os cartões de relatório. Cada um diz o que o arquivo traz.
-3. No cartão desejado, clique no botão **Baixar**. Enquanto o arquivo é gerado, o botão mostra **Gerando...**.
+3. No cartão desejado, clique no botão de baixar, que leva o nome do arquivo, como **Baixar colaboradores.csv** ou **Baixar ausencias.csv**. Enquanto o arquivo é gerado, o botão mostra **Gerando...**.
 
 ![Tela Relatórios com os cartões Colaboradores, Ausências, Benefícios, PDI e o de cursos concluídos, cada um com o botão de baixar](/capturas/admin-relatorios.webp)
 

@@ -28,7 +28,7 @@ No **Ponto Eletrônico** você acompanha as batidas de ponto de quem registra o 
 1. Abra a aba **Por período**.
 2. Em **Colaborador**, escolha a pessoa e ajuste as datas em **De** e **Até**.
 3. Veja os dias com as batidas, as horas trabalhadas e as previstas. Um dia passado com batida faltando aparece com **Incompleto — falta batida**.
-4. Para incluir uma batida que faltou, clique em **Adicionar batida**, preencha **Data e hora**, o **Tipo** e, se quiser, a **Observação (opcional)**, e clique em **Salvar**.
+4. Para incluir uma batida que faltou, clique em **Adicionar batida**, preencha **Data e hora**, o **Tipo** e, se quiser, a **Observação (opcional)**, e clique em **Salvar**. O **Tipo** escolhido não decide se a batida conta como entrada ou saída: veja em Dúvidas comuns.
 5. Para corrigir uma batida, clique no lápis dela, altere e clique em **Salvar**. Para apagar, clique na lixeira e confirme em **Excluir**.
 
 **Para responder às solicitações:**

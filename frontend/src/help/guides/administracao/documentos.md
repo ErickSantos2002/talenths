@@ -34,7 +34,7 @@ Em **Documentos** você envia arquivos para os colaboradores: manuais e polític
 
 **Para conferir um documento:** clique no ícone de olho. PDFs e imagens abrem numa janela, com o botão **Baixar** no topo. Para baixar direto, clique no ícone de download.
 
-Atenção: quando o download falha, o TalentHS não avisa. O arquivo é salvo com o nome do documento, mas contém só uma mensagem de erro e não abre. Se o arquivo baixado não abrir, não o repasse a ninguém: envie o documento de novo em **Enviar Documento** e exclua o antigo.
+Atenção: quando o download falha, o TalentHS não avisa. O arquivo é salvo com o nome do documento, mas contém só uma mensagem de erro e não abre. Se o arquivo baixado não abrir, não o repasse. Tente baixar de novo; se o erro continuar, envie o documento outra vez em **Enviar Documento** e só então exclua o antigo.
 
 **Para excluir:** clique na lixeira do documento.
 

@@ -18,7 +18,7 @@ No **Bingo** você organiza os bingos da empresa: cria o jogo, gera uma cartela 
 ## Passo a passo
 
 1. No menu, no bloco **Empresa**, em **Comunicação**, clique em **Bingo**.
-2. Veja os jogos. Cada um mostra a situação (**Rascunho**, **Em andamento**, **Encerrado** ou **Cancelado**), o monte de números, quantos ganhadores, quantos participantes e quantos números já saíram.
+2. Veja os jogos. Cada um mostra a situação (**Rascunho**, **Em andamento**, **Encerrado** ou **Cancelado**), o monte de números, quantos ganhadores o jogo terá, quantos participantes e quantos números já saíram.
 
 ![Tela Bingo com um jogo em andamento e os botões Abrir, Imprimir e Cancelar](/capturas/admin-bingo.webp)
 

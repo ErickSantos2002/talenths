@@ -171,7 +171,12 @@ async function main() {
         await waitIdle(page, capture.name, 5000);
       }
       for (const step of capture.steps ?? []) {
-        await page.getByRole(step.role, step.name ? { name: step.name } : {}).first().click();
+        const target = page.getByRole(step.role, step.name ? { name: step.name, exact: step.exact } : {});
+        const count = await target.count();
+        if (count !== 1) {
+          throw new Error(`${capture.name}: ${count} alvos para ${step.role} "${step.name ?? ""}" — o passo precisa achar exatamente 1.`);
+        }
+        await target.click();
         await waitIdle(page, capture.name, 5000);
       }
       // Animações de entrada e skeletons terminam.

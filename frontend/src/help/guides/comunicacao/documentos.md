@@ -24,6 +24,8 @@ Para consultar um manual, uma política ou baixar um documento pessoal enviado p
 3. Para ver o documento sem baixar, clique no ícone de olho. PDFs e imagens abrem numa janela, com o botão **Baixar** no topo.
 4. Para baixar direto, clique no ícone de download, à direita.
 
+Atenção: se o download falhar, a tela pode não avisar. O arquivo é salvo com o nome do documento, mas não abre. Se o arquivo baixado não abrir, tente baixar de novo e, se continuar assim, avise o RH.
+
 ![Tela Documentos com dois documentos gerais, um do departamento e um pessoal, cada um com os ícones de visualizar e baixar](/capturas/meus-documentos.webp)
 
 ## O que acontece depois

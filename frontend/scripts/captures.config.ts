@@ -41,11 +41,11 @@ export interface Capture {
   /** valor de `data-tour` do elemento a clicar antes da foto */
   click?: string;
   /**
-   * Cliques depois de `click`, pelo papel e nome acessíveis (o nome casa por trecho; sem nome,
-   * o primeiro do papel), para abrir uma aba, escolher num seletor ou abrir um detalhe que a
-   * URL não abre.
+   * Cliques depois de `click`, pelo papel e nome acessíveis, para abrir uma aba, escolher num
+   * seletor ou abrir um detalhe que a URL não abre. `exact` quando o nome é o rótulo inteiro;
+   * sem ele, o nome casa por trecho. O alvo tem de ser único: o script falha se achar 0 ou 2+.
    */
-  steps?: { role: "button" | "tab" | "combobox" | "option" | "row"; name?: string }[];
+  steps?: { role: "button" | "tab" | "combobox" | "option" | "row"; name?: string; exact?: boolean }[];
   width?: number;
   height?: number;
 }
@@ -112,14 +112,14 @@ export const CAPTURES: Capture[] = [
     steps: [{ role: "row", name: "Técnicas de negociação" }],
   },
   { name: "admin-bingo", account: "gestor", route: () => "/admin/bingo" },
-  { name: "admin-bingo-jogo", account: "gestor", route: () => "/admin/bingo", steps: [{ role: "button", name: "Abrir" }] },
+  { name: "admin-bingo-jogo", account: "gestor", route: () => "/admin/bingo", steps: [{ role: "button", name: "Abrir", exact: true }] },
   { name: "admin-bingo-imprimir", account: "gestor", route: (ids) => `/admin/bingo/${ids.bingo_game}/imprimir` },
   { name: "admin-ausencias", account: "gestor", route: () => "/admin/ausencias" },
   {
     name: "admin-beneficios",
     account: "gestor",
     route: () => "/admin/beneficios",
-    steps: [{ role: "tab", name: "Colaboradores" }],
+    steps: [{ role: "tab", name: "Colaboradores", exact: true }],
   },
   { name: "admin-ponto", account: "gestor", route: () => "/admin/ponto" },
   { name: "admin-ponto-solicitacoes", account: "gestor", route: () => "/admin/ponto", steps: [{ role: "tab", name: "Solicitações" }] },
@@ -139,7 +139,7 @@ export const CAPTURES: Capture[] = [
     steps: [
       { role: "combobox" },
       { role: "option", name: "Pesquisa salarial Exemplo" },
-      { role: "tab", name: "Posicionamento" },
+      { role: "tab", name: "Posicionamento", exact: true },
     ],
   },
   { name: "admin-empresa", account: "gestor", route: () => "/admin/empresa" },
