@@ -25,6 +25,8 @@ Para refazer o tour depois:
 1. Clique em **Ajuda** no menu.
 2. Clique em **Fazer o tour de boas-vindas**.
 
+![Tela Ajuda com o quadro Tour de boas-vindas, a data de conclusão e o botão Fazer o tour de boas-vindas](/capturas/ajuda.webp)
+
 ## O que acontece depois
 
 - O TalentHS guarda o seu progresso. Se você sair no meio do tour, a janela de boas-vindas volta na próxima entrada com o botão **Continuar de onde parou**.

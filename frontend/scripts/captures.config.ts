@@ -52,6 +52,15 @@ export const CAPTURES: Capture[] = [
   { name: "meu-perfil", account: "ana", route: () => "/meu-perfil" },
   { name: "ajuda", account: "ana", route: () => "/ajuda" },
 
+  // Guias de Primeiros passos, Meu Espaço e Desempenho.
+  { name: "dashboard-gestor", account: "gestor", route: () => "/dashboard" },
+  { name: "notificacoes", account: "ana", route: () => "/dashboard", click: "notifications" },
+  { name: "apresentacao", account: "ana", route: () => "/apresentacao" },
+  { name: "cultura", account: "ana", route: () => "/cultura" },
+  { name: "regras-internas", account: "ana", route: () => "/regras-internas" },
+  { name: "calendario", account: "ana", route: () => "/calendario" },
+  { name: "resultado-teste", account: "ana", route: (ids) => `/meus-testes/tentativas/${ids.attempt}` },
+
   // Telas do tour de boas-vindas (gestor).
   { name: "admin-colaboradores", account: "gestor", route: () => "/admin/colaboradores" },
   { name: "admin-videos", account: "gestor", route: () => "/admin/videos" },
