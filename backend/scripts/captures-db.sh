@@ -16,20 +16,32 @@
 #
 # Uso: bash backend/scripts/captures-db.sh   (CAPTURES_DB_NAME para outro nome,
 # que precisa conter "capturas" — a semente recusa qualquer outro banco).
+#
+# O banco é apagado e recriado, então o host fica preso em localhost: um PGHOST
+# que sobrou no ambiente não basta para mirar outro servidor. Para isso, defina
+# CAPTURES_PGHOST de propósito (o script avisa).
 set -euo pipefail
 
 DB_NAME="${CAPTURES_DB_NAME:-talenths_capturas}"
-if [[ "${DB_NAME}" != *capturas* ]]; then
-  echo "Recusado: o banco das capturas precisa ter 'capturas' no nome (veio '${DB_NAME}')." >&2
+# O nome entra cru no SQL (DROP/CREATE DATABASE), então só [a-z0-9_].
+if [[ ! "${DB_NAME}" =~ ^[a-z0-9_]*capturas[a-z0-9_]*$ ]]; then
+  echo "Recusado: o banco das capturas precisa casar com ^[a-z0-9_]*capturas[a-z0-9_]*\$ (veio '${DB_NAME}')." >&2
   exit 2
 fi
+
+if [[ -n "${CAPTURES_PGHOST:-}" ]]; then
+  PGHOST="${CAPTURES_PGHOST}"
+  echo "AVISO: CAPTURES_PGHOST definido — o banco ${DB_NAME} será apagado e recriado em ${PGHOST}, não em localhost." >&2
+else
+  PGHOST=localhost
+fi
+export PGHOST
 
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LEGACY_TESTS="${SCRIPTS_DIR}/../supabase/migrations/20260520000002_custom_tests.sql"
 
 TEST_DB_NAME="${DB_NAME}" bash "${SCRIPTS_DIR}/test-db.sh" >/dev/null
 
-PGHOST="${PGHOST:-localhost}"
 PGPORT="${PGPORT:-5432}"
 PGUSER="${PGUSER:-erick}"
 PGPASSWORD="${PGPASSWORD:-dev123}"

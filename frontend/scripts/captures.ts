@@ -105,6 +105,15 @@ async function toWebp(converter: Page, png: Buffer): Promise<Buffer> {
   return Buffer.from(dataUrl.split(",")[1], "base64");
 }
 
+/** Espera a rede ociosa; se não ficar, a foto sai assim mesmo, mas avisa — pode ter skeleton. */
+async function waitIdle(page: Page, name: string, timeout: number) {
+  try {
+    await page.waitForLoadState("networkidle", { timeout });
+  } catch {
+    console.warn(`  WARN ${name}: a rede não ficou ociosa em ${timeout / 1000}s — confira a imagem.`);
+  }
+}
+
 async function login(browser: Browser, account: Account): Promise<Page> {
   const context = await browser.newContext({
     viewport: { width: WIDTH, height: HEIGHT },
@@ -146,10 +155,10 @@ async function main() {
       const page = pages.get(capture.account)!;
       await page.setViewportSize({ width: capture.width ?? WIDTH, height: capture.height ?? HEIGHT });
       await page.goto(`${APP}${capture.route(ids)}`);
-      await page.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => undefined);
+      await waitIdle(page, capture.name, 10000);
       if (capture.click) {
         await page.locator(`[data-tour="${capture.click}"]`).first().click();
-        await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => undefined);
+        await waitIdle(page, capture.name, 5000);
       }
       // Animações de entrada e skeletons terminam.
       await page.waitForTimeout(800);
