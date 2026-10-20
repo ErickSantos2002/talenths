@@ -1,0 +1,153 @@
+from datetime import datetime
+from typing import Annotated
+
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Path
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.dependencies import get_current_user_id, get_db
+
+router = APIRouter(prefix="/tour", tags=["tour"])
+
+TOURS_PER_USER = 50
+MAX_INVITE_DECLINES = 3
+
+TourId = Annotated[str, Path(pattern=r"^[a-z0-9-]{1,64}$")]
+Version = Annotated[int, Field(ge=1, le=999)]
+
+
+class _Body(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class ProgressIn(_Body):
+    version: Version
+    step: int = Field(ge=0, le=999)
+
+
+class VersionIn(_Body):
+    version: Version
+
+
+class TourProgressOut(BaseModel):
+    tour: str
+    version: int
+    step: int
+    started_at: datetime | None
+    completed_at: datetime | None
+    dismissed_at: datetime | None
+    invites_declined: int
+
+
+async def _locked_row(
+    conn: asyncpg.Connection, user_id: str, tour: str, version: int
+) -> asyncpg.Record:
+    """Garante a linha (sem corrida entre abas) e a devolve travada para escrita."""
+    exists = await conn.fetchval(
+        "SELECT 1 FROM public.tour_progress WHERE user_id = $1 AND tour = $2", user_id, tour
+    )
+    if not exists:
+        total = await conn.fetchval(
+            "SELECT count(*) FROM public.tour_progress WHERE user_id = $1", user_id
+        )
+        if total >= TOURS_PER_USER:
+            raise HTTPException(status_code=422, detail="Limite de tours atingido.")
+        await conn.execute(
+            """INSERT INTO public.tour_progress (user_id, company_id, tour, version)
+               VALUES ($1, (SELECT company_id FROM public.profiles WHERE user_id = $1), $2, $3)
+               ON CONFLICT (user_id, tour) DO NOTHING""",
+            user_id, tour, version,
+        )
+    return await conn.fetchrow(
+        "SELECT * FROM public.tour_progress WHERE user_id = $1 AND tour = $2 FOR UPDATE",
+        user_id, tour,
+    )
+
+
+def _out(row: asyncpg.Record) -> TourProgressOut:
+    return TourProgressOut(**{k: row[k] for k in TourProgressOut.model_fields})
+
+
+@router.get("/progress", response_model=list[TourProgressOut])
+async def list_progress(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    rows = await conn.fetch(
+        "SELECT * FROM public.tour_progress WHERE user_id = $1 ORDER BY tour", user_id
+    )
+    return [_out(r) for r in rows]
+
+
+@router.put("/progress/{tour}", response_model=TourProgressOut)
+async def save_step(
+    tour: TourId,
+    body: ProgressIn,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _locked_row(conn, user_id, tour, body.version)
+    row = await conn.fetchrow(
+        """UPDATE public.tour_progress
+           SET step = $3,
+               version = CASE WHEN completed_at IS NULL THEN $4 ELSE version END,
+               started_at = COALESCE(started_at, now()),
+               updated_at = now()
+           WHERE user_id = $1 AND tour = $2 RETURNING *""",
+        user_id, tour, body.step, body.version,
+    )
+    return _out(row)
+
+
+@router.post("/progress/{tour}/complete", response_model=TourProgressOut)
+async def complete(
+    tour: TourId,
+    body: VersionIn,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _locked_row(conn, user_id, tour, body.version)
+    row = await conn.fetchrow(
+        """UPDATE public.tour_progress
+           SET version = CASE WHEN completed_at IS NULL THEN $3 ELSE GREATEST(version, $3) END,
+               started_at = COALESCE(started_at, now()),
+               completed_at = COALESCE(completed_at, now()),
+               updated_at = now()
+           WHERE user_id = $1 AND tour = $2 RETURNING *""",
+        user_id, tour, body.version,
+    )
+    return _out(row)
+
+
+@router.post("/progress/{tour}/dismiss", response_model=TourProgressOut)
+async def dismiss(
+    tour: TourId,
+    body: VersionIn,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _locked_row(conn, user_id, tour, body.version)
+    row = await conn.fetchrow(
+        """UPDATE public.tour_progress
+           SET dismissed_at = COALESCE(dismissed_at, now()), updated_at = now()
+           WHERE user_id = $1 AND tour = $2 RETURNING *""",
+        user_id, tour,
+    )
+    return _out(row)
+
+
+@router.post("/progress/{tour}/decline-invite", response_model=TourProgressOut)
+async def decline_invite(
+    tour: TourId,
+    body: VersionIn,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _locked_row(conn, user_id, tour, body.version)
+    row = await conn.fetchrow(
+        """UPDATE public.tour_progress
+           SET invites_declined = LEAST(invites_declined + 1, $3), updated_at = now()
+           WHERE user_id = $1 AND tour = $2 RETURNING *""",
+        user_id, tour, MAX_INVITE_DECLINES,
+    )
+    return _out(row)

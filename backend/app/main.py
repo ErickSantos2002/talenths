@@ -38,6 +38,7 @@ from app.routers.documents import router as documents_router
 from app.routers.timeclock import router as timeclock_router
 from app.routers.bingo import router as bingo_router
 from app.routers.videos import router as videos_router
+from app.routers.tour import router as tour_router
 
 
 @asynccontextmanager
@@ -116,6 +117,7 @@ app.include_router(documents_router)
 app.include_router(timeclock_router)
 app.include_router(bingo_router)
 app.include_router(videos_router)
+app.include_router(tour_router)
 
 
 @app.get("/health")

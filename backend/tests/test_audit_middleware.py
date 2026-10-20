@@ -27,3 +27,10 @@ def test_video_action_labels():
     assert _resolve_action("DELETE", f"/videos/{VID}") == "Vídeo removido"
     assert _resolve_action("POST", f"/videos/{VID}/viewers/{UID}/remove") == "Colaborador removido de vídeo"
     assert _resolve_action("DELETE", f"/videos/uploads/{VID}") == "Remoção"
+
+
+def test_tour_routes_not_logged():
+    base = "/tour/progress/boas-vindas-colaborador"
+    assert not _should_log("PUT", base)
+    for suffix in ("complete", "dismiss", "decline-invite"):
+        assert not _should_log("POST", f"{base}/{suffix}")

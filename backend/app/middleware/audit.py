@@ -16,6 +16,7 @@ _SKIP_PREFIXES = ("/docs", "/redoc", "/openapi")
 _SKIP_PATTERNS = (
     re.compile(r"^POST /videos/[^/]+/progress$"),
     re.compile(r"^PUT /videos/uploads/[^/]+/parts/[^/]+$"),
+    re.compile(r"^(PUT|POST) /tour/progress/"),
 )
 
 # Map (METHOD, regex_pattern) → human-readable Portuguese action
