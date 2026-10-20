@@ -242,6 +242,7 @@ O tour de boas-vindas e a página `/ajuda` ficam em `frontend/src/help/`.
 
 - **Alvos só por `data-tour`** — o tour nunca procura elemento por classe, texto ou posição.
 - **Tela citada num tour muda no mesmo commit que o tour** (e, a partir da fase 2, que o guia): mexeu num cabeçalho com `data-tour` ou no menu, confira o passo que aponta para ele.
+- **Deploy:** migração 030 (`backend/scripts/aplicar_030.py`, rodada pelo Erick) → backend → frontend.
 - **Contratos em `src/help/**/*.test.ts`** — rotas, âncoras e textos dos tours são verificados por testes; rode `bun run test` antes de commitar.
 
 ---
