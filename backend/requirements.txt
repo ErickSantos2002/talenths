@@ -10,3 +10,4 @@ anthropic>=0.34.0
 python-dotenv>=1.0.0
 msal>=1.31.0
 httpx>=0.26.0
+mutagen>=1.47
