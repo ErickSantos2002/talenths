@@ -698,9 +698,13 @@ class Seeder:
                                band_100=base, band_105=base * 1.05, band_110=base * 1.1)
 
     async def misc(self) -> None:
-        for key, kind, title, msg in (("ana", "announcement", "Novo comunicado", "Semana de segurança começa dia 22"),
-                                      ("ana", "survey", "Nova pesquisa", "Clima do segundo semestre"),
-                                      ("bruno", "timeclock", "Ajuste de ponto enviado", "Aguardando o RH")):
+        # Só tipos e títulos que o sistema cria (routers/videos.py e routers/custom_tests.py); os
+        # "Novo vídeo para assistir" já saem de internal_video_apply_rules, em videos().
+        for key, kind, title, msg in (
+            ("ana", "video", "Vídeo atualizado: assista novamente", "Uso correto dos EPIs"),
+            ("ana", "test_evaluated", "Resultado disponível",
+             'Seu resultado em "Normas de segurança no trabalho" está disponível.'),
+        ):
             await self.ins("notifications", user_id=self.users[key], type=kind, title=title, message=msg)
         actions = [("POST", "/auth/login", "Login"), ("PUT", "/companies/presentation", "Atualizou a apresentação"),
                    ("POST", "/communications/announcements", "Publicou comunicado"),

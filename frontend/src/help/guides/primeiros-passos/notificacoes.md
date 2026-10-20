@@ -20,7 +20,7 @@ Sempre que o sino mostrar um número em vermelho: é a quantidade de notificaç�
 2. Clique numa notificação para marcá-la como lida. Se for de vídeo, o TalentHS abre a tela **Vídeos** para você assistir.
 3. Para limpar o contador de uma vez, clique em **Marcar todas como lidas**.
 
-![Lista de notificações aberta a partir do sino, com avisos de vídeos novos, comunicado e pesquisa](/capturas/notificacoes.webp)
+![Lista de notificações aberta a partir do sino, com avisos de vídeos novos, um vídeo atualizado e um resultado de teste disponível](/capturas/notificacoes.webp)
 
 ## O que acontece depois
 

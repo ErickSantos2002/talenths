@@ -18,7 +18,7 @@ Para planejar a semana, conferir um prazo ou ver quando é o próximo feriado.
 
 1. No menu, em **Meu Espaço**, clique em **Calendário**. A tela abre no mês atual, com o dia de hoje destacado.
 2. Para trocar de mês, use as setas ao lado dos seletores, escolha o mês e o ano nos seletores ou clique num mês em **Meses do ano**. Para voltar ao dia de hoje, clique em **Hoje**.
-3. Clique num dia para ver, logo abaixo do calendário, todos os eventos dele.
+3. Clique num dia para ver, logo abaixo do calendário, todos os eventos dele. Para gestores e administradores, esse clique também abre o formulário **Novo evento** com aquela data. Se não quiser criar um evento, clique em **Cancelar**.
 4. Confira os próximos compromissos em **Próximos eventos**, à direita.
 
 ![Calendário do mês com eventos coloridos, a lista Próximos eventos e o quadro Meses do ano](/capturas/calendario.webp)
@@ -28,7 +28,7 @@ Se você é gestor ou administrador, também pode cadastrar eventos:
 1. Clique em **Novo evento**, ou clique num dia do calendário para já começar com aquela data.
 2. Preencha **Título**, **Tipo**, **Data de início** e **Data de fim**. A **Cor** segue o tipo, mas pode ser trocada. A **Descrição (opcional)** pode ficar em branco.
 3. Clique em **Salvar**.
-4. Para alterar ou remover um evento, use os ícones de lápis e de lixeira no quadro **Gerenciar eventos**, à direita.
+4. Para alterar ou remover um evento, use os ícones de lápis e de lixeira no quadro **Gerenciar eventos**, à direita. Esse quadro só aparece quando já existe algum evento cadastrado.
 
 ## O que acontece depois
 
