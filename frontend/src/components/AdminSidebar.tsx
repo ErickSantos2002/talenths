@@ -5,7 +5,7 @@ import {
   GitBranch, LogOut, Sun, Moon, Monitor, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
   Gift, FileDown, Shield, ChevronRight, DollarSign, Presentation, ScrollText, MessageSquare, FileText, Clock,
-  Dices,
+  Dices, Video,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "next-themes";
@@ -75,6 +75,7 @@ const adminSections: NavSection[] = [
       { title: "Pesquisas", url: "/admin/pesquisas", icon: BarChart2 },
       { title: "Feedbacks", url: "/admin/feedbacks", icon: MessageSquare },
       { title: "Documentos", url: "/admin/documentos", icon: FileText },
+      { title: "Vídeos", url: "/admin/videos", icon: Video },
       { title: "Bingo", url: "/admin/bingo", icon: Dices },
     ],
   },
