@@ -19,10 +19,15 @@ async def list_notifications(
 
 
 @router.patch("/{notification_id}/read")
-async def mark_as_read(notification_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def mark_as_read(
+    notification_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
     row = await conn.fetchrow(
-        "UPDATE public.notifications SET read = true WHERE id = $1 RETURNING *",
+        "UPDATE public.notifications SET read = true WHERE id = $1 AND user_id = $2 RETURNING *",
         notification_id,
+        user_id,
     )
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notificação não encontrada")
@@ -30,9 +35,15 @@ async def mark_as_read(notification_id: str, conn: asyncpg.Connection = Depends(
 
 
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_notification(notification_id: str, conn: asyncpg.Connection = Depends(get_db)):
+async def delete_notification(
+    notification_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
     result = await conn.execute(
-        "DELETE FROM public.notifications WHERE id = $1", notification_id
+        "DELETE FROM public.notifications WHERE id = $1 AND user_id = $2",
+        notification_id,
+        user_id,
     )
     if result == "DELETE 0":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notificação não encontrada")

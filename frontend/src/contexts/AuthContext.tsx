@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { auth as authApi, getToken, setToken, clearToken } from "@/lib/api";
 
 const USER_KEY = "talenths_user";
@@ -49,6 +50,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
@@ -121,6 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await authApi.logout().catch(() => {});
+    // Server-state cache is per user; drop it so the next login on this browser starts clean.
+    queryClient.clear();
     clearToken();
     clearCachedUser();
     setUser(null);

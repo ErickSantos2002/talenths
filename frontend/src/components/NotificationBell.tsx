@@ -14,29 +14,32 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   countUnread,
-  latestNotifications,
+  formatBadge,
+  sortNewestFirst,
+  unreadIds,
   notificationRoute,
   type AppNotification,
 } from "@/lib/notifications";
 
-const QUERY_KEY = ["notifications"];
+const VISIBLE_LIMIT = 5;
 
 export function NotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const queryKey = ["notifications", user?.id];
+
   const { data: items = [] } = useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: async () =>
-      latestNotifications((await notificationsApi.list()) as unknown as AppNotification[]),
+    queryKey,
+    queryFn: async () => sortNewestFirst((await notificationsApi.list()) as unknown as AppNotification[]),
     enabled: !!user,
     refetchInterval: 60_000,
   });
 
   const markRead = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map((id) => notificationsApi.markRead(id))),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
 
   if (!user) return null;
@@ -50,8 +53,8 @@ export function NotificationBell() {
   };
 
   const markAllAsRead = () => {
-    const unreadIds = items.filter((n) => !n.read).map((n) => n.id);
-    if (unreadIds.length > 0) markRead.mutate(unreadIds);
+    const ids = unreadIds(items);
+    if (ids.length > 0) markRead.mutate(ids);
   };
 
   return (
@@ -65,8 +68,8 @@ export function NotificationBell() {
         >
           <Bell className="h-5 w-5 text-muted-foreground" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-              {unreadCount}
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 bg-destructive text-[10px] font-bold text-destructive-foreground">
+              {formatBadge(unreadCount)}
             </span>
           )}
         </Button>
@@ -88,7 +91,7 @@ export function NotificationBell() {
             Nenhuma notificação
           </div>
         ) : (
-          items.map((n) => (
+          items.slice(0, VISIBLE_LIMIT).map((n) => (
             <DropdownMenuItem
               key={n.id}
               onSelect={() => handleClick(n)}

@@ -18,7 +18,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 flex h-12 items-center justify-end border-b border-border bg-background/90 px-3 backdrop-blur-sm md:px-6 lg:px-8">
+          <header className="flex h-12 items-center justify-end border-b border-border bg-background px-3 md:px-6 lg:px-8">
             <NotificationBell />
           </header>
           <main className="flex-1 overflow-x-hidden p-6 lg:p-8">{children}</main>

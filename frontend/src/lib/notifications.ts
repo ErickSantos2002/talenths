@@ -15,12 +15,18 @@ export function notificationRoute(type: string): string | null {
   return ROUTE_BY_TYPE[type] ?? null;
 }
 
-export function latestNotifications(list: AppNotification[], limit = 5): AppNotification[] {
-  return [...list]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, limit);
+export function sortNewestFirst(list: AppNotification[]): AppNotification[] {
+  return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 export function countUnread(list: AppNotification[]): number {
   return list.filter((n) => !n.read).length;
+}
+
+export function formatBadge(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
+export function unreadIds(list: AppNotification[]): string[] {
+  return list.filter((n) => !n.read).map((n) => n.id);
 }
