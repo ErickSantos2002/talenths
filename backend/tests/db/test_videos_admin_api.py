@@ -358,3 +358,86 @@ async def test_stale_completed_unconsumed_upload_is_cleaned(db, client_as, sampl
     assert await db.fetchval("SELECT count(*) FROM public.internal_video_uploads WHERE id = $1::uuid", stale) == 0
     assert await db.fetchval("SELECT count(*) FROM public.internal_video_uploads WHERE id = $1::uuid", kept) == 1
     assert os.path.exists(consumed_path)
+
+
+def _failing_commit_opener(db):
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def opener(_user_id):
+        yield db
+        raise RuntimeError("falha no commit")
+
+    return lambda: opener
+
+
+async def test_file_survives_failed_commit(db, client_as, sample_mp4):
+    from app.main import app
+    from app.routers.videos import get_conn_opener
+
+    company, manager = await _setup(db)
+    c = client_as(manager)
+    vid = (await _create(c, sample_mp4, _rules()))["id"]
+    path = await db.fetchval("SELECT file_path FROM public.internal_videos WHERE id = $1::uuid", vid)
+    upload_id = await _upload(c, sample_mp4)
+    app.dependency_overrides[get_conn_opener] = _failing_commit_opener(db)
+
+    with pytest.raises(RuntimeError):
+        await c.post(f"/videos/{vid}/replace-file", json={"upload_id": upload_id, "mode": "reset_all"})
+    assert os.path.exists(path)
+    with pytest.raises(RuntimeError):
+        await c.delete(f"/videos/{vid}")
+    assert os.path.exists(path)
+
+
+async def test_replace_on_archived_video_resets_without_notifying(db, client_as, sample_mp4):
+    c, vid, done, watching, idle, _ = await _progress_fixture(db, client_as, sample_mp4)
+    assert (await c.post(f"/videos/{vid}/archive")).status_code == 200
+    upload_id = await _upload(c, sample_mp4)
+
+    r = await c.post(f"/videos/{vid}/replace-file", json={"upload_id": upload_id, "mode": "reset_all"})
+    assert r.status_code == 200
+    for u in (done, watching):
+        row = await _viewer(db, vid, u)
+        assert row["completed_at"] is None and float(row["max_watched_s"]) == 0
+        assert "Vídeo atualizado: assista novamente" not in await _video_notes(db, u)
+
+
+async def test_foreign_targets_and_uploads_are_rejected(db, client_as, sample_mp4):
+    _, manager_a = await _setup(db)
+    company_b, manager_b = await _setup(db)
+    foreign_user = await make_user(db, company_b, name="Outra empresa")
+    foreign_dept = await make_department(db, company_b, "Outra")
+    a = client_as(manager_a)
+    upload_a = await _upload(a, sample_mp4)
+    r = await a.post("/videos", json={"upload_id": upload_a, "title": "T", "rules": _rules(user_ids=[foreign_user])})
+    assert r.status_code == 400
+    vid = (await _create(a, sample_mp4, _rules()))["id"]
+    r = await a.patch(f"/videos/{vid}", json={"rules": _rules(department_ids=[foreign_dept])})
+    assert r.status_code == 400
+    upload_b = await _upload(client_as(manager_b), sample_mp4)
+    a = client_as(manager_a)
+    r = await a.post(f"/videos/{vid}/replace-file", json={"upload_id": upload_b, "mode": "reset_all"})
+    assert r.status_code == 404
+
+
+async def test_description_is_stripped_and_capped(db, client_as, sample_mp4):
+    _, manager = await _setup(db)
+    c = client_as(manager)
+    video = await _create(c, sample_mp4, _rules(), description="  Sobre o vídeo  ")
+    assert video["description"] == "Sobre o vídeo"
+    r = await c.patch(f"/videos/{video['id']}", json={"description": "   "})
+    assert r.status_code == 200 and r.json()["description"] is None
+    r = await c.patch(f"/videos/{video['id']}", json={"description": "x" * 2001})
+    assert r.status_code == 422
+
+
+async def test_unreadable_upload_file_is_400(db, client_as, sample_mp4):
+    _, manager = await _setup(db)
+    c = client_as(manager)
+    upload_id = await _upload(c, sample_mp4)
+    path = await db.fetchval("SELECT file_path FROM public.internal_video_uploads WHERE id = $1::uuid", upload_id)
+    with open(path, "wb") as f:
+        f.write(b"lixo")
+    r = await c.post("/videos", json={"upload_id": upload_id, "title": "T", "rules": _rules()})
+    assert r.status_code == 400

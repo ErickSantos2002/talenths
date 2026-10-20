@@ -200,14 +200,14 @@ class RulesIn(BaseModel):
 class CreateVideoBody(BaseModel):
     upload_id: uuid.UUID
     title: str = Field(min_length=1, max_length=200)
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=2000)
     due_days: int | None = Field(default=None, gt=0)
     rules: RulesIn = RulesIn()
 
 
 class UpdateVideoBody(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=2000)
     due_days: int | None = Field(default=None, gt=0)
     rules: RulesIn | None = None
 
@@ -261,7 +261,10 @@ async def _consume_upload(upload_id: uuid.UUID, company_id: str, conn: asyncpg.C
     await conn.execute(
         "UPDATE public.internal_video_uploads SET consumed_at = now() WHERE id = $1", row["id"]
     )
-    size, duration = await asyncio.to_thread(_file_info, row["file_path"])
+    try:
+        size, duration = await asyncio.to_thread(_file_info, row["file_path"])
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return row["file_path"], size, duration
 
 
@@ -273,6 +276,10 @@ def _clean_title(title: str | None) -> str:
     if not title or not title.strip():
         raise HTTPException(status_code=400, detail="Informe o título do vídeo.")
     return title.strip()
+
+
+def _clean_description(description: str | None) -> str | None:
+    return (description or "").strip() or None
 
 
 def _parse_ids(values: list[str]) -> list[uuid.UUID]:
@@ -390,7 +397,7 @@ async def create_video(
               (company_id, title, description, file_path, file_size, duration_seconds, due_days, created_by)
             VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8::uuid)
             RETURNING {_VIDEO_COLUMNS}""",
-        company_id, title, body.description, file_path, size, duration, body.due_days, user_id,
+        company_id, title, _clean_description(body.description), file_path, size, duration, body.due_days, user_id,
     )
     await _save_rules(row["id"], targets, conn)
     return _video_out(row)
@@ -475,6 +482,8 @@ async def update_video(
     fields = body.model_dump(exclude_unset=True, exclude={"rules"})
     if "title" in fields:
         fields["title"] = _clean_title(fields["title"])
+    if "description" in fields:
+        fields["description"] = _clean_description(fields["description"])
     sets = [f"{col} = ${i}" for i, col in enumerate(fields, start=2)]
     await conn.execute(
         f"UPDATE public.internal_videos SET {', '.join(sets + ['updated_at = now()'])} WHERE id = $1",
@@ -511,38 +520,42 @@ async def remove_viewer(
     return {"ok": True}
 
 
+# Arquivo só sai do disco depois do commit: o commit de get_db roda após a resposta, e
+# uma falha ali deixaria o banco apontando para um arquivo já apagado.
 @router.post("/{video_id}/replace-file")
 async def replace_file(
     video_id: uuid.UUID,
     body: ReplaceFileBody,
     user_id: str = Depends(get_current_user_id),
-    conn: asyncpg.Connection = Depends(get_db),
+    open_conn=Depends(get_conn_opener),
 ):
-    company_id = await _manager_company(user_id, conn)
-    video = await _get_video(video_id, company_id, conn, lock=True)
-    file_path, size, duration = await _consume_upload(body.upload_id, company_id, conn)
-    row = await conn.fetchrow(
-        f"""UPDATE public.internal_videos
-            SET file_path = $2, file_size = $3, duration_seconds = $4,
-                file_version = file_version + 1, updated_at = now()
-            WHERE id = $1 RETURNING {_VIDEO_COLUMNS}""",
-        video_id, file_path, size, duration,
-    )
-    # A linha do tempo mudou: progresso parcial não vale mais. assigned_at fica (prazo original).
-    reset_filter = "" if body.mode == "reset_all" else "AND completed_at IS NULL"
-    await conn.execute(
-        f"""WITH reset AS (
-              UPDATE public.internal_video_viewers
-              SET max_watched_s = 0, completed_at = NULL, last_report_at = NULL
-              WHERE video_id = $1 {reset_filter}
-                AND (max_watched_s > 0 OR completed_at IS NOT NULL)
-              RETURNING user_id, required, excluded
-            )
-            INSERT INTO public.notifications (user_id, type, title, message)
-            SELECT user_id, 'video', $2, $3 FROM reset
-            WHERE required AND NOT excluded AND user_id IS NOT NULL""",
-        video_id, REPLACED_TITLE, row["title"],
-    )
+    async with open_conn(user_id) as conn:
+        company_id = await _manager_company(user_id, conn)
+        video = await _get_video(video_id, company_id, conn, lock=True)
+        file_path, size, duration = await _consume_upload(body.upload_id, company_id, conn)
+        row = await conn.fetchrow(
+            f"""UPDATE public.internal_videos
+                SET file_path = $2, file_size = $3, duration_seconds = $4,
+                    file_version = file_version + 1, updated_at = now()
+                WHERE id = $1 RETURNING {_VIDEO_COLUMNS}""",
+            video_id, file_path, size, duration,
+        )
+        # A linha do tempo mudou: progresso parcial não vale mais. assigned_at fica (prazo original).
+        # Arquivado não aparece para ninguém: zera o progresso, mas não avisa.
+        reset_filter = "" if body.mode == "reset_all" else "AND completed_at IS NULL"
+        await conn.execute(
+            f"""WITH reset AS (
+                  UPDATE public.internal_video_viewers
+                  SET max_watched_s = 0, completed_at = NULL, last_report_at = NULL
+                  WHERE video_id = $1 {reset_filter}
+                    AND (max_watched_s > 0 OR completed_at IS NOT NULL)
+                  RETURNING user_id, required, excluded
+                )
+                INSERT INTO public.notifications (user_id, type, title, message)
+                SELECT user_id, 'video', $2, $3 FROM reset
+                WHERE $4 AND required AND NOT excluded AND user_id IS NOT NULL""",
+            video_id, REPLACED_TITLE, row["title"], video["archived_at"] is None,
+        )
     await asyncio.to_thread(video_storage.remove_file, video["file_path"])
     return _video_out(row)
 
@@ -584,10 +597,11 @@ async def unarchive_video(
 async def delete_video(
     video_id: uuid.UUID,
     user_id: str = Depends(get_current_user_id),
-    conn: asyncpg.Connection = Depends(get_db),
+    open_conn=Depends(get_conn_opener),
 ):
-    company_id = await _manager_company(user_id, conn)
-    video = await _get_video(video_id, company_id, conn, lock=True)
-    await conn.execute("DELETE FROM public.internal_videos WHERE id = $1", video_id)
+    async with open_conn(user_id) as conn:
+        company_id = await _manager_company(user_id, conn)
+        video = await _get_video(video_id, company_id, conn, lock=True)
+        await conn.execute("DELETE FROM public.internal_videos WHERE id = $1", video_id)
     await asyncio.to_thread(video_storage.remove_file, video["file_path"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
