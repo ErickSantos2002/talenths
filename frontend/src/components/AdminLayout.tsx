@@ -25,7 +25,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </header>
           <main className="flex-1 overflow-x-hidden p-6 lg:p-8">{children}</main>
         </div>
-        {/* Mobile-only hamburger — sidebar is a hidden Sheet on small screens */}
+        {/* Mobile-only menu button (top-left) — sidebar is a hidden Sheet on small screens */}
         <div className="fixed left-3 top-3 z-50 md:hidden" data-tour="menu-mobile">
           <SidebarTrigger className="rounded-lg border border-border bg-background/90 shadow-sm backdrop-blur-sm" />
         </div>

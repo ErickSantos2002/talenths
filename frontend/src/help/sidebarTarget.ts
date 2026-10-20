@@ -1,14 +1,14 @@
 import type { PreparedTarget } from "./tourEngine";
 
-export const MOBILE_MENU_TEXT = "No celular, toque no botão **☰** para abrir o menu.";
+export const MOBILE_MENU_TEXT = "No celular, toque no botão do canto superior esquerdo para abrir o menu.";
 
-// "menu-mobile" is the phone's ☰ button, outside the sidebar.
+// "menu-mobile" is the phone's menu button (top-left corner), outside the sidebar.
 function isMenu(element: string | undefined): boolean {
   return element === "menu" || (!!element && element.startsWith("menu-") && element !== "menu-mobile");
 }
 
 // On the phone the menu lives in a drawer that would cover the screen; the
-// step points at the ☰ button instead of opening it. On the computer a
+// step points at the menu button instead of opening it. On the computer a
 // collapsed sidebar hides the item labels, so it expands for the step.
 export function sidebarTarget(
   element: string | undefined,

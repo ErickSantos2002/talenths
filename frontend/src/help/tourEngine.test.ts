@@ -193,13 +193,13 @@ describe("TourEngine", () => {
 
   it("appends extraText from prepare and uses prepare().element as target", async () => {
     const mobile = addTarget("menu-mobile");
-    const prepare = vi.fn(async () => ({ element: "menu-mobile", extraText: "Toque no **☰**." }));
+    const prepare = vi.fn(async () => ({ element: "menu-mobile", extraText: "Toque no **botão**." }));
     engine = new TourEngine(callbacks({ prepare }));
     engine.start(tour([{ route: "/dashboard", element: "menu-videos", title: "M", text: "Menu" }]));
     await vi.advanceTimersByTimeAsync(0);
     expect(prepare).toHaveBeenCalledWith("menu-videos");
     expect(last().element).toBe(mobile);
-    expect(last().popover!.description).toBe("<p>Menu</p><p>Toque no <strong>☰</strong>.</p>");
+    expect(last().popover!.description).toBe("<p>Menu</p><p>Toque no <strong>botão</strong>.</p>");
   });
 
   it('progress text is "N de M"', async () => {
