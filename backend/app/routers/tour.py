@@ -50,6 +50,7 @@ async def _locked_row(
         total = await conn.fetchval(
             "SELECT count(*) FROM public.tour_progress WHERE user_id = $1", user_id
         )
+        # Teto aproximado, só contra laço: a contagem não é travada.
         if total >= TOURS_PER_USER:
             raise HTTPException(status_code=422, detail="Limite de tours atingido.")
         await conn.execute(
