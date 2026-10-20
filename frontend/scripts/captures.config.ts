@@ -59,6 +59,7 @@ export const CAPTURES: Capture[] = [
   { name: "meus-testes", account: "ana", route: () => "/meus-testes" },
   { name: "meu-perfil", account: "ana", route: () => "/meu-perfil" },
   { name: "ajuda", account: "ana", route: () => "/ajuda" },
+  { name: "ajuda-desta-tela", account: "ana", route: () => "/meus-videos", click: "help-button" },
 
   // Guias de Primeiros passos, Meu Espaço e Desempenho.
   { name: "dashboard-gestor", account: "gestor", route: () => "/dashboard" },

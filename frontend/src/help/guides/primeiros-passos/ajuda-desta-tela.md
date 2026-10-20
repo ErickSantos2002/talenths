@@ -21,6 +21,8 @@ Sempre que não souber o que fazer numa tela: para que ela serve, qual botão us
 3. Se a tela tiver outros guias, eles aparecem em **Outros guias desta tela**. Clique em um para abri-lo.
 4. Para ver todos os guias ou buscar por um assunto, clique em **Abrir a central de ajuda**.
 
+![Tela Vídeos com o painel de ajuda aberto na lateral direita, mostrando o guia de Vídeos](/capturas/ajuda-desta-tela.webp)
+
 Se a tela ainda não tiver um guia próprio, o painel mostra a lista de guias do mesmo grupo do menu ou, na falta deles, os guias de **Primeiros passos**.
 
 ## O que acontece depois

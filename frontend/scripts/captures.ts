@@ -8,17 +8,17 @@
 //   # 1. o banco das capturas (uma vez, ou para recriar do zero)
 //   bash backend/scripts/captures-db.sh
 //
-//   # 2. o backend, de backend/, contra esse banco (a porta 8000 é de outro projeto)
+//   # 2. o backend, de backend/, contra esse banco (as portas 8000 e 8011 são de outros projetos)
 //   DATABASE_URL=postgresql://erick:dev123@localhost:5432/talenths_capturas JWT_SECRET=dev-secret \
 //   FRONTEND_URL=http://localhost:8091 UPLOADS_DIR=/tmp/talenths-uploads-capturas \
-//   .venv/bin/python -m uvicorn app.main:app --port 8011
+//   .venv/bin/python -m uvicorn app.main:app --port 8021
 //
 //   (O UPLOADS_DIR do backend tem de ser o mesmo CAPTURES_UPLOADS_DIR da semente —
 //   os dois têm padrão /tmp/talenths-uploads-capturas: é lá que a semente grava o
 //   MP4 do player da captura `video`.)
 //
 //   # 3. o frontend, apontado para esse backend
-//   VITE_API_URL=http://localhost:8011 bun run --cwd frontend dev -- --port 8091 --strictPort
+//   VITE_API_URL=http://localhost:8021 bun run --cwd frontend dev -- --port 8091 --strictPort
 //
 // O script então roda a semente (`backend/scripts/seed_captures.py`, que apaga
 // e repovoa o banco), entra com cada conta pela tela de login, abre cada tela
@@ -28,7 +28,7 @@
 // Pré-requisitos: Chrome e ffmpeg (com libx264 e drawtext, para o MP4 do player;
 // sem ele a semente avisa e a captura `video` sai com o player vazio).
 //
-// Ambiente (opcional): CAPTURES_DATABASE_URL, CAPTURES_UPLOADS_DIR, TALENTHS_PYTHON (o Python com
+// Ambiente (opcional): CAPTURES_DATABASE_URL, CAPTURES_API_URL (padrão http://localhost:8021), CAPTURES_UPLOADS_DIR, TALENTHS_PYTHON (o Python com
 // asyncpg e bcrypt — padrão backend/.venv/bin/python), CHROME (padrão
 // /usr/bin/google-chrome), CAPTURES_PASSWORD.
 //
@@ -44,7 +44,7 @@ import { ACCOUNTS, CAPTURES, PASSWORD, type Account, type Ids } from "./captures
 const FRONTEND = resolve(import.meta.dir, "..");
 const BACKEND = resolve(FRONTEND, "..", "backend");
 const OUT = join(FRONTEND, "public", "capturas");
-const API = "http://localhost:8011";
+const API = process.env.CAPTURES_API_URL ?? "http://localhost:8021";
 const APP = "http://localhost:8091";
 const WIDTH = 1280;
 const HEIGHT = 800;
@@ -172,6 +172,8 @@ async function main() {
       }
       for (const step of capture.steps ?? []) {
         const target = page.getByRole(step.role, step.name ? { name: step.name, exact: step.exact } : {});
+        // count() não espera: aguarda o primeiro alvo aparecer (portais) e só então exige exatamente 1.
+        await target.first().waitFor({ state: "visible", timeout: 5000 });
         const count = await target.count();
         if (count !== 1) {
           throw new Error(`${capture.name}: ${count} alvos para ${step.role} "${step.name ?? ""}" — o passo precisa achar exatamente 1.`);
