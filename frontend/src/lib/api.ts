@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+export const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 const TOKEN_KEY = "talenths_token";
 
@@ -760,6 +760,139 @@ export const documents = {
     return { url: `${BASE_URL}/documents/${id}/download`, token };
   },
   delete: (id: string) => del(`/documents/${id}`),
+};
+
+// ── Vídeos internos ───────────────────────────────────────────────────────────
+
+export type ViewerStatus = "pendente" | "em_andamento" | "concluido" | "atrasado";
+
+export type VideoRules = { all: boolean; department_ids: string[]; user_ids: string[] };
+
+export type AdminVideo = {
+  id: string;
+  title: string;
+  duration_seconds: number;
+  due_days: number | null;
+  archived_at: string | null;
+  created_at: string;
+  required_count: number;
+  completed_count: number;
+  overdue_count: number;
+};
+
+export type ViewerRow = {
+  user_id: string | null;
+  name: string | null;
+  department: string | null;
+  status: ViewerStatus;
+  progress_pct: number;
+  completed_at: string | null;
+  assigned_at: string;
+  due_at: string | null;
+};
+
+export type VideoCore = {
+  id: string;
+  title: string;
+  description: string | null;
+  file_size: number;
+  duration_seconds: number;
+  due_days: number | null;
+  file_version: number;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminVideoDetail = {
+  video: VideoCore;
+  rules: VideoRules;
+  required: ViewerRow[];
+  voluntary: ViewerRow[];
+  former: ViewerRow[];
+};
+
+export type MyVideo = {
+  id: string;
+  title: string;
+  description: string | null;
+  duration_seconds: number;
+  status: ViewerStatus;
+  progress_pct: number;
+  due_at: string | null;
+  completed_at: string | null;
+  max_watched_s?: number;
+};
+
+export type UploadStart = { upload_id: string; part_size: number; parts: number };
+export type UploadComplete = { upload_id: string; duration_seconds: number; file_size: number };
+export type CreateVideoInput = {
+  upload_id: string;
+  title: string;
+  description?: string | null;
+  due_days?: number | null;
+  rules: VideoRules;
+};
+export type UpdateVideoInput = {
+  title?: string;
+  description?: string | null;
+  due_days?: number | null;
+  rules?: VideoRules;
+};
+
+export class ProgressRejected extends Error {
+  constructor(public maxWatched: number) {
+    super("Avanço além do assistido.");
+    this.name = "ProgressRejected";
+  }
+}
+
+export const videos = {
+  start: (total_size: number) => post<UploadStart>("/videos/uploads", { total_size }),
+  complete: (uploadId: string) => post<UploadComplete>(`/videos/uploads/${uploadId}/complete`),
+  cancel: (uploadId: string) => del(`/videos/uploads/${uploadId}`),
+  create: (data: CreateVideoInput) => post<VideoCore>("/videos", data),
+  listAdmin: () => get<AdminVideo[]>("/videos/admin"),
+  getAdmin: (id: string) => get<AdminVideoDetail>(`/videos/${id}/admin`),
+  update: (id: string, data: UpdateVideoInput) => patch<VideoCore>(`/videos/${id}`, data),
+  removeViewer: (id: string, userId: string) =>
+    post<{ ok: boolean }>(`/videos/${id}/viewers/${userId}/remove`),
+  replaceFile: (id: string, upload_id: string, mode: "keep_completed" | "reset_all") =>
+    post<VideoCore>(`/videos/${id}/replace-file`, { upload_id, mode }),
+  archive: (id: string) => post<VideoCore>(`/videos/${id}/archive`),
+  unarchive: (id: string) => post<VideoCore>(`/videos/${id}/unarchive`),
+  remove: (id: string) => del(`/videos/${id}`),
+  listMine: () => get<{ required: MyVideo[]; library: MyVideo[] }>("/videos/mine"),
+  get: (id: string) => get<MyVideo & { max_watched_s: number }>(`/videos/${id}`),
+  streamUrl: async (id: string) => {
+    const { url } = await post<{ url: string }>(`/videos/${id}/stream-token`);
+    return `${BASE_URL}${url}`;
+  },
+  reportProgress: async (id: string, position_s: number) => {
+    const token = getToken();
+    const res = await fetch(`${BASE_URL}/videos/${id}/progress`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ position_s }),
+    });
+    if (res.status === 409) {
+      const body = await res.json().catch(() => ({}));
+      throw new ProgressRejected(Number((body as { max_watched_s?: number }).max_watched_s ?? 0));
+    }
+    if (res.status === 401) {
+      clearToken();
+      window.location.href = "/login";
+      throw new Error("Sessão expirada");
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { detail?: string }).detail ?? "Erro na requisição");
+    }
+    return res.json() as Promise<{ max_watched_s: number; completed: boolean }>;
+  },
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────
