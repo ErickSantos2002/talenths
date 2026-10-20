@@ -8,6 +8,10 @@ O RH pediu uma página de **vídeos internos** no TalentHS: o RH sobe um vídeo,
 precisa assistir, e sabe com confiança **quem assistiu e quem não assistiu** — tanto
 funcionários atuais quanto os que entrarem depois.
 
+**Natureza dos vídeos:** não são treinamentos — são vídeos de **integração (onboarding) e
+apresentação da empresa** (cultura, estrutura, boas-vindas etc.). Textos de UI, changelog e
+comentários não devem falar em "treinamento" nem "curso".
+
 Existe algo parecido no DocsHS (treinamento com vídeo), que serve de **base de
 comportamento**, não de código a copiar: lá o vídeo é parte de uma "ata" de treinamento,
 com prova e assinatura; aqui é só o vídeo.

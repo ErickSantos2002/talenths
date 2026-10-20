@@ -496,9 +496,11 @@ git commit -m "feat(videos): meus videos, player e card de pendencias"
 - Create: `backend/scripts/aplicar_029.py`
 
 Changelog `entries`:
-- `{ type: "novidade", text: "Nova página de Vídeos: o RH publica vídeos internos e escolhe quem precisa assistir." }`
-- `{ type: "novidade", text: "Em Meus Vídeos você vê o que precisa assistir, com prazo, e a biblioteca completa." }`
+- `{ type: "novidade", text: "Nova página de Vídeos: o RH publica vídeos de integração e apresentação da empresa e escolhe quem precisa assistir." }`
+- `{ type: "novidade", text: "Em Meus Vídeos você vê os vídeos que precisa assistir, com prazo, e todos os vídeos da empresa." }`
 - `{ type: "novidade", text: "O RH acompanha quem já assistiu até o fim, quem está pendente e quem está atrasado." }`
+
+Também nesta task: trocar o comentário da linha 1 de `029_internal_videos.sql` para "vídeos internos de integração e apresentação da empresa, com atribuição obrigatória" (a 029 ainda não foi aplicada em produção — só no banco de teste), e conferir que nenhum texto de UI fala em "treinamento"/"curso".
 
 `aplicar_029.py`: usa `bancos.conectar("talenths", perfil="admin")` (ver `~/projetos/bancos/README.md`), aplica `029_internal_videos.sql` numa transação e confere que as 4 tabelas e os 2 triggers existem. **O Claude não roda** — o Erick roda no Konsole: `backend/.venv/bin/python backend/scripts/aplicar_029.py`.
 
