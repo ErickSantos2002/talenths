@@ -1,4 +1,4 @@
--- 029_internal_videos.sql — vídeos internos (treinamentos em vídeo com atribuição obrigatória)
+-- 029_internal_videos.sql — vídeos internos de integração e apresentação da empresa, com atribuição obrigatória
 CREATE TABLE IF NOT EXISTS public.internal_videos (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,

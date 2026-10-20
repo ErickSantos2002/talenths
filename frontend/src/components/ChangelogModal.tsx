@@ -16,9 +16,31 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.9.0",
+    date: "20/10/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Nova página de Vídeos: o RH publica vídeos de integração e apresentação da empresa e escolhe quem precisa assistir.",
+      },
+      {
+        type: "novidade",
+        text: "Em Meus Vídeos você vê os vídeos que precisa assistir, com prazo, e todos os vídeos da empresa.",
+      },
+      {
+        type: "novidade",
+        text: "O RH acompanha quem já assistiu até o fim, quem está pendente e quem está atrasado.",
+      },
+      {
+        type: "melhoria",
+        text: "O sino de notificações agora aparece no topo da tela, com os avisos do sistema.",
+      },
+    ],
+  },
+  {
     version: "v1.8.5",
     date: "06/07/2026",
-    current: true,
     entries: [
       {
         type: "novidade",
