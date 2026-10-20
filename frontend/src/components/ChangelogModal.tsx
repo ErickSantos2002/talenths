@@ -26,7 +26,7 @@ const CHANGELOG: ChangelogVersion[] = [
       },
       {
         type: "novidade",
-        text: "Em Meus Vídeos você vê os vídeos que precisa assistir, com prazo, e todos os vídeos da empresa.",
+        text: "Na página Vídeos você vê os vídeos que precisa assistir, com prazo, e todos os vídeos da empresa.",
       },
       {
         type: "novidade",
