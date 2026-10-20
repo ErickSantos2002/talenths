@@ -97,60 +97,66 @@ export async function uploadVideoFile(
   const relay = () => internal.abort();
   if (opts.signal.aborted) relay();
   else opts.signal.addEventListener("abort", relay, { once: true });
-  const { upload_id, part_size } = await videos.start(file.size);
-  const ranges = partRanges(file.size, part_size);
-  const confirmed = new Array<number>(ranges.length).fill(0);
-  const inFlight = new Array<number>(ranges.length).fill(0);
-  const report = () => {
-    const sum = confirmed.reduce((a, b) => a + b, 0) + inFlight.reduce((a, b) => a + b, 0);
-    onProgress(Math.min(100, Math.floor((sum / file.size) * 100)));
-  };
+  try {
+    const { upload_id, part_size } = await videos.start(file.size);
+    const ranges = partRanges(file.size, part_size);
+    const confirmed = new Array<number>(ranges.length).fill(0);
+    const inFlight = new Array<number>(ranges.length).fill(0);
+    const report = () => {
+      const sum = confirmed.reduce((a, b) => a + b, 0) + inFlight.reduce((a, b) => a + b, 0);
+      onProgress(Math.min(100, Math.floor((sum / file.size) * 100)));
+    };
 
-  const sendPart = async (i: number) => {
-    const [start, end] = ranges[i];
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await putPart(upload_id, i, file.slice(start, end), signal, (loaded) => {
-          inFlight[i] = loaded;
+    const sendPart = async (i: number) => {
+      const [start, end] = ranges[i];
+      for (let attempt = 1; ; attempt++) {
+        try {
+          await putPart(upload_id, i, file.slice(start, end), signal, (loaded) => {
+            inFlight[i] = loaded;
+            report();
+          });
+          inFlight[i] = 0;
+          confirmed[i] = end - start;
           report();
-        });
-        inFlight[i] = 0;
-        confirmed[i] = end - start;
-        report();
-        return;
-      } catch (e) {
-        inFlight[i] = 0;
-        if (signal.aborted || !(e instanceof PartError) || !e.retryable || attempt >= MAX_ATTEMPTS) throw e;
-        await backoff(RETRY_DELAY_MS * attempt, signal);
+          return;
+        } catch (e) {
+          inFlight[i] = 0;
+          if (signal.aborted || !(e instanceof PartError) || !e.retryable || attempt >= MAX_ATTEMPTS) throw e;
+          await backoff(RETRY_DELAY_MS * attempt, signal);
+        }
       }
-    }
-  };
+    };
 
-  let next = 0;
-  const workers = Array.from({ length: Math.min(PARALLEL_PARTS, ranges.length) }, async () => {
-    try {
-      while (next < ranges.length) {
-        if (signal.aborted) throw abortError();
-        await sendPart(next++);
+    let next = 0;
+    let firstError: unknown;
+    const workers = Array.from({ length: Math.min(PARALLEL_PARTS, ranges.length) }, async () => {
+      try {
+        while (next < ranges.length) {
+          if (signal.aborted) throw abortError();
+          await sendPart(next++);
+        }
+      } catch (e) {
+        if (!(e instanceof DOMException && e.name === "AbortError")) firstError ??= e;
+        // Interrompe os irmãos: nenhuma parte nova começa e os XHRs em andamento são abortados.
+        internal.abort();
+        throw e;
       }
+    });
+    try {
+      const results = await Promise.allSettled(workers);
+      // O erro real vem antes do cancelamento que ele mesmo provocou nos outros workers.
+      if (firstError !== undefined) throw firstError;
+      const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+      if (failed) throw failed.reason;
+      if (signal.aborted) throw abortError();
+      const done = await videos.complete(upload_id);
+      onProgress(100);
+      return { upload_id: done.upload_id, duration_seconds: done.duration_seconds };
     } catch (e) {
-      // Interrompe os irmãos: nenhuma parte nova começa e os XHRs em andamento são abortados.
-      internal.abort();
+      // Todos os workers já terminaram: o DELETE não corre contra uma parte ainda gravando.
+      await videos.cancel(upload_id).catch(() => undefined);
       throw e;
     }
-  });
-  try {
-    const results = await Promise.allSettled(workers);
-    const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
-    if (failed) throw failed.reason;
-    if (signal.aborted) throw abortError();
-    const done = await videos.complete(upload_id);
-    onProgress(100);
-    return { upload_id: done.upload_id, duration_seconds: done.duration_seconds };
-  } catch (e) {
-    // Todos os workers já terminaram: o DELETE não corre contra uma parte ainda gravando.
-    await videos.cancel(upload_id).catch(() => undefined);
-    throw e;
   } finally {
     opts.signal.removeEventListener("abort", relay);
   }

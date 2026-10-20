@@ -11,6 +11,7 @@ class FakeXHR {
   url = "";
   headers: Record<string, string> = {};
   status = 0;
+  responseText = "";
   body: Blob | null = null;
   aborted = false;
   upload: { onprogress: ((e: { loaded: number; lengthComputable: boolean }) => void) | null } = { onprogress: null };
@@ -159,6 +160,21 @@ describe("uploadVideoFile", () => {
     expect(FakeXHR.instances.length).toBe(3);
     expect(FakeXHR.instances.slice(1).every((x) => x.aborted)).toBe(true);
     expect(events.at(-1)).toBe("delete");
+  });
+
+  it("falha permanente de um worker tardio reporta o erro do servidor, não o cancelamento", async () => {
+    FakeXHR.plan = (x) => {
+      if (x.url.endsWith("/parts/2")) {
+        x.responseText = JSON.stringify({ detail: "Parte maior que o permitido." });
+        return 413;
+      }
+      return "hang";
+    };
+    fetchMock.mockImplementation(async (_u: string, init?: RequestInit) =>
+      init?.method === "DELETE"
+        ? new Response(null, { status: 204 })
+        : json({ upload_id: "u-1", part_size: 4, parts: 5 }, 201));
+    await expect(uploadVideoFile(fileOf(20), opts())).rejects.toThrow("Parte maior que o permitido.");
   });
 
   it("aceita type vazio quando o nome termina em .mp4", async () => {
