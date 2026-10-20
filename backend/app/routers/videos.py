@@ -66,7 +66,7 @@ async def _get_company_id(user_id: str, conn: asyncpg.Connection) -> str:
 
 async def _get_open_upload(upload_id: uuid.UUID, company_id: str, conn: asyncpg.Connection):
     row = await conn.fetchrow(
-        """SELECT id, total_size, parts_received, completed_at
+        """SELECT id, total_size, parts_received, completed_at, consumed_at, file_path
            FROM public.internal_video_uploads
            WHERE id = $1 AND company_id = $2::uuid FOR UPDATE""",
         upload_id, company_id,
@@ -144,35 +144,37 @@ async def upload_part(
 async def complete_upload(
     upload_id: uuid.UUID,
     user_id: str = Depends(get_current_user_id),
-    conn: asyncpg.Connection = Depends(get_db),
+    open_conn=Depends(get_conn_opener),
 ):
-    await require_manager(user_id, conn)
-    company_id = await _get_company_id(user_id, conn)
-    row = await _get_open_upload(upload_id, company_id, conn)
-    if row["completed_at"]:
-        raise HTTPException(status_code=409, detail="Upload já concluído.")
-    # Conferir o tamanho do arquivo não basta: pwrite deixa buracos até a última parte.
-    if len(row["parts_received"]) != video_storage.expected_parts(row["total_size"]):
-        raise HTTPException(status_code=400, detail="Faltam partes do arquivo. Tente enviar novamente.")
-    tmp = video_storage.tmp_path(company_id, str(row["id"]))
-    if not os.path.exists(tmp):
-        raise HTTPException(status_code=400, detail="Arquivo temporário não encontrado. Envie novamente.")
+    # Commit antes de responder: o cliente cria o vídeo logo em seguida, possivelmente em
+    # outro worker. Se o commit falhar, o arquivo final não pode ficar órfão no disco.
+    final_path = None
     try:
-        final_path, size, duration = await asyncio.to_thread(
-            video_storage.finalize_file, tmp, company_id
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    try:
-        await conn.execute(
-            "UPDATE public.internal_video_uploads SET file_path = $2, completed_at = now() WHERE id = $1",
-            row["id"], final_path,
-        )
+        async with open_conn(user_id) as conn:
+            await require_manager(user_id, conn)
+            company_id = await _get_company_id(user_id, conn)
+            row = await _get_open_upload(upload_id, company_id, conn)
+            if row["completed_at"]:
+                raise HTTPException(status_code=409, detail="Upload já concluído.")
+            # Conferir o tamanho do arquivo não basta: pwrite deixa buracos até a última parte.
+            if len(row["parts_received"]) != video_storage.expected_parts(row["total_size"]):
+                raise HTTPException(status_code=400, detail="Faltam partes do arquivo. Tente enviar novamente.")
+            tmp = video_storage.tmp_path(company_id, str(row["id"]))
+            if not os.path.exists(tmp):
+                raise HTTPException(status_code=400, detail="Arquivo temporário não encontrado. Envie novamente.")
+            try:
+                final_path, size, duration = await asyncio.to_thread(
+                    video_storage.finalize_file, tmp, company_id
+                )
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+            await conn.execute(
+                "UPDATE public.internal_video_uploads SET file_path = $2, completed_at = now() WHERE id = $1",
+                row["id"], final_path,
+            )
     except Exception:
-        try:
-            os.remove(final_path)
-        except OSError:
-            pass
+        if final_path:
+            await asyncio.to_thread(video_storage.remove_file, final_path)
         raise
     return {"upload_id": str(row["id"]), "duration_seconds": duration, "file_size": size}
 
@@ -186,12 +188,11 @@ async def cancel_upload(
     await require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     row = await _get_open_upload(upload_id, company_id, conn)
-    if row["completed_at"]:
-        raise HTTPException(status_code=409, detail="Upload já concluído.")
-    try:
-        os.remove(video_storage.tmp_path(company_id, str(row["id"])))
-    except FileNotFoundError:
-        pass
+    if row["consumed_at"]:
+        raise HTTPException(status_code=409, detail="Este arquivo já foi usado em um vídeo.")
+    # Concluído e ainda não usado: o modal fechado antes de salvar descarta o arquivo final.
+    path = row["file_path"] if row["completed_at"] else video_storage.tmp_path(company_id, str(row["id"]))
+    await asyncio.to_thread(video_storage.remove_file, path)
     await conn.execute("DELETE FROM public.internal_video_uploads WHERE id = $1", row["id"])
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

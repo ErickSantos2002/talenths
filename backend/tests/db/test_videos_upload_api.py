@@ -147,3 +147,61 @@ async def test_other_company_gets_404(db, client_as, sample_mp4):
     assert (await b.put(f"/videos/uploads/{uid}/parts/0", content=_split(sample_mp4)[0])).status_code == 404
     assert (await b.post(f"/videos/uploads/{uid}/complete")).status_code == 404
     assert (await b.delete(f"/videos/uploads/{uid}")).status_code == 404
+
+
+async def _complete(c, data: bytes) -> str:
+    info = (await c.post("/videos/uploads", json={"total_size": len(data)})).json()
+    for n, part in enumerate(_split(data)):
+        assert (await c.put(f"/videos/uploads/{info['upload_id']}/parts/{n}", content=part)).status_code == 204
+    assert (await c.post(f"/videos/uploads/{info['upload_id']}/complete")).status_code == 200
+    return info["upload_id"]
+
+
+async def test_cancel_completed_unconsumed_upload_removes_file(db, client_as, sample_mp4):
+    _, manager = await _manager(db)
+    c = client_as(manager)
+    upload_id = await _complete(c, sample_mp4)
+    path = await db.fetchval("SELECT file_path FROM public.internal_video_uploads WHERE id = $1::uuid", upload_id)
+    assert os.path.exists(path)
+
+    assert (await c.delete(f"/videos/uploads/{upload_id}")).status_code == 204
+    assert not os.path.exists(path)
+    assert await db.fetchval(
+        "SELECT count(*) FROM public.internal_video_uploads WHERE id = $1::uuid", upload_id
+    ) == 0
+
+
+async def test_cancel_consumed_upload_is_409(db, client_as, sample_mp4):
+    _, manager = await _manager(db)
+    c = client_as(manager)
+    upload_id = await _complete(c, sample_mp4)
+    r = await c.post("/videos", json={"upload_id": upload_id, "title": "T", "rules": {}})
+    assert r.status_code == 201, r.text
+    path = await db.fetchval("SELECT file_path FROM public.internal_video_uploads WHERE id = $1::uuid", upload_id)
+
+    assert (await c.delete(f"/videos/uploads/{upload_id}")).status_code == 409
+    assert os.path.exists(path)
+
+
+async def test_complete_removes_final_file_when_commit_fails(db, client_as, sample_mp4):
+    from contextlib import asynccontextmanager
+
+    from app.main import app
+    from app.routers.videos import get_conn_opener
+
+    company, manager = await _manager(db)
+    c = client_as(manager)
+    info = (await c.post("/videos/uploads", json={"total_size": len(sample_mp4)})).json()
+    for n, part in enumerate(_split(sample_mp4)):
+        assert (await c.put(f"/videos/uploads/{info['upload_id']}/parts/{n}", content=part)).status_code == 204
+
+    @asynccontextmanager
+    async def failing(_user_id):
+        yield db
+        raise RuntimeError("falha no commit")
+
+    app.dependency_overrides[get_conn_opener] = lambda: failing
+    with pytest.raises(RuntimeError):
+        await c.post(f"/videos/uploads/{info['upload_id']}/complete")
+    directory = video_storage.video_dir(company)
+    assert [f for f in os.listdir(directory) if f.endswith(".mp4")] == []
