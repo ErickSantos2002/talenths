@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { videos } from "@/lib/api";
@@ -121,6 +121,8 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
       onError(e);
     },
   });
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const handleClose = () => {
     abortRef.current?.abort();
@@ -336,7 +338,7 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Tirar {removeTarget?.name ?? "pessoa"} deste vídeo?</AlertDialogTitle>
             <AlertDialogDescription>
-              A pessoa deixa de ser obrigada a assistir e o progresso dela neste vídeo é apagado.
+              A pessoa sai da lista de obrigatórios e o progresso dela é mantido. Ela só volta a ser obrigada se for marcada individualmente de novo.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

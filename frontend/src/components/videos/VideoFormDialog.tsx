@@ -53,7 +53,10 @@ export function VideoFormDialog({ open, onOpenChange, video }: Props) {
     setDescription(video?.description ?? "");
     setDueDays(video?.due_days != null ? String(video.due_days) : "");
     setRules(video?.rules ?? EMPTY_RULES);
-  }, [open, video]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when opening or switching video, not on parent re-renders
+  }, [open, video?.id]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const dueNumber = dueDays.trim() === "" ? null : Number(dueDays);
   const dueInvalid = dueNumber !== null && (!Number.isInteger(dueNumber) || dueNumber < 1);
@@ -105,7 +108,7 @@ export function VideoFormDialog({ open, onOpenChange, video }: Props) {
 
   const busy = saveMut.isPending;
   const canSubmit =
-    !!title.trim() && !dueInvalid && !isEmptyAudience(rules) && (!!video || !!file) && !busy;
+    !!title.trim() && !dueInvalid && (!!video || (!isEmptyAudience(rules) && !!file)) && !busy;
 
   const handleOpenChange = (next: boolean) => {
     if (!next) abortRef.current?.abort();
@@ -171,15 +174,25 @@ export function VideoFormDialog({ open, onOpenChange, video }: Props) {
           <div className="space-y-2">
             <Label>Quem deve assistir</Label>
             <AudiencePicker value={rules} onChange={setRules} />
-            {isEmptyAudience(rules) && (
+            {video && (
+              <p className="text-xs text-muted-foreground">
+                Desmarcar um grupo ou pessoa não retira quem já recebeu o vídeo. Para tirar alguém, use “Tirar” no detalhe do vídeo.
+              </p>
+            )}
+            {!video && isEmptyAudience(rules) && (
               <p className="text-xs text-muted-foreground">Selecione ao menos um grupo ou pessoa.</p>
             )}
           </div>
         </div>
 
         <DialogFooter>
+          {uploading && (
+            <Button variant="outline" onClick={() => abortRef.current?.abort()}>
+              Cancelar envio
+            </Button>
+          )}
           <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            {uploading ? "Cancelar envio" : "Cancelar"}
+            Cancelar
           </Button>
           <Button disabled={!canSubmit} onClick={() => saveMut.mutate()}>
             {busy ? (uploading ? "Enviando..." : "Salvando...") : "Salvar"}
