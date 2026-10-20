@@ -60,6 +60,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   localStorage.clear();
 });
@@ -102,15 +104,21 @@ describe("uploadVideoFile", () => {
   });
 
   it("tenta de novo parte que falhou", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
     let calls = 0;
     FakeXHR.plan = () => (++calls === 1 ? 500 : 204);
-    await uploadVideoFile(fileOf(10), opts());
+    const p = uploadVideoFile(fileOf(10), opts());
+    await vi.advanceTimersByTimeAsync(1000);
+    await p;
     expect(FakeXHR.instances.length).toBe(4);
   });
 
   it("desiste após 3 tentativas e cancela o upload", async () => {
     FakeXHR.plan = () => 500;
-    await expect(uploadVideoFile(fileOf(3), { ...opts() })).rejects.toThrow();
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    const p = expect(uploadVideoFile(fileOf(3), opts())).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(5000);
+    await p;
     expect(FakeXHR.instances.length).toBe(3);
     const del = fetchMock.mock.calls.find(([, i]) => i?.method === "DELETE");
     expect(del?.[0]).toMatch(/\/videos\/uploads\/u-1$/);
@@ -122,15 +130,43 @@ describe("uploadVideoFile", () => {
     expect(FakeXHR.instances.length).toBe(1);
   });
 
-  it("abort cancela os XHRs em andamento e chama DELETE", async () => {
+  it("abort cancela os XHRs em andamento, não inicia novos e chama DELETE", async () => {
     FakeXHR.plan = () => "hang";
     const ac = new AbortController();
-    const p = uploadVideoFile(fileOf(10), { onProgress: vi.fn(), signal: ac.signal });
+    const p = uploadVideoFile(fileOf(20), { onProgress: vi.fn(), signal: ac.signal });
     await vi.waitFor(() => expect(FakeXHR.instances.length).toBe(3));
     ac.abort();
     await expect(p).rejects.toThrow();
+    expect(FakeXHR.instances.length).toBe(3);
     expect(FakeXHR.instances.every((x) => x.aborted)).toBe(true);
     const del = fetchMock.mock.calls.find(([, i]) => i?.method === "DELETE");
     expect(del?.[0]).toMatch(/\/videos\/uploads\/u-1$/);
+  });
+
+  it("falha permanente numa parte para as outras e só então faz DELETE", async () => {
+    const events: string[] = [];
+    FakeXHR.plan = (x) => (x.url.endsWith("/parts/0") ? 413 : "hang");
+    const origAbort = FakeXHR.prototype.abort;
+    vi.spyOn(FakeXHR.prototype, "abort").mockImplementation(function (this: FakeXHR) {
+      origAbort.call(this);
+      events.push("abort");
+    });
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (init?.method === "DELETE") { events.push("delete"); return new Response(null, { status: 204 }); }
+      return json({ upload_id: "u-1", part_size: 4, parts: 5 }, 201);
+    });
+    await expect(uploadVideoFile(fileOf(20), opts())).rejects.toThrow();
+    expect(FakeXHR.instances.length).toBe(3);
+    expect(FakeXHR.instances.slice(1).every((x) => x.aborted)).toBe(true);
+    expect(events.at(-1)).toBe("delete");
+  });
+
+  it("aceita type vazio quando o nome termina em .mp4", async () => {
+    const f = new File([new Uint8Array(3)], "Video.MP4", { type: "" });
+    await expect(uploadVideoFile(f, opts())).resolves.toBeDefined();
+  });
+
+  it("partRanges recusa part_size inválido", () => {
+    expect(() => partRanges(10, 0)).toThrow();
   });
 });
