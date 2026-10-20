@@ -106,7 +106,11 @@ function VideoPlayer({ id }: { id: string }) {
       if (videoRef.current && !videoRef.current.paused) void reporter.flush();
     }, REPORT_INTERVAL_MS);
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") void reporter.flush(true);
+      if (document.visibilityState !== "hidden") return;
+      void reporter.flush(true);
+      // Chrome throttles timers in hidden silent tabs: timeupdate jumps far enough to be
+      // treated as a skip and snapped back, over and over. The user resumes by hand.
+      if (!completedRef.current) videoRef.current?.pause();
     };
     const onPageHide = () => void reporter.flush(true);
     document.addEventListener("visibilitychange", onVisibility);
