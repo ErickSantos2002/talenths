@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import appSource from "@/App.tsx?raw";
-import { SCREENS, canOpen, menuSections, screenName, type ScreenContext } from "./screens";
+import { SCREENS, canOpen, matchScreen, menuSections, screenName, type ScreenContext } from "./screens";
 
 const user: ScreenContext = { roles: ["user"], timeclockEnabled: false };
 const manager: ScreenContext = { roles: ["manager"], timeclockEnabled: false };
@@ -69,5 +69,29 @@ describe("screens", () => {
     expect(canOpen("/meu-ponto", user)).toBe(false);
     expect(canOpen("/meu-ponto", { ...user, timeclockEnabled: true })).toBe(true);
     expect(canOpen("/inexistente", master)).toBe(false);
+  });
+
+  it("roles in SCREENS match requiredRoles of each protected route in App.tsx", () => {
+    const blocks = [
+      ...appSource.matchAll(/path="([^"]+)"\s+element=\{\s*<ProtectedRoute(?:\s+requiredRoles=\{\[([^\]]*)\]\})?\s*>/g),
+    ];
+    expect(blocks.length).toBeGreaterThan(40);
+    const ALL = ["manager", "master_admin", "user"];
+    const mismatches = blocks
+      .filter(([, path]) => SCREENS.some((s) => s.path === path))
+      .map(([, path, roles]) => ({
+        path,
+        expected: roles ? [...roles.matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort() : ALL,
+        actual: [...SCREENS.find((s) => s.path === path)!.roles].sort(),
+      }))
+      .filter((r) => JSON.stringify(r.expected) !== JSON.stringify(r.actual));
+    expect(mismatches).toEqual([]);
+  });
+
+  it("matchScreen resolves a pathname to its pattern", () => {
+    expect(matchScreen("/admin/testes/42/editar")?.path).toBe("/admin/testes/:testId/editar");
+    expect(matchScreen("/videos/abc")?.path).toBe("/videos/:id");
+    expect(matchScreen("/admin/testes")?.path).toBe("/admin/testes");
+    expect(matchScreen("/nada")).toBeNull();
   });
 });

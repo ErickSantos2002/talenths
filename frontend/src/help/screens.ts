@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { matchPath } from "react-router-dom";
 import {
   LayoutDashboard, Building2, Users, ClipboardList, ClipboardCheck, Grid3X3,
   GitBranch, UserPen, HeartHandshake, Target,
@@ -155,9 +156,15 @@ export function screensFor(ctx: ScreenContext): Screen[] {
   return SCREENS.filter((s) => allowed(s, ctx));
 }
 
+/** `path` here and in `screenName` is a react-router pattern (as in SCREENS),
+ *  not a concrete URL; use `matchScreen` to turn a pathname into its Screen. */
 export function canOpen(path: string, ctx: ScreenContext): boolean {
   const screen = SCREENS.find((s) => s.path === path);
   return !!screen && allowed(screen, ctx);
+}
+
+export function matchScreen(pathname: string): Screen | null {
+  return SCREENS.find((s) => matchPath({ path: s.path, end: true }, pathname)) ?? null;
 }
 
 export function screenName(path: string): string {
