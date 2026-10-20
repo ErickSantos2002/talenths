@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { TourLayoutBridge } from "@/help/TourLayoutBridge";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ function getSidebarDefaultOpen(): boolean {
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider defaultOpen={getSidebarDefaultOpen()}>
+      <TourLayoutBridge />
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
         <div className="flex min-w-0 flex-1 flex-col">

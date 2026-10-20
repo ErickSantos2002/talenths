@@ -102,6 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await authApi.login(email, password);
       setToken(res.access_token);
       setUser(res.user);
+      // A previous session in this browser may have left another user's cache.
+      queryClient.clear();
       await loadMe();
       return { error: null };
     } catch (e) {
@@ -114,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await authApi.register(email, password, name);
       setToken(res.access_token);
       setUser(res.user);
+      // A previous session in this browser may have left another user's cache.
+      queryClient.clear();
       await loadMe();
       return { error: null };
     } catch (e) {
