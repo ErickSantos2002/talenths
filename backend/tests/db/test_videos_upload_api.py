@@ -100,3 +100,46 @@ async def test_stale_uploads_are_cleaned_on_start(db, client_as):
     assert r.status_code == 201
     assert not os.path.exists(tmp)
     assert await db.fetchval("SELECT count(*) FROM public.internal_video_uploads WHERE id=$1::uuid", stale) == 0
+
+
+async def test_part_rejected_when_body_exceeds_part_size(db, client_as, sample_mp4):
+    _, manager = await _manager(db)
+    c = client_as(manager)
+    info = (await c.post("/videos/uploads", json={"total_size": len(sample_mp4)})).json()
+    r = await c.put(f"/videos/uploads/{info['upload_id']}/parts/0", content=b"x" * (SMALL + 1))
+    assert r.status_code == 413
+
+
+async def test_non_canonical_upload_id_cannot_create_holes(db, client_as, sample_mp4):
+    company, manager = await _manager(db)
+    c = client_as(manager)
+    info = (await c.post("/videos/uploads", json={"total_size": len(sample_mp4)})).json()
+    parts = _split(sample_mp4)
+    upper = info["upload_id"].upper()
+    for n in range(len(parts)):
+        r = await c.put(f"/videos/uploads/{upper}/parts/{n}", content=parts[n])
+        assert r.status_code == 204
+    tmp = video_storage.tmp_path(company, info["upload_id"])
+    assert open(tmp, "rb").read() == sample_mp4
+    assert len(os.listdir(os.path.dirname(tmp))) == 1
+    # sem partes registradas, complete segue impossível
+    other = (await c.post("/videos/uploads", json={"total_size": len(sample_mp4)})).json()
+    r = await c.post(f"/videos/uploads/{other['upload_id'].upper()}/complete")
+    assert r.status_code == 400
+
+
+async def test_invalid_upload_id_is_422(db, client_as):
+    _, manager = await _manager(db)
+    r = await client_as(manager).delete("/videos/uploads/nao-e-uuid")
+    assert r.status_code == 422
+
+
+async def test_other_company_gets_404(db, client_as, sample_mp4):
+    _, manager_a = await _manager(db)
+    _, manager_b = await _manager(db)
+    info = (await client_as(manager_a).post("/videos/uploads", json={"total_size": len(sample_mp4)})).json()
+    uid = info["upload_id"]
+    b = client_as(manager_b)
+    assert (await b.put(f"/videos/uploads/{uid}/parts/0", content=_split(sample_mp4)[0])).status_code == 404
+    assert (await b.post(f"/videos/uploads/{uid}/complete")).status_code == 404
+    assert (await b.delete(f"/videos/uploads/{uid}")).status_code == 404

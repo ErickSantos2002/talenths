@@ -47,7 +47,9 @@ def write_part(path: str, part_number: int, data: bytes, total_size: int) -> Non
 
 def finalize_file(tmp: str, company_id: str) -> tuple[str, int, float]:
     size = os.path.getsize(tmp)
-    if size <= 0 or size > MAX_FILE_SIZE:
+    if size <= 0:
+        raise ValueError("O arquivo enviado está vazio.")
+    if size > MAX_FILE_SIZE:
         raise ValueError("O arquivo excede o limite de 2 GB.")
     with open(tmp, "rb") as f:
         head = f.read(4096)

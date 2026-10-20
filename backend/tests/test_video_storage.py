@@ -52,3 +52,11 @@ def test_finalize_rejects_non_mp4(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="MP4"):
         finalize_file(str(tmp), "company-1")
     assert tmp.exists()
+
+
+def test_finalize_rejects_empty_file(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.video_storage.settings.UPLOADS_DIR", str(tmp_path))
+    tmp = tmp_path / "up.tmp"
+    tmp.write_bytes(b"")
+    with pytest.raises(ValueError, match="vazio"):
+        finalize_file(str(tmp), "company-1")

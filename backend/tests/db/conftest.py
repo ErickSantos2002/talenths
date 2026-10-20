@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 import uuid
 
 import asyncpg
@@ -62,10 +63,11 @@ def sample_mp4() -> bytes:
 
 
 @pytest.fixture
-def client_as(db, tmp_path, monkeypatch):
+async def client_as(db, tmp_path, monkeypatch):
     """Cliente HTTP que age como `user_id`, usando a conexão (em transação) do teste."""
     from app.config import settings
     from app.dependencies import get_current_user_id, get_db, get_db_public
+    from app.routers.videos import get_conn_opener
     from app.main import app
 
     monkeypatch.setattr(settings, "UPLOADS_DIR", str(tmp_path))
@@ -77,10 +79,17 @@ def client_as(db, tmp_path, monkeypatch):
 
         app.dependency_overrides[get_db] = _db
         app.dependency_overrides[get_db_public] = _db
+        @asynccontextmanager
+        async def _opener(_user_id):
+            yield db
+
+        app.dependency_overrides[get_conn_opener] = lambda: _opener
         app.dependency_overrides[get_current_user_id] = lambda: user_id
         client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
         clients.append(client)
         return client
 
     yield make
+    for client in clients:
+        await client.aclose()
     app.dependency_overrides.clear()
