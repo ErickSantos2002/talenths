@@ -326,7 +326,9 @@ class Seeder:
                 base = {1: 2, 2: 4, 3: 5}[yb]
                 kinds = ["self", "manager"]
                 if cycle == self.eval_cycle and key == "ana":
-                    kinds = []  # a autoavaliação dela está aberta na tela
+                    # A autoavaliação dela está aberta na tela; só a gestora avaliou, e a nota
+                    # consolidada vem só dessa avaliação (como o "Calcular Notas" faz).
+                    kinds = ["manager"]
                 for kind in kinds:
                     evaluator = self.users[key] if kind == "self" else self.users["gestor"]
                     eid = await self.ins(
@@ -384,9 +386,24 @@ class Seeder:
             await self.ins("test_questions", test_id=second, order_index=pos, question_type="open_text",
                            text=text, points=1)
         await self.ins("test_assignments", test_id=second, department_id=self.depts["Comercial"])
-        await self.ins("custom_tests", company_id=self.company_id, created_by=gestor,
-                       title="Integração — primeiros dias", description="Rascunho em preparação.",
-                       scoring_mode="auto", status="draft")
+        # O rascunho é o da captura do editor: perguntas, configurações e uma atribuição.
+        self.draft_test_id = await self.ins(
+            "custom_tests", company_id=self.company_id, created_by=gestor,
+            title="Integração — primeiros dias", description="Rascunho em preparação.",
+            instructions="Responda depois da primeira semana.", scoring_mode="auto", is_public=False,
+            max_attempts=1, time_limit_min=15, pass_score=7, total_points=10, status="draft",
+        )
+        for pos, (text, options) in enumerate([
+            ("Em que horário começa o expediente?", [("8h", True), ("9h", False), ("10h", False)]),
+            ("Onde ficam as regras internas da empresa?",
+             [("No TalentHS, em Regras Internas", True), ("No mural da recepção", False)]),
+        ]):
+            qid = await self.ins("test_questions", test_id=self.draft_test_id, order_index=pos,
+                                 question_type="single_choice", text=text, points=5)
+            for oi, (otext, correct) in enumerate(options):
+                await self.ins("test_question_options", question_id=qid, order_index=oi, text=otext,
+                               is_correct=correct, point_value=5 if correct else 0)
+        await self.ins("test_assignments", test_id=self.draft_test_id, user_id=self.users["igor"])
         # Tentativa avaliada da Ana (Meus Testes > resultado) e de colegas (Tentativas).
         self.attempt_id = None
         for key, score, passed in (("ana", 75, True), ("carla", 100, True), ("igor", 50, False)):
@@ -785,6 +802,7 @@ class Seeder:
             "users": self.users,
             "video": self.video_ids[1],
             "test": self.test_id,
+            "draft_test": self.draft_test_id,
             "attempt": self.attempt_id,
             "bingo_game": self.bingo_game,
             "survey": self.survey_id,

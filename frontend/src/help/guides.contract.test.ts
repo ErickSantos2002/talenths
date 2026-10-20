@@ -27,7 +27,7 @@ const COVERED_SCREENS = SCREENS.filter((s) => s.menu && !s.path.startsWith("/adm
 
 // Captures no guide cites yet: the manager welcome-tour screens, kept for the
 // admin guides (Task 7).
-const NOT_IN_GUIDES = new Set(["admin-colaboradores", "admin-videos", "admin-relatorios"]);
+const NOT_IN_GUIDES = new Set(["admin-videos", "admin-relatorios"]);
 
 const REQUIRED_SECTIONS = ["## Para que serve", "## Passo a passo", "## Dúvidas comuns"];
 

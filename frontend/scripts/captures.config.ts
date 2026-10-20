@@ -24,6 +24,8 @@ export interface Ids {
   users: Record<Account | "carla" | "diego" | "eduarda" | "felipe" | "helena" | "igor", string>;
   video: string;
   test: string;
+  /** o teste em rascunho, com perguntas (captura do editor) */
+  draft_test: string;
   attempt: string;
   bingo_game: string;
   survey: string;
@@ -80,4 +82,19 @@ export const CAPTURES: Capture[] = [
   { name: "admin-colaboradores", account: "gestor", route: () => "/admin/colaboradores" },
   { name: "admin-videos", account: "gestor", route: () => "/admin/videos" },
   { name: "admin-relatorios", account: "gestor", route: () => "/admin/relatorios" },
+
+  // Guias de Administração (gestor).
+  { name: "admin-metas", account: "gestor", route: () => "/admin/metas" },
+  { name: "admin-avaliacao", account: "gestor", route: () => "/admin/avaliacao" },
+  { name: "admin-9box", account: "gestor", route: () => "/admin/9box" },
+  { name: "admin-testes", account: "gestor", route: () => "/admin/testes" },
+  { name: "admin-teste-editar", account: "gestor", route: (ids) => `/admin/testes/${ids.draft_test}/editar` },
+  { name: "admin-teste-tentativas", account: "gestor", route: (ids) => `/admin/testes/${ids.test}/tentativas` },
+  { name: "admin-trilhas", account: "gestor", route: () => "/admin/trilhas" },
+  { name: "admin-pdi", account: "gestor", route: () => "/admin/pdi" },
+  { name: "admin-universidade", account: "gestor", route: () => "/admin/universidade" },
+  { name: "admin-workshops", account: "gestor", route: () => "/admin/workshops" },
+  { name: "admin-comunicados", account: "gestor", route: () => "/admin/comunicados" },
+  { name: "admin-onboarding", account: "gestor", route: () => "/admin/onboarding" },
+  { name: "admin-pesquisas", account: "gestor", route: () => "/admin/pesquisas" },
 ];
