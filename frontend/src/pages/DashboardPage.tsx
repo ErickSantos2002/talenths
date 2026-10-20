@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { profiles, departments, feedbacks, documents } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { PendingVideosCard } from "@/components/videos/PendingVideosCard";
 
 function StatCard({
   title, value, icon: Icon, color, loading,
@@ -85,6 +86,8 @@ function CollaboratorDashboard({ profile }: { profile: any }) {
           Bem-vindo ao seu painel. Acesse rapidamente tudo que é seu.
         </p>
       </div>
+
+      <PendingVideosCard />
 
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-4">

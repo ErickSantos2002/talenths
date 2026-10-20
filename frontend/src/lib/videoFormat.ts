@@ -22,3 +22,13 @@ export function toggleId(ids: string[], id: string): string[] {
 export function isEmptyAudience(rules: VideoRules): boolean {
   return !rules.all && rules.department_ids.length === 0 && rules.user_ids.length === 0;
 }
+
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+}

@@ -55,6 +55,8 @@ import MeusFeedbacksPage from "./pages/MeusFeedbacksPage";
 import AdminDocumentosPage from "./pages/AdminDocumentosPage";
 import MeusDocumentosPage from "./pages/MeusDocumentosPage";
 import AdminVideosPage from "./pages/AdminVideosPage";
+import MeusVideosPage from "./pages/MeusVideosPage";
+import VideoPlayerPage from "./pages/VideoPlayerPage";
 import AdminTesteTentativasPage from "./pages/AdminTesteTentativasPage";
 import MeusTestesPage from "./pages/MeusTestesPage";
 import RealizarTestePage from "./pages/RealizarTestePage";
@@ -469,6 +471,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <MeusDocumentosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/meus-videos"
+              element={
+                <ProtectedRoute>
+                  <MeusVideosPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/videos/:id"
+              element={
+                <ProtectedRoute>
+                  <VideoPlayerPage />
                 </ProtectedRoute>
               }
             />

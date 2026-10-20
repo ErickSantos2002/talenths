@@ -140,6 +140,7 @@ const personalSections: NavSection[] = [
       { title: "Pesquisas", url: "/pesquisas", icon: BarChart2 },
       { title: "Feedbacks", url: "/meus-feedbacks", icon: MessageSquare },
       { title: "Documentos", url: "/meus-documentos", icon: FileText },
+      { title: "Vídeos", url: "/meus-videos", icon: Video },
       { title: "Bingo", url: "/bingo", icon: Dices },
     ],
   },

@@ -893,6 +893,19 @@ export const videos = {
     }
     return res.json() as Promise<{ max_watched_s: number; completed: boolean }>;
   },
+  // Fire-and-forget for pagehide: keepalive lets the request outlive the page; no 401 redirect.
+  reportProgressKeepalive: (id: string, position_s: number) => {
+    const token = getToken();
+    void fetch(`${BASE_URL}/videos/${id}/progress`, {
+      method: "POST",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ position_s }),
+    }).catch(() => undefined);
+  },
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────────

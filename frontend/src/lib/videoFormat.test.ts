@@ -28,3 +28,12 @@ describe("videoFormat", () => {
     expect(isEmptyAudience({ all: false, department_ids: [], user_ids: ["u"] })).toBe(false);
   });
 });
+
+describe("formatDateTime", () => {
+  it("formata DD/MM/AAAA HH:mm", async () => {
+    const { formatDateTime, formatDate } = await import("./videoFormat");
+    const iso = new Date(2026, 9, 5, 8, 7).toISOString();
+    expect(formatDateTime(iso)).toBe("05/10/2026 08:07");
+    expect(formatDate(iso)).toBe("05/10/2026");
+  });
+});
