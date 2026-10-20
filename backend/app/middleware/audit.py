@@ -12,6 +12,11 @@ from app.database import get_pool
 # Paths that should never be logged
 _SKIP_PATHS = {"/health", "/docs", "/openapi.json", "/redoc"}
 _SKIP_PREFIXES = ("/docs", "/redoc", "/openapi")
+# Disparadas a cada poucos segundos durante um vídeo ou envio: inundariam o log.
+_SKIP_PATTERNS = (
+    re.compile(r"^POST /videos/[^/]+/progress$"),
+    re.compile(r"^PUT /videos/uploads/[^/]+/parts/[^/]+$"),
+)
 
 # Map (METHOD, regex_pattern) → human-readable Portuguese action
 _ACTION_MAP: list[tuple[re.Pattern, str]] = [
@@ -96,6 +101,14 @@ _ACTION_MAP: list[tuple[re.Pattern, str]] = [
     (re.compile(r"POST /career"), "Trilha de carreira criada"),
     (re.compile(r"PUT /career/"), "Trilha de carreira atualizada"),
     (re.compile(r"DELETE /career/"), "Trilha de carreira removida"),
+
+    (re.compile(r"POST /videos$"), "Vídeo criado"),
+    (re.compile(r"PATCH /videos/[^/]+$"), "Vídeo atualizado"),
+    (re.compile(r"POST /videos/[^/]+/replace-file$"), "Arquivo de vídeo substituído"),
+    (re.compile(r"POST /videos/[^/]+/archive$"), "Vídeo arquivado"),
+    (re.compile(r"POST /videos/[^/]+/unarchive$"), "Vídeo desarquivado"),
+    (re.compile(r"POST /videos/[^/]+/viewers/[^/]+/remove$"), "Colaborador removido de vídeo"),
+    (re.compile(r"DELETE /videos/(?!uploads/)[^/]+$"), "Vídeo removido"),
 ]
 
 
@@ -106,6 +119,15 @@ def _resolve_action(method: str, path: str) -> str:
             return label
     method_labels = {"POST": "Criação", "PUT": "Atualização", "PATCH": "Atualização", "DELETE": "Remoção"}
     return method_labels.get(method, method)
+
+
+def _should_log(method: str, path: str) -> bool:
+    if method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return False
+    if path in _SKIP_PATHS or any(path.startswith(p) for p in _SKIP_PREFIXES):
+        return False
+    key = f"{method} {path}"
+    return not any(p.search(key) for p in _SKIP_PATTERNS)
 
 
 def _get_client_ip(request: Request) -> str:
@@ -159,12 +181,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
         method = request.method
         path = request.url.path
 
-        # Only log write operations
-        if method not in ("POST", "PUT", "PATCH", "DELETE"):
-            return response
-
-        # Skip internal/docs paths
-        if path in _SKIP_PATHS or any(path.startswith(p) for p in _SKIP_PREFIXES):
+        if not _should_log(method, path):
             return response
 
         # Decode JWT without raising (token may be absent for public routes)
