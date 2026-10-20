@@ -12,7 +12,7 @@ async def list_notifications(
     conn: asyncpg.Connection = Depends(get_db),
 ):
     rows = await conn.fetch(
-        "SELECT * FROM public.notifications WHERE user_id = $1 ORDER BY created_at DESC",
+        "SELECT * FROM public.notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 100",
         user_id,
     )
     return [dict(r) for r in rows]

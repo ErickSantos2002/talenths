@@ -27,3 +27,17 @@ async def test_other_user_cannot_mark_read_or_delete(db, client_as):
     assert (await c.delete(f"/notifications/{nid}")).status_code == 404
     row = await db.fetchrow("SELECT read FROM public.notifications WHERE id = $1::uuid", nid)
     assert row is not None and row["read"] is False
+
+
+async def test_list_returns_latest_100(db, client_as):
+    company = await make_company(db)
+    user = await make_user(db, company, name="Ana")
+    await db.execute(
+        """INSERT INTO public.notifications (user_id, type, title, created_at)
+           SELECT $1, 'video', 'Aviso ' || n, now() - make_interval(mins => n)
+           FROM generate_series(0, 104) AS n""",
+        user,
+    )
+    body = (await client_as(user).get("/notifications")).json()
+    assert len(body) == 100
+    assert body[0]["title"] == "Aviso 0" and body[-1]["title"] == "Aviso 99"
