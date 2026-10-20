@@ -37,7 +37,7 @@ export default function HelpPage() {
             <p className="text-sm text-muted-foreground">
               Um passeio rápido pelas principais telas do TalentHS. Você pode refazê-lo quando quiser.
             </p>
-            <Button data-tour="help-start-tour" onClick={() => startWelcome()}>
+            <Button data-tour="help-start-tour" disabled={!loaded} onClick={() => startWelcome()}>
               Fazer o tour de boas-vindas
             </Button>
           </CardContent>
