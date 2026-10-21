@@ -20,11 +20,11 @@ Quando receber a notificação **Novo vídeo para assistir**, quando um vídeo o
 ## Passo a passo
 
 1. No menu, em **Comunicação**, clique em **Vídeos**.
-2. Em **Obrigatórios**, veja os vídeos que você precisa assistir. Os atrasados aparecem primeiro. Cada vídeo mostra a duração, o **Prazo** e a situação: **Pendente**, **Em andamento**, **Atrasado** ou **Concluído**.
+2. Em **Obrigatórios**, veja os vídeos que você precisa assistir, na ordem sugerida pelo RH: o número ao lado do título (1º, 2º…) diz qual assistir primeiro. Você pode assistir na ordem que quiser. Cada vídeo mostra a duração, o **Prazo** e a situação: **Pendente**, **Em andamento**, **Atrasado** ou **Concluído**.
 3. Em **Biblioteca**, veja os vídeos opcionais.
 4. Clique no botão do vídeo: **Assistir** para começar, **Continuar** para seguir de onde parou ou **Rever** para ver de novo um vídeo concluído.
 
-![Tela Vídeos com três vídeos obrigatórios (em andamento, pendente e concluído) e um vídeo na Biblioteca](/capturas/meus-videos.webp)
+![Tela Vídeos com três vídeos obrigatórios numerados e um vídeo na Biblioteca](/capturas/meus-videos.webp)
 
 O vídeo abre na sua própria tela:
 
@@ -51,5 +51,7 @@ O vídeo abre na sua própria tela:
 **Apareceu "Falha ao registrar o progresso. Tentaremos novamente."** A conexão falhou por um instante. Continue assistindo: o sistema tenta salvar de novo sozinho.
 
 **Recebi a notificação "Vídeo atualizado: assista novamente".** O vídeo foi trocado por uma versão nova e o seu progresso foi zerado. Assista de novo até o fim.
+
+**Meus vídeos pulam um número (1º, 3º).** O número é o da lista do RH, igual para todos. O vídeo que falta não é obrigatório para você. Em caso de dúvida, fale com o RH.
 
 **Um vídeo obrigatório está como Atrasado.** O prazo passou e você ainda não concluiu. Assista até o fim assim que puder. Ele continua valendo.

@@ -795,6 +795,8 @@ export type AdminVideo = {
   required_count: number;
   completed_count: number;
   overdue_count: number;
+  /** Position in the RH list among active videos; null when archived. */
+  order: number | null;
 };
 
 export type ViewerRow = {
@@ -839,6 +841,8 @@ export type MyVideo = {
   due_at: string | null;
   completed_at: string | null;
   max_watched_s?: number;
+  /** Number in the RH list, the same for everyone (only in the list). */
+  order?: number;
 };
 
 export type UploadStart = { upload_id: string; part_size: number; parts: number };
@@ -913,6 +917,8 @@ export const videos = {
   archive: (id: string) => post<VideoCore>(`/videos/${encodeURIComponent(id)}/archive`),
   unarchive: (id: string) => post<VideoCore>(`/videos/${encodeURIComponent(id)}/unarchive`),
   remove: (id: string) => del(`/videos/${encodeURIComponent(id)}`),
+  move: (id: string, direction: "up" | "down") =>
+    post<void>(`/videos/${encodeURIComponent(id)}/move`, { direction }),
   listMine: () => get<{ required: MyVideo[]; library: MyVideo[] }>("/videos/mine"),
   get: (id: string) => get<MyVideo & { max_watched_s: number }>(`/videos/${encodeURIComponent(id)}`),
   streamUrl: async (id: string) => {

@@ -18,13 +18,19 @@ Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tel
 - Para publicar um vídeo de boas-vindas, de segurança ou de um processo novo.
 - Para conferir quem ainda não assistiu a um vídeo obrigatório.
 - Para trocar um vídeo por uma versão nova ou tirá-lo do ar.
+- Para definir em que ordem a equipe deve assistir aos vídeos.
 
 ## Passo a passo
 
 1. No menu, no bloco **Empresa**, em **Comunicação**, clique em **Vídeos**.
-2. Veja a lista de vídeos. Para cada um, a tabela mostra a **Duração**, o **Prazo**, quantos **Concluídos** há entre os obrigatórios e quantos **Atrasados**.
+2. Veja a lista de vídeos na ordem definida pelo RH. Para cada um, a tabela mostra a **Ordem**, a **Duração**, o **Prazo**, quantos **Concluídos** há entre os obrigatórios e quantos **Atrasados**.
 
-![Tela Vídeos com quatro vídeos, a duração, o prazo, os concluídos e os atrasados de cada um](/capturas/admin-videos.webp)
+![Tela Vídeos com quatro vídeos numerados, com as setas de ordem, a duração, o prazo, os concluídos e os atrasados de cada um](/capturas/admin-videos.webp)
+
+**Para mudar a ordem dos vídeos:**
+
+1. Na coluna **Ordem**, clique na seta para cima para subir o vídeo uma posição ou na seta para baixo para descer.
+2. A nova ordem vale na hora, para todos. Os colaboradores veem os obrigatórios nessa ordem, com o número ao lado do título (1º, 2º…). A **Biblioteca** segue a mesma ordem, sem número.
 
 **Para publicar um vídeo:**
 
@@ -68,5 +74,11 @@ No detalhe, use também os botões:
 **Desmarquei um departamento e as pessoas continuam obrigadas.** Desmarcar um grupo ou pessoa em **Editar** não tira quem já recebeu o vídeo. Para tirar alguém, use **Tirar** no detalhe do vídeo.
 
 **Tirei uma pessoa por engano.** Em **Editar**, marque a pessoa de novo em **Pessoas**. Ela volta a ser obrigada.
+
+**Uma pessoa vê 1º e 3º, sem o 2º.** O número é o da lista do RH e é o mesmo para todos. Se a pessoa não precisa assistir ao 2º vídeo, ele não aparece entre os obrigatórios dela.
+
+**A ordem obriga a assistir em sequência?** Não. O número só indica a ordem sugerida; a pessoa pode assistir na ordem que quiser.
+
+**Vídeo novo ou reativado vai para onde?** Para o fim da lista. Use as setas para mudar a posição. Vídeo arquivado não tem número.
 
 **Qual a diferença entre Arquivar e Excluir?** **Arquivar** esconde o vídeo e guarda o histórico; dá para reativar. **Excluir** apaga o arquivo e o histórico de vez.

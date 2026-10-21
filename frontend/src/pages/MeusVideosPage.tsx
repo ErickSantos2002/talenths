@@ -10,9 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { formatDate, formatDateTime, formatDuration } from "@/lib/videoFormat";
 
-// Overdue first, then pending/in progress, completed last.
-const ORDER: Record<MyVideo["status"], number> = { atrasado: 0, em_andamento: 1, pendente: 2, concluido: 3 };
-
 function VideoCard({ video, optional }: { video: MyVideo; optional: boolean }) {
   // Nothing is owed on an optional video: "Pendente" there would read as an obligation.
   const showStatus = !(optional && video.status === "pendente");
@@ -22,7 +19,10 @@ function VideoCard({ video, optional }: { video: MyVideo; optional: boolean }) {
         <div className="flex-1 space-y-2 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Video className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="font-medium">{video.title}</span>
+            {!optional && video.order && (
+              <span className="font-semibold text-primary">{video.order}º</span>
+            )}
+            <span className="font-medium" data-testid="my-video-title">{video.title}</span>
             {showStatus && <VideoStatusBadge status={video.status} />}
           </div>
           {video.description && <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>}
@@ -75,7 +75,8 @@ function Section({
 
 export default function MeusVideosPage() {
   const { data, isLoading } = useQuery({ queryKey: ["my-videos"], queryFn: () => videos.listMine() });
-  const required = [...(data?.required ?? [])].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
+  // The server already sends both lists in the RH order.
+  const required = data?.required ?? [];
   const library = data?.library ?? [];
 
   return (

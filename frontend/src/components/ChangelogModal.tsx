@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.12.0",
+    version: "v1.13.0",
     date: "21/10/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "O RH agora define a ordem dos vídeos, com as setas da coluna Ordem na tela Vídeos.",
+      },
+      {
+        type: "melhoria",
+        text: "Em Vídeos, os obrigatórios aparecem na ordem do RH, com o número ao lado do título (1º, 2º…). Dá para assistir na ordem que quiser.",
+      },
+    ],
+  },
+  {
+    version: "v1.12.0",
+    date: "21/10/2026",
     entries: [
       {
         type: "novidade",

@@ -9,7 +9,7 @@ import asyncpg
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app import video_storage
 from app.config import settings
@@ -228,6 +228,11 @@ class ReplaceFileBody(BaseModel):
     mode: Literal["keep_completed", "reset_all"]
 
 
+class MoveBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    direction: Literal["up", "down"]
+
+
 _VIDEO_COLUMNS = """id, title, description, file_size, duration_seconds, due_days, file_version,
                     archived_at, created_at, updated_at"""
 
@@ -436,13 +441,54 @@ async def list_videos_admin(
              ON w.video_id = v.id AND w.required AND NOT w.excluded AND w.user_id IS NOT NULL
            WHERE v.company_id = $1::uuid
            GROUP BY v.id
-           ORDER BY v.created_at DESC""",
+           ORDER BY v.archived_at IS NOT NULL, v.position, v.created_at DESC""",
         company_id,
     )
-    return [
-        {**dict(r), "id": str(r["id"]), "duration_seconds": float(r["duration_seconds"])}
-        for r in rows
+    # O número é a posição entre os ativos: arquivado não ocupa lugar na ordem do RH.
+    active = 0
+    out = []
+    for r in rows:
+        order = None
+        if r["archived_at"] is None:
+            active += 1
+            order = active
+        out.append({**dict(r), "id": str(r["id"]), "duration_seconds": float(r["duration_seconds"]), "order": order})
+    return out
+
+
+@router.post("/{video_id}/move", status_code=status.HTTP_204_NO_CONTENT)
+async def move_video(
+    video_id: uuid.UUID,
+    body: MoveBody,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    video = await _get_video(video_id, company_id, conn)
+    if video["archived_at"] is not None:
+        raise HTTPException(status_code=409, detail="Vídeo arquivado não tem lugar na ordem")
+    # Trava os ativos da empresa: duas setas ao mesmo tempo não embaralham a lista.
+    ids = [
+        r["id"]
+        for r in await conn.fetch(
+            """SELECT id FROM public.internal_videos
+               WHERE company_id = $1::uuid AND archived_at IS NULL
+               ORDER BY position, created_at DESC
+               FOR UPDATE""",
+            company_id,
+        )
     ]
+    i = ids.index(video_id)
+    j = i - 1 if body.direction == "up" else i + 1
+    if 0 <= j < len(ids):
+        ids[i], ids[j] = ids[j], ids[i]
+        await conn.execute(
+            """UPDATE public.internal_videos v SET position = o.n
+               FROM unnest($1::uuid[]) WITH ORDINALITY AS o(id, n)
+               WHERE v.id = o.id""",
+            ids,
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{video_id}/admin")
@@ -579,7 +625,13 @@ async def _set_archived(video_id: uuid.UUID, archived: bool, user_id: str, conn:
     await _get_video(video_id, company_id, conn, lock=True)
     row = await conn.fetchrow(
         f"""UPDATE public.internal_videos
-            SET archived_at = CASE WHEN $2 THEN COALESCE(archived_at, now()) END, updated_at = now()
+            SET archived_at = CASE WHEN $2 THEN COALESCE(archived_at, now()) END,
+                -- Reativado volta no fim da lista do RH.
+                position = CASE WHEN NOT $2 AND archived_at IS NOT NULL THEN (
+                  SELECT COALESCE(max(o.position), 0) + 1 FROM public.internal_videos o
+                  WHERE o.company_id = internal_videos.company_id
+                ) ELSE position END,
+                updated_at = now()
             WHERE id = $1 RETURNING {_VIDEO_COLUMNS}""",
         video_id, archived,
     )
@@ -626,8 +678,6 @@ async def delete_video(
 
 STREAM_TOKEN_TYPE = "video_stream"
 STREAM_TOKEN_TTL = timedelta(minutes=10)
-_STATUS_ORDER = {"atrasado": 0, "pendente": 1, "em_andamento": 1, "concluido": 2}
-_NEVER = datetime.max.replace(tzinfo=timezone.utc)
 
 
 class ProgressBody(BaseModel):
@@ -674,12 +724,14 @@ async def list_my_videos(
     conn: asyncpg.Connection = Depends(get_db),
 ):
     company_id = await _get_company_id(user_id, conn)
-    rows = await conn.fetch(f"{_MY_VIDEO_QUERY} ORDER BY v.created_at DESC", company_id, user_id)
+    rows = await conn.fetch(
+        f"{_MY_VIDEO_QUERY} ORDER BY v.position, v.created_at DESC", company_id, user_id
+    )
     now = datetime.now(timezone.utc)
     required, library = [], []
-    for r in rows:
-        (required if r["is_required"] else library).append(_my_video_out(r, now))
-    required.sort(key=lambda v: (_STATUS_ORDER[v["status"]], v["due_at"] or _NEVER))
+    # O número é o da lista do RH para todos: quem não recebeu um vídeo vê o buraco (1º, 3º).
+    for order, r in enumerate(rows, start=1):
+        (required if r["is_required"] else library).append({**_my_video_out(r, now), "order": order})
     return {"required": required, "library": library}
 
 

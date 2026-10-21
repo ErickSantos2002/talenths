@@ -92,7 +92,7 @@ export const SCREEN_TOURS: ScreenTour[] = [
   },
   {
     id: "tela-admin-videos",
-    version: 1,
+    version: 2,
     screen: "/admin/videos",
     roles: ["master_admin", "manager"],
     steps: [
@@ -100,6 +100,12 @@ export const SCREEN_TOURS: ScreenTour[] = [
         element: "admin-videos-new",
         title: "Publicar um vídeo",
         text: "Clique em **Novo vídeo** para enviar um MP4, definir o prazo e escolher quem deve assistir.",
+      },
+      {
+        element: "admin-videos-order",
+        title: "A ordem",
+        text: "Use as setas da coluna **Ordem** para definir em que ordem a equipe deve assistir. Os colaboradores veem os obrigatórios numerados nessa ordem.",
+        since: 2,
       },
       {
         element: "admin-videos-list",

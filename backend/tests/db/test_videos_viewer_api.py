@@ -73,6 +73,7 @@ async def test_mine_splits_required_and_library(db, client_as, sample_mp4):
     first = body["required"][0]
     assert set(first) == {
         "id", "title", "description", "duration_seconds", "status", "progress_pct", "due_at", "completed_at",
+        "order",
     }
 
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { videos } from "@/lib/api";
 import { formatDueDays, formatDuration } from "@/lib/videoFormat";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { usePageSize } from "@/hooks/use-page-size";
-import { Plus, Video } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowDown, ArrowUp, Plus, Video } from "lucide-react";
 
 export default function AdminVideosPage() {
   const [showCreate, setShowCreate] = useState(false);
@@ -19,9 +20,20 @@ export default function AdminVideosPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = usePageSize("admin-videos");
 
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { data: list = [], isLoading } = useQuery({
     queryKey: ["admin-videos"],
     queryFn: () => videos.listAdmin(),
+  });
+  const lastOrder = list.reduce((max, v) => Math.max(max, v.order ?? 0), 0);
+  const move = useMutation({
+    mutationFn: ({ id, direction }: { id: string; direction: "up" | "down" }) => videos.move(id, direction),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
+      queryClient.invalidateQueries({ queryKey: ["my-videos"] });
+    },
+    onError: () => toast({ title: "Não foi possível mudar a ordem", variant: "destructive" }),
   });
 
   const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
@@ -55,6 +67,7 @@ export default function AdminVideosPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-32" data-tour="admin-videos-order">Ordem</TableHead>
                       <TableHead>Título</TableHead>
                       <TableHead>Duração</TableHead>
                       <TableHead>Prazo</TableHead>
@@ -65,6 +78,35 @@ export default function AdminVideosPage() {
                   <TableBody data-tour="admin-videos-rows">
                     {rows.map((v) => (
                       <TableRow key={v.id} className="cursor-pointer" onClick={() => setDetailId(v.id)}>
+                        <TableCell onClick={(e) => e.stopPropagation()} className="cursor-default">
+                          {v.order === null ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="w-6 font-semibold tabular-nums">{v.order}º</span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                aria-label={`Subir ${v.title}`}
+                                disabled={v.order === 1 || move.isPending}
+                                onClick={() => move.mutate({ id: v.id, direction: "up" })}
+                              >
+                                <ArrowUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                aria-label={`Descer ${v.title}`}
+                                disabled={v.order === lastOrder || move.isPending}
+                                onClick={() => move.mutate({ id: v.id, direction: "down" })}
+                              >
+                                <ArrowDown className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">
                           {v.title}
                           {v.archived_at && <Badge variant="secondary" className="ml-2">Arquivado</Badge>}
