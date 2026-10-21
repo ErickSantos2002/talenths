@@ -42,7 +42,7 @@ const CHANGELOG: ChangelogVersion[] = [
       },
       {
         type: "corrigido",
-        text: "Cadastro de colaboradores: a senha agora é obrigatória, e a tela não promete mais um convite por e-mail.",
+        text: "Cadastro de colaboradores: a senha agora é obrigatória, com pelo menos 6 caracteres (também ao redefinir), e a tela não promete mais um convite por e-mail.",
       },
     ],
   },

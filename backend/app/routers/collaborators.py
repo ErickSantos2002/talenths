@@ -27,7 +27,7 @@ class CollaboratorCreate(BaseModel):
 
 
 class PasswordUpdate(BaseModel):
-    password: str
+    password: str = Field(min_length=6)
 
 
 class CollaboratorUpdate(BaseModel):

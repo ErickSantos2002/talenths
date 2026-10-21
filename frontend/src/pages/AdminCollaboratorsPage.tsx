@@ -333,7 +333,7 @@ export default function AdminCollaboratorsPage() {
     if (!addEmail.trim()) missingFields.push("Email");
     if (addCpf.trim() && addCpf.replace(/\D/g, "").length < 11) missingFields.push("CPF (deve ter 11 dígitos)");
     if (addPhone.trim() && addPhone.replace(/\D/g, "").length < 11) missingFields.push("Telefone (deve ter 11 dígitos)");
-    if (addPassword.trim().length < 6) missingFields.push("Senha (mínimo 6 caracteres)");
+    if (addPassword.length < 6 || !addPassword.trim()) missingFields.push("Senha (mínimo 6 caracteres)");
     if (missingFields.length > 0) {
       toast({ title: `Campos obrigatórios: ${missingFields.join(", ")}`, variant: "destructive" });
       return;
@@ -349,7 +349,7 @@ export default function AdminCollaboratorsPage() {
         phone: addPhone.replace(/\D/g, "") || null,
         birth_date: addBirthDate || null,
         hire_date: addHireDate || null,
-        password: addPassword.trim(),
+        password: addPassword,
         role: addRole,
         job_title: addJobTitle.trim() || null,
       });
@@ -371,10 +371,14 @@ export default function AdminCollaboratorsPage() {
   };
 
   const handleResetPassword = async () => {
-    if (!resetTarget || !resetPassword.trim()) return;
+    if (!resetTarget) return;
+    if (resetPassword.length < 6 || !resetPassword.trim()) {
+      toast({ title: "A senha deve ter pelo menos 6 caracteres", variant: "destructive" });
+      return;
+    }
     setResetting(true);
     try {
-      await collaboratorsApi.resetPassword(resetTarget.id, resetPassword.trim());
+      await collaboratorsApi.resetPassword(resetTarget.id, resetPassword);
       toast({ title: "Senha redefinida com sucesso" });
       setResetTarget(null);
     } catch (err: any) {
@@ -858,7 +862,7 @@ export default function AdminCollaboratorsPage() {
               type="password"
               value={resetPassword}
               onChange={(e) => setResetPassword(e.target.value)}
-              placeholder="Digite a nova senha"
+              placeholder="Mínimo 6 caracteres"
               onKeyDown={(e) => e.key === "Enter" && handleResetPassword()}
             />
           </div>

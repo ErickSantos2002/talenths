@@ -40,7 +40,7 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 2. Altere o que precisar e clique em **Salvar**. Apagar o conteúdo de **CPF**, **Telefone**, **Cargo** ou das datas, ou trocar o **Departamento** por **Sem departamento**, não tem efeito: o dado antigo continua.
 3. Para que a pessoa registre o ponto pelo sistema, ligue **Bater ponto pelo sistema** e informe a **Jornada diária (horas)**.
 
-**Para redefinir a senha:** na linha da pessoa, clique na chave, digite a **Nova senha** e clique em **Redefinir Senha**. Depois, passe a nova senha para a pessoa.
+**Para redefinir a senha:** na linha da pessoa, clique na chave, digite a **Nova senha**, com pelo menos 6 caracteres, e clique em **Redefinir Senha**. Depois, passe a nova senha para a pessoa.
 
 **Para cuidar dos departamentos:**
 

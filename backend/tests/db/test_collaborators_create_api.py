@@ -55,3 +55,21 @@ async def test_create_with_password_logs_in_with_it(db, client_as):
     assert r.status_code == 201, r.text
     hashed = await db.fetchval("SELECT encrypted_password FROM auth.users WHERE email = $1", body["email"])
     assert verify_password("senha123", hashed)
+
+
+async def test_reset_password_requires_min_length(db, client_as):
+    company = await make_company(db)
+    manager = await make_user(db, company, name="Gestora", role="manager")
+    user = await make_user(db, company, name="Carla")
+    profile_id = str(await db.fetchval("SELECT id FROM public.profiles WHERE user_id = $1", user))
+    c = client_as(manager)
+
+    for pwd in ("", "12345"):
+        r = await c.patch(f"/collaborators/{profile_id}/password", json={"password": pwd})
+        assert r.status_code == 422, r.text
+        assert [e["loc"] for e in r.json()["detail"]] == [["body", "password"]]
+
+    r = await c.patch(f"/collaborators/{profile_id}/password", json={"password": " nova1 "})
+    assert r.status_code == 204, r.text
+    hashed = await db.fetchval("SELECT encrypted_password FROM auth.users WHERE id = $1", user)
+    assert verify_password(" nova1 ", hashed)
