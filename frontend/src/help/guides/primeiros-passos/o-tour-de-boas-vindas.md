@@ -32,11 +32,14 @@ Para refazer o tour depois:
 - O TalentHS guarda o seu progresso. Se você sair no meio do tour, a janela de boas-vindas volta na próxima entrada com o botão **Continuar de onde parou**.
 - Quando você conclui o tour, a janela deixa de aparecer. A tela **Ajuda** passa a mostrar a data em que você o concluiu.
 - Se parar no meio e voltar à tela **Ajuda**, ela mostra em qual passo você parou.
+- Quando o tour ganha um passo novo depois que você o concluiu, aparece um ponto no **?**, no topo da tela. Clique nele e depois em **Ver o que mudou** para fazer só os passos novos, ou em **Dispensar**. Veja [o guia da ajuda desta tela](/ajuda/primeiros-passos/ajuda-desta-tela).
 
 ## Dúvidas comuns
 
 **Não consigo fechar a janela de boas-vindas.** O tour é obrigatório na primeira entrada. A janela só deixa de aparecer quando você faz o tour até o fim.
 
 **O botão Fazer o tour de boas-vindas está desabilitado.** Ele fica assim por alguns instantes, enquanto o sistema carrega o seu progresso. Aguarde um momento.
+
+**Apareceu um ponto no ? depois que eu já tinha feito o tour.** O tour ganhou algo novo. Clique no **?** para ver o quadro **O que mudou**. Você não precisa refazer o tour inteiro.
 
 **Posso fazer o tour de novo depois de concluir?** Sim. Use o botão **Fazer o tour de boas-vindas** na tela **Ajuda**, quantas vezes quiser.

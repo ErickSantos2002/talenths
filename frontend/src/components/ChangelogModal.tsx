@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.11.0",
+    version: "v1.12.0",
     date: "21/10/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Botão Mostrar nesta tela na ajuda (botão ?) de seis telas: um passeio rápido pelos blocos da tela.",
+      },
+      {
+        type: "novidade",
+        text: "Quando o tour ganha algo novo, um ponto no botão ? mostra só o que mudou.",
+      },
+      {
+        type: "novidade",
+        text: "Nova tela Adoção do tour para o RH acompanhar quem já fez o tour de boas-vindas.",
+      },
+    ],
+  },
+  {
+    version: "v1.11.0",
+    date: "21/10/2026",
     entries: [
       {
         type: "novidade",
