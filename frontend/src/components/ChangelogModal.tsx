@@ -17,7 +17,7 @@ interface ChangelogVersion {
 const CHANGELOG: ChangelogVersion[] = [
   {
     version: "v1.11.0",
-    date: "20/10/2026",
+    date: "21/10/2026",
     current: true,
     entries: [
       {
