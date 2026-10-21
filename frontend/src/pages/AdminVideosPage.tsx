@@ -38,7 +38,7 @@ export default function AdminVideosPage() {
             <Video className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-semibold">Vídeos</h1>
           </div>
-          <Button onClick={() => setShowCreate(true)}>
+          <Button onClick={() => setShowCreate(true)} data-tour="admin-videos-new">
             <Plus className="h-4 w-4 mr-2" /> Novo vídeo
           </Button>
         </div>
@@ -49,7 +49,7 @@ export default function AdminVideosPage() {
         )}
 
         {list.length > 0 && (
-          <Card>
+          <Card data-tour="admin-videos-list">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
@@ -62,7 +62,7 @@ export default function AdminVideosPage() {
                       <TableHead>Atrasados</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+                  <TableBody data-tour="admin-videos-rows">
                     {rows.map((v) => (
                       <TableRow key={v.id} className="cursor-pointer" onClick={() => setDetailId(v.id)}>
                         <TableCell className="font-medium">

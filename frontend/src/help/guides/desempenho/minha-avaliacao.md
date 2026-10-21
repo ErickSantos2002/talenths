@@ -4,11 +4,14 @@ modulo: desempenho
 papeis: [user, manager, master_admin]
 telas: [/minha-avaliacao]
 ordem: 10
+tour: tela-minha-avaliacao
 ---
 
 ## Para que serve
 
 Em **Minha Avaliação** você faz a sua autoavaliação de desempenho: dá uma nota de 1 a 5 estrelas para cada comportamento esperado na empresa, com um comentário opcional.
+
+Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tela.
 
 ## Quando usar
 

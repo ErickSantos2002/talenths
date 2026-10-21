@@ -115,7 +115,7 @@ export default function NineBoxPage() {
             ) : cycles && cycles.length > 0 ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2" data-tour="ninebox-cycle">
                     <span className="max-w-[180px] truncate">{selectedCycle?.name ?? "Selecionar"}</span>
                     {selectedCycle && (
                       <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
@@ -138,14 +138,14 @@ export default function NineBoxPage() {
               </DropdownMenu>
             ) : null}
 
-            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={boxLoading}>
+            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={boxLoading} data-tour="ninebox-refresh">
               <RefreshCw className={cn("h-4 w-4 mr-1", boxLoading && "animate-spin")} /> Atualizar
             </Button>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground" data-tour="ninebox-legend">
           <div className="flex items-center gap-1.5">
             <div className="h-3 w-3 rounded-sm bg-emerald-500/20 border border-emerald-500/40" />
             <span>Elegível para Trilha de Carreira</span>
@@ -175,7 +175,7 @@ export default function NineBoxPage() {
             {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2" data-tour="ninebox-grid">
             {/* Y-axis label */}
             <div className="flex gap-2">
               <div className="w-8 flex items-center justify-center">

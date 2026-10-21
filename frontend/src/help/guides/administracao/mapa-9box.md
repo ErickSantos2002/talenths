@@ -4,11 +4,14 @@ modulo: administracao
 papeis: [manager, master_admin]
 telas: [/admin/9box]
 ordem: 40
+tour: tela-admin-9box
 ---
 
 ## Para que serve
 
 O **Mapa de Talentos — 9Box** mostra onde cada colaborador está num quadro de nove quadrantes, cruzando a nota da avaliação de desempenho (eixo vertical) com o progresso das metas do time (eixo horizontal).
+
+Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tela.
 
 ## Quando usar
 

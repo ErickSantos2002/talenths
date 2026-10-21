@@ -131,7 +131,11 @@ function VideoPlayer({ id }: { id: string }) {
   return (
     <AdminLayout>
       <div className="space-y-4 max-w-4xl">
-        <Link to="/meus-videos" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/meus-videos"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          data-tour="video-back"
+        >
           <ArrowLeft className="h-4 w-4" /> Vídeos
         </Link>
 
@@ -145,7 +149,7 @@ function VideoPlayer({ id }: { id: string }) {
         {video && (
           <Card>
             <CardContent className="p-5 space-y-4">
-              <div className="space-y-1">
+              <div className="space-y-1" data-tour="video-title">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-bold tracking-tight">{video.title}</h1>
                   <VideoStatusBadge status={video.status} />
@@ -157,6 +161,7 @@ function VideoPlayer({ id }: { id: string }) {
                 <video
                   ref={videoRef}
                   className="w-full rounded border bg-black"
+                  data-tour="video-player"
                   src={src}
                   controls
                   preload="metadata"
@@ -206,7 +211,7 @@ function VideoPlayer({ id }: { id: string }) {
                 !notice && <p className="text-sm text-muted-foreground">Preparando vídeo...</p>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-2" data-tour="video-progress">
                 <Progress value={pct} className="h-2 max-w-sm" aria-label="Progresso assistido" />
                 {completedAt ? (
                   <p className="flex items-center gap-1.5 text-sm text-emerald-600">

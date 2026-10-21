@@ -1,19 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { canOpen, SCREENS } from "../screens";
+import { canOpen } from "../screens";
+import { ANCHORS as anchors } from "./anchors";
 import { FINAL_STEPS, WELCOME_TOURS } from "./welcome";
-
-const sources = import.meta.glob("/src/**/*.tsx", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-
-const anchors = new Set<string>();
-for (const [file, code] of Object.entries(sources)) {
-  if (/\.test\.tsx$/.test(file)) continue;
-  for (const m of code.matchAll(/data-tour="([^"{}]+)"/g)) anchors.add(m[1]);
-}
-for (const s of SCREENS) if (s.menu) anchors.add(s.menu.tour);
 
 const tours = Object.entries(WELCOME_TOURS);
 

@@ -23,6 +23,8 @@ export interface Guide {
   /** react-router patterns from SCREENS where the "?" opens this guide. */
   screens: string[];
   order: number;
+  /** Id of the screen tour linked to this guide (front matter `tour`). */
+  tour?: string;
   /** Markdown without the front matter. */
   body: string;
   /** Normalized title + plain body text, for search. */

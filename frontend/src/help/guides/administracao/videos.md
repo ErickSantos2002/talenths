@@ -4,11 +4,14 @@ modulo: administracao
 papeis: [manager, master_admin]
 telas: [/admin/videos]
 ordem: 150
+tour: tela-admin-videos
 ---
 
 ## Para que serve
 
 Em **Vídeos** você publica os vídeos internos da empresa, escolhe quem deve assistir a cada um e acompanha quem já concluiu, quem está em andamento e quem está atrasado.
+
+Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tela.
 
 ## Quando usar
 

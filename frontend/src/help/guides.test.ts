@@ -54,6 +54,11 @@ describe("parseGuide", () => {
     expect(g.body).toBe("## Para que serve\n\nTexto.\n");
     expect(g.searchText).toContain("minha avaliacao");
     expect(g.searchText).toContain("para que serve");
+    expect(g.tour).toBeUndefined();
+  });
+
+  it("reads the optional screen tour id", () => {
+    expect(parseGuide(P, raw({ tour: "tela-exemplo" })).tour).toBe("tela-exemplo");
   });
 
   it.each([
@@ -62,7 +67,8 @@ describe("parseGuide", () => {
     ["screen outside SCREENS", raw({ telas: "[/nao-existe]" })],
     ["module different from folder", raw({ modulo: "rh" })],
     ["no front matter", "## Só corpo\n"],
-    ["tour field is not allowed", raw({ tour: "x" })],
+    ["tour id outside kebab-case", raw({ tour: "Tela_X" })],
+    ["unknown field", raw({ extra: "x" })],
   ])("rejects %s with the path in the message", (_n, text) => {
     expect(() => parseGuide(P, text)).toThrow(P);
   });

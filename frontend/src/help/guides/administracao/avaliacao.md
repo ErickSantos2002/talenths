@@ -4,11 +4,14 @@ modulo: administracao
 papeis: [manager, master_admin]
 telas: [/admin/avaliacao]
 ordem: 30
+tour: tela-admin-avaliacao
 ---
 
 ## Para que serve
 
 Na **Avaliação de Desempenho** você conduz os ciclos de avaliação: cria o ciclo, acompanha quem já fez a autoavaliação, avalia cada colaborador como gestor e calcula as notas finais, que também posicionam as pessoas no Mapa 9Box.
+
+Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tela.
 
 ## Quando usar
 

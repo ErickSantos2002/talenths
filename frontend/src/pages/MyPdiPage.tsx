@@ -73,7 +73,7 @@ function PlanCard({ plan, onCycleStatus }: { plan: PdiPlan; onCycleStatus: (id: 
   const [open, setOpen] = useState(true);
 
   return (
-    <Card>
+    <Card data-tour="pdi-plan">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
@@ -106,7 +106,7 @@ function PlanCard({ plan, onCycleStatus }: { plan: PdiPlan; onCycleStatus: (id: 
 
       {open && plan.actions.length > 0 && (
         <CardContent className="pt-0">
-          <div>
+          <div data-tour="pdi-actions">
             {plan.actions.map((action) => (
               <ActionRow key={action.id} action={action} onCycleStatus={onCycleStatus} />
             ))}
@@ -152,7 +152,7 @@ export default function MyPdiPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" data-tour="pdi-header">
           <BookOpen className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold">Meu PDI</h1>
@@ -161,7 +161,7 @@ export default function MyPdiPage() {
         </div>
 
         {!isLoading && total > 0 && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4" data-tour="pdi-summary">
             <Card className="hover:shadow-md hover:border-primary/20 transition-all">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">

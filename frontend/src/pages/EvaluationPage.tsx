@@ -94,7 +94,7 @@ export default function EvaluationPage() {
             ) : cycles && cycles.length > 0 ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+                  <Button variant="outline" className="gap-2" data-tour="evaluation-cycle">
                     <span className="max-w-[180px] truncate">{selectedCycle?.name ?? "Selecionar"}</span>
                     {selectedCycle && (
                       <Badge variant={selectedCycle.status === "evaluation" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
@@ -117,7 +117,7 @@ export default function EvaluationPage() {
               </DropdownMenu>
             ) : null}
 
-            <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)} data-tour="evaluation-new-cycle">
               <Plus className="h-4 w-4 mr-1" /> Novo Ciclo
             </Button>
           </div>
@@ -134,7 +134,7 @@ export default function EvaluationPage() {
         {selectedCycleId && selectedCycle && (
           <div className="space-y-6">
             {/* Cycle controls */}
-            <div className="flex flex-wrap items-center gap-3 rounded-xl border p-4 bg-card">
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border p-4 bg-card" data-tour="evaluation-controls">
               <div className="flex items-center gap-2 flex-1">
                 <span className="text-sm text-muted-foreground">Etapa atual:</span>
                 <Select
@@ -164,7 +164,7 @@ export default function EvaluationPage() {
 
             {/* Progress summary */}
             {teamStatus && teamStatus.length > 0 && (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4" data-tour="evaluation-summary">
                 {[
                   { label: "Colaboradores", value: teamStatus.length, suffix: "" },
                   { label: "Autoavaliação", value: `${selfPct}%`, suffix: `${teamStatus.filter(m => m.self_submitted).length} / ${teamStatus.length}` },
@@ -186,7 +186,7 @@ export default function EvaluationPage() {
                 {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : teamStatus && teamStatus.length > 0 ? (
-              <div className="rounded-xl border overflow-hidden">
+              <div className="rounded-xl border overflow-hidden" data-tour="evaluation-table">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
                     <tr>

@@ -45,7 +45,7 @@ export default function MyEvaluationPage() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3" data-tour="my-evaluation">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" data-tour="my-evaluation-title">
             <ClipboardCheck className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">Minha Avaliação</h1>
           </div>
@@ -55,7 +55,7 @@ export default function MyEvaluationPage() {
           ) : cycles && cycles.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" data-tour="my-evaluation-cycle">
                   <span className="max-w-[200px] truncate">{selectedCycle?.name ?? "Selecionar ciclo"}</span>
                   {selectedCycle && (
                     <Badge variant={selectedCycle.status === "evaluation" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
@@ -94,7 +94,7 @@ export default function MyEvaluationPage() {
               </div>
             ) : myEval?.submitted ? (
               <div className="space-y-6">
-                <div className="rounded-xl border bg-emerald-500/5 border-emerald-500/20 p-6 flex items-center gap-4">
+                <div className="rounded-xl border bg-emerald-500/5 border-emerald-500/20 p-6 flex items-center gap-4" data-tour="my-evaluation-sent">
                   <CheckCircle2 className="h-8 w-8 text-emerald-500 shrink-0" />
                   <div>
                     <p className="font-semibold text-emerald-700 dark:text-emerald-400">Autoavaliação enviada!</p>
@@ -105,7 +105,7 @@ export default function MyEvaluationPage() {
                 </div>
 
                 {isEvaluationOpen && (
-                  <div>
+                  <div data-tour="my-evaluation-form">
                     <p className="text-sm text-muted-foreground mb-4">Você pode atualizar sua avaliação enquanto o ciclo estiver aberto.</p>
                     <EvaluationForm
                       cycleId={selectedCycleId}
@@ -117,11 +117,13 @@ export default function MyEvaluationPage() {
                 )}
               </div>
             ) : isEvaluationOpen ? (
-              <EvaluationForm
-                cycleId={selectedCycleId}
-                evaluatedUserId={userId}
-                evalType="self"
-              />
+              <div data-tour="my-evaluation-form">
+                <EvaluationForm
+                  cycleId={selectedCycleId}
+                  evaluatedUserId={userId}
+                  evalType="self"
+                />
+              </div>
             ) : (
               <div className="rounded-xl border border-dashed p-12 text-center">
                 <ClipboardCheck className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />

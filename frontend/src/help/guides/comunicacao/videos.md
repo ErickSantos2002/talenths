@@ -4,11 +4,14 @@ modulo: comunicacao
 papeis: [user, manager, master_admin]
 telas: [/meus-videos, /videos/:id]
 ordem: 50
+tour: tela-video
 ---
 
 ## Para que serve
 
 Em **Vídeos** você assiste aos vídeos internos da empresa. Os **Obrigatórios** foram designados para você e podem ter prazo. Os da **Biblioteca** são opcionais. O sistema registra até onde você assistiu e quando concluiu cada vídeo.
+
+Com um vídeo aberto, clique no **?** e em **Mostrar nesta tela** para um passeio rápido pela tela do vídeo.
 
 ## Quando usar
 

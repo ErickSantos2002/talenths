@@ -4,11 +4,14 @@ modulo: desenvolvimento
 papeis: [user, manager, master_admin]
 telas: [/meu-pdi]
 ordem: 20
+tour: tela-meu-pdi
 ---
 
 ## Para que serve
 
 O **Meu PDI** mostra o seu Plano de Desenvolvimento Individual: as ações combinadas com o seu gestor para você crescer, com o prazo e a situação de cada uma.
+
+Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tela.
 
 ## Quando usar
 

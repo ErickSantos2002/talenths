@@ -15,6 +15,8 @@ const frontMatterSchema = z
     papeis: z.array(z.enum(["master_admin", "manager", "user"])).min(1),
     telas: z.array(z.string().refine((p) => SCREEN_PATHS.has(p), "tela fora de SCREENS")),
     ordem: z.number().int(),
+    // Id of the screen tour that "Mostrar nesta tela" starts from this guide.
+    tour: z.string().regex(/^[a-z0-9-]{1,64}$/).optional(),
   })
   .strict();
 
@@ -59,6 +61,7 @@ export function parseGuide(path: string, raw: string): Guide {
     roles: fm.papeis,
     screens: fm.telas,
     order: fm.ordem,
+    tour: fm.tour,
     body,
     searchText: normalize(`${fm.titulo}\n${plainText(body)}`),
   };
