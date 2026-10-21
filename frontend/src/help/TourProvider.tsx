@@ -7,7 +7,7 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
   type MutableRefObject, type ReactNode,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
@@ -18,12 +18,12 @@ import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { tour as tourApi, type TourProgress } from "@/lib/api";
 import { createProgressQueue } from "./progressQueue";
-import { screenName } from "./screens";
+import { matchScreen, screenName } from "./screens";
 import { prepareSafely, restoreSidebar, type LayoutHooks } from "./sidebarTarget";
-import { TourEngine } from "./tourEngine";
-import { audienceOf, resumeStep } from "./tourRules";
+import { TourEngine, onlyPresent } from "./tourEngine";
+import { asTour, audienceOf, resumeStep } from "./tourRules";
 import { WELCOME_TOURS } from "./tours/welcome";
-import type { Tour } from "./tours/types";
+import type { ScreenTour, Tour } from "./tours/types";
 
 export type { LayoutHooks } from "./sidebarTarget";
 
@@ -39,8 +39,15 @@ interface TourContextValue {
   // The mandatory welcome modal was already answered in this visit; it comes
   // back on the next login or page load until the tour is finished.
   prompted: boolean;
+  // Every tour progress row, for the "what changed" lookups.
+  progressAll: TourProgress[];
   startWelcome(): void;
   beginWelcome(): void;
+  showScreenTour(s: ScreenTour): void;
+  // Runs the cut of steps added since the person's last completed version.
+  viewWhatsNew(cut: Tour): void;
+  // Marks the current version as seen without running the cut.
+  dismissWhatsNew(cut: Tour): void;
   registerLayout(hooks: LayoutHooks | null): void;
 }
 
@@ -58,6 +65,7 @@ const TourLayoutContext = createContext<TourLayoutContextValue | null>(null);
 export function TourProvider({ children }: { children: ReactNode }) {
   const { user, roles } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const queryClient = useQueryClient();
   const [active, setActive] = useState(false);
   const [resume, setResume] = useState<{ tour: Tour; step: number } | null>(null);
@@ -76,7 +84,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
   navigateRef.current = navigate;
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
   const runningRef = useRef<Tour | null>(null);
+  // Pattern of the screen a per-screen tour started on; null for the welcome
+  // tour, which navigates by itself.
+  const screenPathRef = useRef<string | null>(null);
   const layoutRef = useRef<LayoutHooks | null>(null);
   const expandedByTour = useRef(false);
   const queue = useMemo(() => createProgressQueue(() => ownerRef.current), []);
@@ -149,10 +162,11 @@ export function TourProvider({ children }: { children: ReactNode }) {
   }, [active]);
 
   const start = useCallback(
-    (t: Tour, from: number) => {
+    (t: Tour, from: number, screenPath: string | null = null) => {
       if (!t.steps.length) return;
       setResume(null);
       runningRef.current = t;
+      screenPathRef.current = screenPath;
       setActive(true);
       engine.start(t, from);
     },
@@ -189,6 +203,47 @@ export function TourProvider({ children }: { children: ReactNode }) {
     start(welcome, resumeStep(progress, welcome) ?? 0);
   }, [welcome, progress, start]);
 
+  // A per-screen tour points at elements of one page: leaving it ends the tour
+  // (the progress already sent stays).
+  useEffect(() => {
+    const started = screenPathRef.current;
+    if (started === null || !runningRef.current) return;
+    if (matchScreen(pathname)?.path === started) return;
+    runningRef.current = null;
+    screenPathRef.current = null;
+    engine.stop();
+    setActive(false);
+    void queue.drain().then(reload);
+  }, [pathname, engine, queue, reload]);
+
+  const startPresent = useCallback(
+    (t: Tour) => {
+      const present = onlyPresent(t);
+      if (!present.steps.length) return false;
+      start(present, 0, matchScreen(pathnameRef.current)?.path ?? null);
+      return true;
+    },
+    [start],
+  );
+
+  const showScreenTour = useCallback(
+    (s: ScreenTour) => {
+      if (!startPresent(asTour(s))) toast("Nada para mostrar nesta tela agora.");
+    },
+    [startPresent],
+  );
+
+  // A cut without any route belongs to one screen (same rule as DocsHS).
+  const viewWhatsNew = useCallback(
+    (cut: Tour) => {
+      if (cut.steps.some((s) => s.route)) start(cut, 0);
+      else if (!startPresent(cut)) void complete(cut);
+    },
+    [start, startPresent, complete],
+  );
+
+  const dismissWhatsNew = useCallback((cut: Tour) => void complete(cut), [complete]);
+
   const registerLayout = useCallback((hooks: LayoutHooks | null) => {
     layoutRef.current = hooks;
   }, []);
@@ -199,9 +254,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const value = useMemo<TourContextValue>(
     () => ({
       welcome, progress, loaded: query.isSuccess, active, prompted,
-      startWelcome, beginWelcome, registerLayout,
+      progressAll: query.data ?? [],
+      startWelcome, beginWelcome, showScreenTour, viewWhatsNew, dismissWhatsNew, registerLayout,
     }),
-    [welcome, progress, query.isSuccess, active, prompted, startWelcome, beginWelcome, registerLayout],
+    [
+      welcome, progress, query.isSuccess, query.data, active, prompted,
+      startWelcome, beginWelcome, showScreenTour, viewWhatsNew, dismissWhatsNew, registerLayout,
+    ],
   );
   const layoutValue = useMemo<TourLayoutContextValue>(
     () => ({ registerLayout, unregisterLayout, expandedByTour }),
