@@ -77,4 +77,14 @@ describe("toCsv", () => {
     const g = WELCOME_TOURS.manager.steps.length;
     expect(lines[2]).toBe(`"Bruno";"";"Sem departamento";"Gestor";"Em andamento";"Passo 2 de ${g}";""`);
   });
+
+  it("neutralizes values that a spreadsheet would run as a formula", () => {
+    const csv = toCsv([
+      row({ name: '=HYPERLINK("x")', email: "@evil", department: "-1+1" }),
+      row({ name: "Carla", email: "carla@x.com" }),
+    ]);
+    const lines = csv.slice(1).split("\n");
+    expect(lines[1].startsWith('"\'=HYPERLINK(""x"")";"\'@evil";"\'-1+1";')).toBe(true);
+    expect(lines[2].startsWith('"Carla";"carla@x.com";"Comercial";')).toBe(true);
+  });
 });

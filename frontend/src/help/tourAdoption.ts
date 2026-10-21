@@ -75,6 +75,10 @@ export function toCsv(rows: TourAdoptionRow[]): string {
     stepLabel(r),
     formatDate(r.completed_at),
   ]);
-  const cell = (c: string) => `"${c.replace(/"/g, '""')}"`;
+  // People edit their own name: a leading = + - @ tab or CR would run as a formula in Excel.
+  const cell = (c: string) => {
+    const safe = /^[=+\-@\t\r]/.test(c) ? "'" + c : c;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
   return "﻿" + [header, ...lines].map((l) => l.map(cell).join(";")).join("\n");
 }
