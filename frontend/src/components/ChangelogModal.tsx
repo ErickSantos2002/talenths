@@ -36,6 +36,10 @@ const CHANGELOG: ChangelogVersion[] = [
         type: "corrigido",
         text: "Meus Testes: ao clicar em Iniciar, as perguntas voltaram a abrir normalmente.",
       },
+      {
+        type: "corrigido",
+        text: "Correções de permissão no PDI e no Onboarding.",
+      },
     ],
   },
   {

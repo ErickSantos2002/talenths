@@ -248,6 +248,25 @@ async def update_action(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    # Dono do plano ou gestor da mesma empresa; qualquer outro recebe 404.
+    allowed = await conn.fetchval(
+        """SELECT 1
+           FROM pdi_actions pa
+           JOIN pdi_plans pp ON pp.id = pa.plan_id
+           WHERE pa.id = $1
+             AND (
+               pp.user_id = $2
+               OR (
+                 EXISTS (SELECT 1 FROM user_roles ur
+                         WHERE ur.user_id = $2 AND ur.role IN ('manager', 'master_admin'))
+                 AND pp.company_id = (SELECT company_id FROM profiles WHERE user_id = $2)
+               )
+             )""",
+        action_id, user_id,
+    )
+    if not allowed:
+        raise HTTPException(404, "Ação não encontrada")
+
     now = datetime.now(timezone.utc)
     completed_at = now if body.get("status") == "done" else None
 
