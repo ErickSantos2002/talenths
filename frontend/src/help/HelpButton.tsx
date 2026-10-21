@@ -83,15 +83,12 @@ export function HelpButton() {
         size="icon"
         data-tour="help-button"
         className="relative"
-        aria-label="Ajuda desta tela"
+        aria-label={cuts.length > 0 ? "Ajuda desta tela (há novidades)" : "Ajuda desta tela"}
         onClick={() => setOpen(true)}
       >
         <HelpCircle className="h-5 w-5" />
         {cuts.length > 0 && (
-          <>
-            <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
-            <span className="sr-only">(há novidades)</span>
-          </>
+          <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
         )}
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>

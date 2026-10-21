@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, useNavigate } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Guide } from "@/help/guides";
+import { SCREEN_TOURS } from "@/help/tours/screenTours";
 import { HelpButton } from "./HelpButton";
 
 const guidesMock = vi.hoisted(() => ({
@@ -168,8 +169,8 @@ describe("HelpButton", () => {
     it("shows the dot and the block when the welcome tour has new steps", () => {
       setWelcome(1);
       render(tree("/dashboard"));
-      expect(screen.getByText("(há novidades)")).toBeTruthy();
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.getByRole("button", { name: "Ajuda desta tela (há novidades)" })).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela (há novidades)" }));
       expect(screen.getByText("O que mudou")).toBeTruthy();
       expect(screen.getByText("O tour de boas-vindas ganhou 1 passo novo.")).toBeTruthy();
       fireEvent.click(screen.getByRole("button", { name: "Ver o que mudou" }));
@@ -181,7 +182,7 @@ describe("HelpButton", () => {
     it("dismisses the what's new block", () => {
       setWelcome(1);
       render(tree("/dashboard"));
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela (há novidades)" }));
       fireEvent.click(screen.getByRole("button", { name: "Dispensar" }));
       expect(tourMock.dismissWhatsNew).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -190,14 +191,40 @@ describe("HelpButton", () => {
     it("shows nothing when completed on the current version", () => {
       setWelcome(2);
       render(tree("/dashboard"));
-      expect(screen.queryByText("(há novidades)")).toBeNull();
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.queryByRole("button", { name: "Ajuda desta tela (há novidades)" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
       expect(screen.queryByText("O que mudou")).toBeNull();
+    });
+
+    it("shows nothing when the welcome tour was never completed", () => {
+      tourMock.welcome = WELCOME;
+      tourMock.progress = { ...done(1), completed_at: null };
+      tourMock.progressAll = [tourMock.progress];
+      render(tree("/dashboard"));
+      expect(screen.queryByRole("button", { name: "Ajuda desta tela (há novidades)" })).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
+      expect(screen.queryByText("O que mudou")).toBeNull();
+    });
+
+    it("announces new steps of the screen tour", () => {
+      const tour = SCREEN_TOURS.find((t) => t.id === "tela-meu-pdi")!;
+      const original = { version: tour.version, steps: tour.steps };
+      tour.version = 2;
+      tour.steps = [...tour.steps, { ...tour.steps[0], since: 2 }];
+      try {
+        tourMock.progressAll = [{ tour: tour.id, version: 1, step: 0, started_at: "2026-01-01", completed_at: "2026-01-02" }];
+        render(tree("/meu-pdi"));
+        fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela (há novidades)" }));
+        expect(screen.getByText("O tour desta tela ganhou 1 passo novo.")).toBeTruthy();
+      } finally {
+        tour.version = original.version;
+        tour.steps = original.steps;
+      }
     });
 
     it("offers the screen tour on /meu-pdi for a collaborator", () => {
       render(tree("/meu-pdi"));
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
       fireEvent.click(screen.getByRole("button", { name: "Mostrar nesta tela" }));
       expect((tourMock.showScreenTour.mock.calls[0][0] as { id: string }).id).toBe("tela-meu-pdi");
       expect(screen.queryByRole("dialog")).toBeNull();
@@ -205,19 +232,19 @@ describe("HelpButton", () => {
 
     it("does not offer a screen tour on /dashboard", () => {
       render(tree("/dashboard"));
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
       expect(screen.queryByRole("button", { name: "Mostrar nesta tela" })).toBeNull();
     });
 
     it("does not offer an admin screen tour to a collaborator", () => {
       render(tree("/admin/videos"));
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
       expect(screen.queryByRole("button", { name: "Mostrar nesta tela" })).toBeNull();
     });
 
     it("does not offer the video tour on /meus-videos", () => {
       render(tree("/meus-videos"));
-      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
       expect(screen.queryByRole("button", { name: "Mostrar nesta tela" })).toBeNull();
     });
   });

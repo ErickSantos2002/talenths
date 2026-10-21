@@ -57,7 +57,7 @@ export default function TourAdoptionPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Adoção do tour</h1>
               <p className="text-sm text-muted-foreground">
-                Veja quem já fez o tour de boas-vindas do seu papel atual: colaborador ou gestor.
+                Veja quem já fez o tour de boas-vindas do papel atual de cada pessoa: colaborador ou gestor.
               </p>
             </div>
           </div>

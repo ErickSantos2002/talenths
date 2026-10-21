@@ -142,11 +142,13 @@ export function TourProvider({ children }: { children: ReactNode }) {
         onComplete: () => {
           const t = runningRef.current;
           runningRef.current = null;
+          screenPathRef.current = null;
           setActive(false);
           if (t) void complete(t);
         },
         onClose: () => {
           runningRef.current = null;
+          screenPathRef.current = null;
           setActive(false);
           void queue.drain().then(reload);
         },
