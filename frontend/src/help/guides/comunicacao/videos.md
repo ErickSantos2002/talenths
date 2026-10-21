@@ -28,7 +28,7 @@ Quando receber a notificação **Novo vídeo para assistir**, quando um vídeo o
 
 O vídeo abre na sua própria tela:
 
-1. Clique no play para assistir. Se você já tinha começado, o vídeo retoma do ponto em que parou.
+1. Clique no play para assistir. Se você já tinha começado e ainda não concluiu, o vídeo retoma do ponto em que parou.
 2. Abaixo do vídeo, acompanhe a barra de progresso e o tempo assistido, por exemplo **Assistido: 04:20 de 10:00**.
 3. Para voltar à lista, clique em **Vídeos**, acima do título.
 

@@ -76,7 +76,7 @@ export const SCREEN_TOURS: ScreenTour[] = [
       {
         element: "video-player",
         title: "Assistir",
-        text: "Clique no play para assistir. O vídeo retoma de onde você parou, e não dá para avançar além do ponto já assistido.",
+        text: "Clique no play para assistir. Até concluir, o vídeo retoma de onde você parou e não dá para avançar além do ponto já assistido.",
       },
       {
         element: "video-progress",
