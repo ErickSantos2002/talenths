@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, type ReactNode } from "react";
+import { GuideLoadError } from "./GuideLoadError";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const GuideContent = lazy(() => import("./GuideContent").then((m) => ({ default: m.GuideContent })));
@@ -11,7 +12,7 @@ class GuideErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
   }
 
   render() {
-    if (this.state.failed) return <p className="text-sm">Não foi possível carregar o guia.</p>;
+    if (this.state.failed) return <GuideLoadError what="o guia" />;
     return this.props.children;
   }
 }

@@ -6,13 +6,14 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
+import { GuideLoadError } from "@/help/GuideLoadError";
 import { LazyGuideContent } from "@/help/LazyGuideContent";
 import { MODULES, findGuide, guidesFor, useGuides } from "@/help/guides";
 
 export default function HelpGuidePage() {
   const { module = "", slug = "" } = useParams();
   const { roles, profile } = useAuth();
-  const { guides, isLoading, isError, refetch } = useGuides(true);
+  const { guides, isLoading, isError } = useGuides(true);
 
   const visible = useMemo(
     () => (guides ? guidesFor(guides, { roles, timeclockEnabled: !!profile?.timeclock_enabled }) : []),
@@ -40,12 +41,7 @@ export default function HelpGuidePage() {
             <Skeleton className="h-40 w-full" />
           </div>
         ) : isError ? (
-          <div className="space-y-3">
-            <p className="text-sm">Não foi possível carregar os guias.</p>
-            <Button variant="outline" onClick={() => refetch()}>
-              Tentar de novo
-            </Button>
-          </div>
+          <GuideLoadError />
         ) : !guide ? (
           <div className="space-y-3">
             <h1 className="text-2xl font-bold">Guia não encontrado</h1>

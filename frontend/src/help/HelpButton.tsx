@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
+import { GuideLoadError } from "@/help/GuideLoadError";
 import { LazyGuideContent } from "@/help/LazyGuideContent";
 import { MODULES, guidesFor, guidesForPath, useGuides, type Guide } from "@/help/guides";
 import { useTour } from "@/help/TourProvider";
@@ -33,7 +34,7 @@ export function HelpButton() {
   const { pathname } = useLocation();
   const { active } = useTour();
   const { roles, profile } = useAuth();
-  const { guides, isLoading, isError, refetch } = useGuides(open);
+  const { guides, isLoading, isError } = useGuides(open);
 
   useEffect(() => {
     setOpen(false);
@@ -81,12 +82,7 @@ export function HelpButton() {
                 <Skeleton className="h-32 w-full" />
               </div>
             ) : isError ? (
-              <div className="space-y-3">
-                <p className="text-sm">Não foi possível carregar os guias.</p>
-                <Button variant="outline" onClick={() => refetch()}>
-                  Tentar de novo
-                </Button>
-              </div>
+              <GuideLoadError />
             ) : (
               found && (
                 <>

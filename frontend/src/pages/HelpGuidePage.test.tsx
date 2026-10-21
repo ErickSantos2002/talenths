@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Guide } from "@/help/guides";
@@ -44,9 +44,22 @@ beforeEach(() => {
   guidesMock.value = { guides: GUIDES, isLoading: false, isError: false, refetch: () => {} };
   authMock.value = { roles: ["user"], profile: {} };
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("HelpGuidePage", () => {
+  it("offers to reload the page when the guides fail to load", () => {
+    const reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
+    guidesMock.value = { guides: undefined, isLoading: false, isError: true, refetch: () => {} };
+    renderAt("/ajuda/desempenho/minha-avaliacao");
+    expect(screen.getByText(/Se o TalentHS foi atualizado, recarregue a página/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Recarregar a página" }));
+    expect(reload).toHaveBeenCalled();
+  });
+
   it("renders the guide, breadcrumb, siblings and document title", async () => {
     renderAt("/ajuda/desempenho/minha-avaliacao");
     expect(screen.getByRole("heading", { level: 1, name: "Minha Avaliação" })).toBeTruthy();

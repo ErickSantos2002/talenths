@@ -51,9 +51,23 @@ beforeEach(() => {
   guidesMock.enabledArgs = [];
   tourMock.active = false;
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("HelpButton", () => {
+  it("offers to reload the page when the guides fail to load", () => {
+    const reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
+    guidesMock.value = { guides: undefined, isLoading: false, isError: true, refetch: () => {} };
+    render(tree("/meus-videos"));
+    fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
+    expect(screen.getByText(/Se o TalentHS foi atualizado, recarregue a página/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Recarregar a página" }));
+    expect(reload).toHaveBeenCalled();
+  });
+
   it("has aria-label and data-tour, and loads guides only when opened", () => {
     render(tree("/meus-videos"));
     const btn = screen.getByRole("button", { name: "Ajuda desta tela" });

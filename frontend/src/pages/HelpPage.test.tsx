@@ -56,7 +56,10 @@ beforeEach(() => {
   guidesMock.value = { guides: GUIDES, isLoading: false, isError: false, refetch: () => {} };
   authMock.value = { roles: ["user"], profile: {} };
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("HelpPage", () => {
   it("disables the tour button and hides the badge while not loaded", () => {
@@ -127,16 +130,17 @@ describe("HelpPage", () => {
     expect(screen.getByText("1 guia encontrado")).toBeTruthy();
   });
 
-  it("shows a skeleton while loading and a retry on error", () => {
+  it("shows a skeleton while loading and a reload on error", () => {
     guidesMock.value = { guides: undefined, isLoading: true, isError: false, refetch: () => {} };
     const { container } = renderAt();
     expect(container.querySelector(".animate-pulse")).toBeTruthy();
     cleanup();
-    const refetch = vi.fn();
-    guidesMock.value = { guides: undefined, isLoading: false, isError: true, refetch };
+    const reload = vi.fn();
+    vi.stubGlobal("location", { ...window.location, reload });
+    guidesMock.value = { guides: undefined, isLoading: false, isError: true, refetch: () => {} };
     renderAt();
-    expect(screen.getByText("Não foi possível carregar os guias.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
-    expect(refetch).toHaveBeenCalled();
+    expect(screen.getByText(/Se o TalentHS foi atualizado, recarregue a página/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Recarregar a página" }));
+    expect(reload).toHaveBeenCalled();
   });
 });

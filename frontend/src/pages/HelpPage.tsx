@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
+import { GuideLoadError } from "@/help/GuideLoadError";
 import { MODULES, guidesFor, searchGuides, useGuides } from "@/help/guides";
 import { useTour } from "@/help/TourProvider";
 import { tourStatus } from "@/help/tourRules";
@@ -16,7 +17,7 @@ import { tourStatus } from "@/help/tourRules";
 export default function HelpPage() {
   const { welcome, progress, loaded, startWelcome } = useTour();
   const { roles, profile } = useAuth();
-  const { guides, isLoading, isError, refetch } = useGuides(true);
+  const { guides, isLoading, isError } = useGuides(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("busca") ?? "";
   const hasQuery = query.trim() !== "";
@@ -95,12 +96,7 @@ export default function HelpPage() {
             <Skeleton className="h-24 w-full" />
           </div>
         ) : isError ? (
-          <div className="space-y-3">
-            <p className="text-sm">Não foi possível carregar os guias.</p>
-            <Button variant="outline" onClick={() => refetch()}>
-              Tentar de novo
-            </Button>
-          </div>
+          <GuideLoadError />
         ) : hasQuery ? (
           results.length === 0 ? (
             <Link to="/ajuda" replace className="text-sm text-primary underline">
