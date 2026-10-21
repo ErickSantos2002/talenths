@@ -563,6 +563,7 @@ export const customTests = {
   deleteOption: (optionId: string) => del(`/tests/options/${optionId}`),
   // Colaborador
   available: () => get<CustomTest[]>("/tests/available"),
+  getForTaking: (id: string) => get<TakeTestDetail>(`/tests/${id}/take`),
   start: (testId: string) => post<TestAttempt>(`/tests/${testId}/start`),
   myAttempts: () => get<TestAttempt[]>("/tests/my-attempts"),
   myAttemptDetail: (attemptId: string) => get<TestAttemptDetail>(`/tests/my-attempts/${attemptId}`),
@@ -619,6 +620,22 @@ export interface TestQuestion {
 
 export interface CustomTestDetail extends CustomTest {
   questions: TestQuestion[];
+}
+
+// Versão para quem responde: o backend não envia gabarito nem explicação.
+export type TakeTestOption = Pick<TestOption, "id" | "order_index" | "text">;
+
+export interface TakeTestQuestion
+  extends Pick<
+    TestQuestion,
+    "id" | "order_index" | "question_type" | "text" | "is_required" | "points" | "scale_min" | "scale_max" | "scale_labels"
+  > {
+  options: TakeTestOption[];
+}
+
+export interface TakeTestDetail
+  extends Pick<CustomTest, "id" | "title" | "description" | "instructions" | "time_limit_min" | "max_attempts" | "scoring_mode"> {
+  questions: TakeTestQuestion[];
 }
 
 export interface TestAttempt {

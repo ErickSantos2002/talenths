@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { customTests } from "@/lib/api";
-import type { CustomTestDetail, TestAttempt, TestQuestion } from "@/lib/api";
+import type { TakeTestDetail, TakeTestOption, TestAttempt } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,11 +32,26 @@ export default function RealizarTestePage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  const { data: test, isLoading } = useQuery<CustomTestDetail>({
-    queryKey: ["test-detail-public", testId],
-    queryFn: () => customTests.get(testId!),
+  const { data: test, isLoading } = useQuery<TakeTestDetail>({
+    queryKey: ["test-take", testId],
+    queryFn: () => customTests.getForTaking(testId!),
     enabled: !!testId,
   });
+
+  // Embaralha as opções de cada questão uma única vez por teste. Fica antes dos
+  // retornos antecipados: hook depois deles muda a ordem dos hooks entre renders.
+  const shuffledOptions = useMemo(() => {
+    const map: Record<string, TakeTestOption[]> = {};
+    for (const q of test?.questions ?? []) {
+      const opts = [...q.options];
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]];
+      }
+      map[q.id] = opts;
+    }
+    return map;
+  }, [test]);
 
   // Start or resume attempt
   useEffect(() => {
@@ -120,20 +135,6 @@ export default function RealizarTestePage() {
   if (!test || !attempt?.id) return null;
 
   const questions = test.questions;
-
-  // Embaralha as opções de cada questão uma única vez ao montar
-  const shuffledOptions = useMemo(() => {
-    const map: Record<string, typeof questions[0]["options"]> = {};
-    for (const q of questions) {
-      const opts = [...q.options];
-      for (let i = opts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [opts[i], opts[j]] = [opts[j], opts[i]];
-      }
-      map[q.id] = opts;
-    }
-    return map;
-  }, [test.id]);
 
   const q = questions[currentIdx];
   const resp = responses[q.id] ?? {};

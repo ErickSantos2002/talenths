@@ -32,6 +32,10 @@ const CHANGELOG: ChangelogVersion[] = [
         type: "melhoria",
         text: "O tour de boas-vindas ganhou um último passo mostrando o botão ?.",
       },
+      {
+        type: "corrigido",
+        text: "Meus Testes: ao clicar em Iniciar, as perguntas voltaram a abrir normalmente.",
+      },
     ],
   },
   {

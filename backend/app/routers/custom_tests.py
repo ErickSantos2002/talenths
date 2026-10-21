@@ -194,6 +194,39 @@ async def _build_test_detail(conn: asyncpg.Connection, test_id: str) -> dict:
     return result
 
 
+async def _get_takeable_test_or_404(conn: asyncpg.Connection, test_id: str, user_id: str) -> dict:
+    """Mesma regra de /available (sem o limite de tentativas, que o start confere).
+    Sem acesso responde 404 para não revelar que o teste existe."""
+    row = await conn.fetchrow(
+        """
+        SELECT t.*
+        FROM public.custom_tests t
+        JOIN public.profiles p ON p.user_id = $2 AND p.company_id = t.company_id
+        WHERE t.id = $1
+          AND t.status = 'published'
+          AND (
+            t.is_public = true
+            OR EXISTS (
+              SELECT 1 FROM public.test_assignments ta
+              WHERE ta.test_id = t.id
+                AND (ta.user_id = $2 OR ta.department_id = p.department_id)
+            )
+          )
+        """,
+        test_id, user_id,
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Teste não encontrado")
+    return dict(row)
+
+
+TAKE_TEST_FIELDS = ("id", "title", "description", "instructions", "time_limit_min", "max_attempts", "scoring_mode")
+TAKE_QUESTION_FIELDS = (
+    "id", "order_index", "question_type", "text", "is_required", "points",
+    "scale_min", "scale_max", "scale_labels",
+)
+
+
 # ── Rotas estáticas (devem vir antes de /{test_id}) ───────────────────────────
 
 @router.get("/available")
@@ -232,6 +265,33 @@ async def get_available_tests(
         user_id, dept_id, company_id,
     )
     return [dict(r) for r in rows]
+
+
+@router.get("/{test_id}/take")
+async def get_test_for_taking(
+    test_id: str,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    """Teste para quem vai responder: sem gabarito (is_correct, point_value) nem explicação."""
+    test = await _get_takeable_test_or_404(conn, test_id, user_id)
+    result = {k: test[k] for k in TAKE_TEST_FIELDS}
+    questions = await conn.fetch(
+        "SELECT * FROM public.test_questions WHERE test_id = $1 ORDER BY order_index", test_id,
+    )
+    result["questions"] = []
+    for q in questions:
+        qd = {k: q[k] for k in TAKE_QUESTION_FIELDS}
+        if isinstance(qd["scale_labels"], str):
+            qd["scale_labels"] = json.loads(qd["scale_labels"])
+        options = await conn.fetch(
+            """SELECT id, order_index, text FROM public.test_question_options
+               WHERE question_id = $1 ORDER BY order_index""",
+            q["id"],
+        )
+        qd["options"] = [dict(o) for o in options]
+        result["questions"].append(qd)
+    return result
 
 
 @router.get("/my-attempts")
@@ -1010,9 +1070,7 @@ async def start_attempt(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
-    test = await _get_test_or_404(conn, test_id)
-    if test["status"] != "published":
-        raise HTTPException(status_code=400, detail="Teste não está disponível")
+    test = await _get_takeable_test_or_404(conn, test_id, user_id)
 
     in_progress = await conn.fetchrow(
         "SELECT id FROM public.test_attempts WHERE test_id = $1 AND user_id = $2 AND status = 'in_progress'",
