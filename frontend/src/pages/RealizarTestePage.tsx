@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { customTests } from "@/lib/api";
@@ -43,16 +43,16 @@ export default function RealizarTestePage() {
   // /take responder 404: avisa e volta, como no erro ao iniciar. O ref evita
   // dois avisos quando o start e o /take falham juntos.
   const leftRef = useRef(false);
-  const leaveWithError = (message: string) => {
+  const leaveWithError = useCallback((message: string) => {
     if (leftRef.current) return;
     leftRef.current = true;
     toast({ title: "Erro ao iniciar teste", description: message, variant: "destructive" });
     navigate("/meus-testes");
-  };
+  }, [toast, navigate]);
 
   useEffect(() => {
     if (loadError) leaveWithError(loadError.message);
-  }, [loadError]);
+  }, [loadError, leaveWithError]);
 
   // Embaralha as opções de cada questão uma única vez por teste. Fica antes dos
   // retornos antecipados: hook depois deles muda a ordem dos hooks entre renders.
