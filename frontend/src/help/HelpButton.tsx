@@ -11,7 +11,7 @@ import { LazyGuideContent } from "@/help/LazyGuideContent";
 import { MODULES, guidesFor, guidesForPath, useGuides, type Guide } from "@/help/guides";
 import { useTour } from "@/help/TourProvider";
 
-function GuideList({ guides, heading }: { guides: Guide[]; heading: string }) {
+function GuideList({ guides, heading, onNavigate }: { guides: Guide[]; heading: string; onNavigate: () => void }) {
   if (guides.length === 0) return null;
   return (
     <section className="space-y-2">
@@ -19,7 +19,7 @@ function GuideList({ guides, heading }: { guides: Guide[]; heading: string }) {
       <ul className="space-y-1">
         {guides.map((g) => (
           <li key={`${g.module}/${g.slug}`}>
-            <Link to={`/ajuda/${g.module}/${g.slug}`} className="text-sm text-primary hover:underline">
+            <Link to={`/ajuda/${g.module}/${g.slug}`} onClick={onNavigate} className="text-sm text-primary hover:underline">
               {g.title}
             </Link>
           </li>
@@ -87,11 +87,11 @@ export function HelpButton() {
               found && (
                 <>
                   {found.main && <LazyGuideContent body={found.main.body} />}
-                  <GuideList guides={found.others} heading={listHeading} />
+                  <GuideList guides={found.others} heading={listHeading} onNavigate={() => setOpen(false)} />
                 </>
               )
             )}
-            <Link to="/ajuda" className="block text-sm font-medium text-primary underline">
+            <Link to="/ajuda" onClick={() => setOpen(false)} className="block text-sm font-medium text-primary underline">
               Abrir a central de ajuda
             </Link>
           </div>

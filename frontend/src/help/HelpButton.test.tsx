@@ -107,6 +107,23 @@ describe("HelpButton", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("closes when a panel link points to the page already open", () => {
+    render(tree("/ajuda"));
+    fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
+    fireEvent.click(screen.getByRole("link", { name: "Abrir a central de ajuda" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
+    fireEvent.click(screen.getByRole("link", { name: "Como começar" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("closes when a guide link points to the guide's own page", () => {
+    render(tree("/ajuda/primeiros-passos/como-comecar"));
+    fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
+    fireEvent.click(screen.getByRole("link", { name: "Como começar" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("closes when the tour becomes active", () => {
     const { rerender } = render(tree("/meus-videos"));
     fireEvent.click(screen.getByRole("button", { name: "Ajuda desta tela" }));
