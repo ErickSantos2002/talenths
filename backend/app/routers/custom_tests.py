@@ -339,7 +339,8 @@ async def get_my_attempt_detail(
         SELECT r.*, q.text AS question_text, q.question_type, q.points, q.explanation,
                q.scale_min, q.scale_max, q.scale_labels, q.order_index
         FROM public.test_responses r
-        JOIN public.test_questions q ON q.id = r.question_id
+        JOIN public.test_attempts a ON a.id = r.attempt_id
+        JOIN public.test_questions q ON q.id = r.question_id AND q.test_id = a.test_id
         WHERE r.attempt_id = $1
         ORDER BY q.order_index
         """,
@@ -351,7 +352,10 @@ async def get_my_attempt_detail(
     for resp in responses:
         rd = dict(resp)
         if not show_answers:
-            rd.pop("explanation", None)
+            # Antes da avaliação (em andamento, ou mista aguardando o RH), nem a
+            # explicação nem a pontuação por pergunta: diriam quais estão certas.
+            for field in ("explanation", "auto_points", "manual_points", "hr_comment"):
+                rd.pop(field, None)
         if show_answers:
             opts = await conn.fetch(
                 "SELECT * FROM public.test_question_options WHERE question_id = $1 ORDER BY order_index",
@@ -494,6 +498,7 @@ async def save_responses(
             "SELECT id FROM public.test_questions WHERE test_id = $1", attempt["test_id"]
         )
     }
+    validated = []
     for resp in body.responses:
         try:
             qid = uuid.UUID(resp.question_id)
@@ -501,11 +506,14 @@ async def save_responses(
             qid = None
         if qid not in test_question_ids:
             raise HTTPException(status_code=422, detail="Pergunta não pertence a este teste")
+        # Grava a forma canônica: formas aceitas pelo uuid.UUID (urn:uuid:…, sem
+        # hífens) o asyncpg recusaria com 500.
+        validated.append((str(qid), resp))
 
-    for resp in body.responses:
+    for question_id, resp in validated:
         existing = await conn.fetchrow(
             "SELECT id FROM public.test_responses WHERE attempt_id = $1 AND question_id = $2",
-            attempt_id, resp.question_id,
+            attempt_id, question_id,
         )
         if existing:
             await conn.execute(
@@ -515,14 +523,14 @@ async def save_responses(
                    WHERE attempt_id = $5 AND question_id = $6""",
                 resp.selected_option_ids, resp.text_response,
                 resp.scale_value, resp.boolean_response,
-                attempt_id, resp.question_id,
+                attempt_id, question_id,
             )
         else:
             await conn.execute(
                 """INSERT INTO public.test_responses
                    (attempt_id, question_id, selected_option_ids, text_response, scale_value, boolean_response)
                    VALUES ($1, $2, $3, $4, $5, $6)""",
-                attempt_id, resp.question_id, resp.selected_option_ids,
+                attempt_id, question_id, resp.selected_option_ids,
                 resp.text_response, resp.scale_value, resp.boolean_response,
             )
 

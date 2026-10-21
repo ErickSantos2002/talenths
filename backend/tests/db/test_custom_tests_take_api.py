@@ -245,3 +245,83 @@ async def test_respond_rejects_question_of_another_test(db, client_as):
     r = await c.post(f"/tests/attempts/{attempt}/respond",
                      json={"responses": [{"question_id": "não-é-uuid", "text_response": "x"}]})
     assert r.status_code == 422, r.text
+
+
+async def _make_mixed_test(db, company_id, created_by):
+    test_id = await _make_test(db, company_id, created_by, is_public=True)
+    await db.execute("UPDATE public.custom_tests SET scoring_mode = 'mixed' WHERE id = $1::uuid", test_id)
+    await db.execute(
+        """INSERT INTO public.test_questions (test_id, order_index, question_type, text, points)
+           VALUES ($1::uuid, 2, 'open_text', 'Explique a norma', 1)""",
+        test_id,
+    )
+    return test_id
+
+
+GRADING_FIELDS = ("auto_points", "manual_points", "hr_comment")
+
+
+async def test_my_attempt_hides_grading_until_evaluated(db, client_as):
+    company, dept, manager, user = await _setup(db)
+    test_id = await _make_mixed_test(db, company, manager)
+    c = client_as(user)
+    attempt = (await c.post(f"/tests/{test_id}/start")).json()["id"]
+    q1, _, q_open = await _questions(db, test_id)
+    r = await c.post(f"/tests/attempts/{attempt}/respond", json={"responses": [
+        {"question_id": q1, "selected_option_ids": [await _correct_option(db, q1)]},
+        {"question_id": q_open, "text_response": "Entrada às 8h"},
+    ]})
+    assert r.status_code == 200, r.text
+    r = await c.post(f"/tests/attempts/{attempt}/submit")
+    assert r.json()["status"] == "submitted", r.text
+
+    r = await c.get(f"/tests/my-attempts/{attempt}")
+    assert r.status_code == 200, r.text
+    for resp in r.json()["responses"]:
+        assert not set(GRADING_FIELDS) & set(resp), resp
+
+    r = await client_as(manager).post(f"/tests/attempts/{attempt}/evaluate", json={
+        "question_scores": [{"question_id": q_open, "manual_points": 1, "hr_comment": "Boa"}],
+    })
+    assert r.status_code == 200, r.text
+    # client_as troca o usuário de todos os clientes; volta a agir como a colaboradora.
+    body = (await client_as(user).get(f"/tests/my-attempts/{attempt}")).json()
+    assert body["status"] == "evaluated"
+    by_q = {resp["question_id"]: resp for resp in body["responses"]}
+    assert float(by_q[q1]["auto_points"]) == 1
+    assert float(by_q[q_open]["manual_points"]) == 1 and by_q[q_open]["hr_comment"] == "Boa"
+
+
+async def test_my_attempt_ignores_responses_of_other_tests(db, client_as):
+    company, dept, manager, user = await _setup(db)
+    probe = await _make_test(db, company, manager, is_public=True)
+    target = await _make_test(db, company, manager)
+    c = client_as(user)
+    attempt = (await c.post(f"/tests/{probe}/start")).json()["id"]
+    target_q1, _ = await _questions(db, target)
+    # Linha estranha gravada por fora da API (a respond não deixa mais).
+    await db.execute(
+        "INSERT INTO public.test_responses (attempt_id, question_id) VALUES ($1::uuid, $2::uuid)",
+        attempt, target_q1,
+    )
+    assert (await c.post(f"/tests/attempts/{attempt}/submit")).status_code == 200
+
+    body = (await c.get(f"/tests/my-attempts/{attempt}")).json()
+    assert body["status"] == "evaluated"
+    assert target_q1 not in {resp["question_id"] for resp in body["responses"]}
+
+
+async def test_respond_accepts_any_parseable_uuid_form(db, client_as):
+    company, dept, manager, user = await _setup(db)
+    test_id = await _make_test(db, company, manager, is_public=True)
+    c = client_as(user)
+    attempt = (await c.post(f"/tests/{test_id}/start")).json()["id"]
+    q1, _ = await _questions(db, test_id)
+
+    r = await c.post(f"/tests/attempts/{attempt}/respond",
+                     json={"responses": [{"question_id": f"urn:uuid:{q1.upper()}", "selected_option_ids": []}]})
+    assert r.status_code == 200, r.text
+    assert await db.fetchval(
+        "SELECT COUNT(*) FROM public.test_responses WHERE attempt_id = $1::uuid AND question_id = $2::uuid",
+        attempt, q1,
+    ) == 1
