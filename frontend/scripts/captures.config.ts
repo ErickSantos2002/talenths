@@ -144,6 +144,7 @@ export const CAPTURES: Capture[] = [
     ],
   },
   { name: "admin-empresa", account: "gestor", route: () => "/admin/empresa" },
+  { name: "adocao-do-tour", account: "gestor", route: () => "/admin/tour" },
 
   // Logs só abrem para o master_admin.
   { name: "admin-logs", account: "admin", route: () => "/admin/logs" },

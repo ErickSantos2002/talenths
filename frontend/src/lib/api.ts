@@ -874,8 +874,24 @@ export interface TourProgress {
   invites_declined: number;
 }
 
+export interface TourAdoptionRow {
+  user_id: string;
+  name: string;
+  email: string | null;
+  department_id: string | null;
+  department: string | null;
+  audience: "collaborator" | "manager";
+  tour: string;
+  version: number | null;
+  step: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  status: "completed" | "in_progress" | "not_started";
+}
+
 export const tour = {
   list: () => get<TourProgress[]>("/tour/progress"),
+  adoption: () => get<TourAdoptionRow[]>("/tour/adoption"),
   advance: (id: string, version: number, step: number) =>
     put<TourProgress>(`/tour/progress/${encodeURIComponent(id)}`, { version, step }),
   complete: (id: string, version: number) =>

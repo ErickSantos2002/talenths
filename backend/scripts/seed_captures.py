@@ -47,8 +47,11 @@ DEFAULT_URL = "postgresql://erick:dev123@localhost:5432/talenths_capturas"
 PASSWORD = os.environ.get("CAPTURES_PASSWORD", "exemplo123")
 BRT = timezone(timedelta(hours=-3))
 # Os tours de boas-vindas (frontend/src/help/tours/welcome.ts): concluídos para
-# todas as contas, senão o modal obrigatório cobre todas as fotos.
+# as contas de login, senão o modal obrigatório cobre as fotos. Das demais, uma
+# para no meio e outra nem começa, para a tela de adoção mostrar as três situações.
 WELCOME_TOURS = {"boas-vindas-colaborador": 2, "boas-vindas-gestor": 2}
+TOUR_IN_PROGRESS = "felipe"  # parou no passo 4 (índice 3)
+TOUR_NOT_STARTED = "igor"  # sem linha em tour_progress
 # Tabela que a 001 já semeia (o teste DISC antigo) e que não é dado de pessoa.
 KEEP = {"scenario_blocks"}
 # O mesmo UPLOADS_DIR do backend das capturas (topo de frontend/scripts/captures.ts).
@@ -209,7 +212,16 @@ class Seeder:
         self.collaborators = [k for k in self.users if k not in ("gestor", "admin")]
         for key in self.collaborators:
             await self.ins("user_managers", user_id=self.users[key], manager_id=self.users["gestor"])
-        for uid in self.users.values():
+        for key, uid in self.users.items():
+            if key == TOUR_NOT_STARTED:
+                continue
+            if key == TOUR_IN_PROGRESS:
+                await self.ins(
+                    "tour_progress", user_id=uid, company_id=self.company_id, tour="boas-vindas-colaborador",
+                    version=WELCOME_TOURS["boas-vindas-colaborador"], step=3,
+                    started_at=self.now - timedelta(days=2),
+                )
+                continue
             for tour, version in WELCOME_TOURS.items():
                 await self.ins(
                     "tour_progress", user_id=uid, company_id=self.company_id, tour=tour, version=version,

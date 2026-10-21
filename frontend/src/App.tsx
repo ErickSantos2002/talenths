@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { TourProvider } from "@/help/TourProvider";
 import { WelcomeTourModal } from "@/components/WelcomeTourModal";
 import LoginPage from "./pages/LoginPage";
+import TourAdoptionPage from "./pages/TourAdoptionPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminCollaboratorsPage from "./pages/AdminCollaboratorsPage";
 import InvitePage from "./pages/InvitePage";
@@ -412,6 +413,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ResultadoTestePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/tour"
+              element={
+                <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
+                  <TourAdoptionPage />
                 </ProtectedRoute>
               }
             />

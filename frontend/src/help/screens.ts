@@ -5,7 +5,7 @@ import {
   GitBranch, UserPen, HeartHandshake, Target,
   BookOpen, GraduationCap, CalendarDays, Megaphone, ListChecks, BarChart2, CalendarOff,
   Gift, FileDown, Shield, DollarSign, Presentation, ScrollText, MessageSquare, FileText, Clock,
-  Dices, Video, LifeBuoy,
+  Dices, Video, LifeBuoy, UserCheck,
 } from "lucide-react";
 
 export type AppRole = "master_admin" | "manager" | "user";
@@ -113,6 +113,7 @@ export const SCREENS: Screen[] = [
   item("/admin/tabela-salarial", "Tabela Salarial", DollarSign, "rh", ADMIN),
 
   item("/admin/empresa", "Minha Empresa", Building2, "sistema", ADMIN),
+  item("/admin/tour", "Adoção do tour", UserCheck, "sistema", ADMIN),
   item("/admin/relatorios", "Relatórios", FileDown, "sistema", ADMIN),
   item("/admin/logs", "Logs", Shield, "sistema", MASTER),
 
