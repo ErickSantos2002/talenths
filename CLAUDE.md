@@ -241,7 +241,9 @@ Ao **concluir uma entrega visível ao usuário** (nova funcionalidade ou correç
 O tour de boas-vindas e a página `/ajuda` ficam em `frontend/src/help/`.
 
 - **Alvos só por `data-tour`** — o tour nunca procura elemento por classe, texto ou posição.
-- **Tela citada num tour muda no mesmo commit que o tour** (e, a partir da fase 2, que o guia): mexeu num cabeçalho com `data-tour` ou no menu, confira o passo que aponta para ele.
+- **Tela citada num tour muda no mesmo commit que o tour**: mexeu num cabeçalho com `data-tour` ou no menu, confira o passo que aponta para ele.
+- **Tela com guia muda no mesmo commit que o guia** — os guias ficam em `src/help/guides/<módulo>/<slug>.md` e a tela é ligada a eles pelo campo `telas`. Mudou botão, rótulo, campo ou fluxo: atualize o texto do guia e refaça a captura dela (`bun run --cwd frontend capturas -- --only nome1,nome2`). O contrato em `src/help/guides.contract.test.ts` exige guia para toda tela do menu, links internos válidos e imagens que existem.
+- **Bug conhecido que leva o leitor a errar ganha um "Atenção:" curto no guia** — onde seguir o guia perde dado, gasta tentativa ou leva a uma decisão errada de RH, o guia avisa em uma frase, em linguagem simples, ligada ao comportamento. O aviso sai **no mesmo commit que corrige o bug**.
 - **Deploy:** migração 030 (`backend/scripts/aplicar_030.py`, rodada pelo Erick) → backend → frontend.
 - **Contratos em `src/help/**/*.test.ts`** — rotas, âncoras e textos dos tours são verificados por testes; rode `bun run test` antes de commitar.
 - **Capturas dos guias** ficam em `frontend/public/capturas/<nome>.webp` (**nunca** em `public/ajuda/` — o nginx redirecionaria `/ajuda` → `/ajuda/`) e são listadas em `frontend/scripts/captures.config.ts`. Só dado fictício, de um banco só delas. Para refazer:
