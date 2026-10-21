@@ -21,6 +21,7 @@ describe("welcome tours contract", () => {
   it("every element exists as data-tour", () => {
     for (const [key, tour] of tours) {
       for (const step of tour.steps) {
+        expect(step.route, `${key}: ${step.title}`).toBeTruthy();
         if (step.element) {
           expect(anchors.has(step.element), `${key}: ${step.element}`).toBe(true);
         }

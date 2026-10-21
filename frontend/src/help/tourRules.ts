@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import type { TourProgress } from "@/lib/api";
 import type { AppRole } from "./screens";
-import type { Audience, Tour } from "./tours/types";
+import type { Audience, ScreenTour, Tour } from "./tours/types";
 
 export function audienceOf(roles: AppRole[]): Audience {
   return roles.includes("manager") || roles.includes("master_admin") ? "manager" : "collaborator";
@@ -27,4 +27,21 @@ export function tourStatus(
   if (!progress || !progress.started_at) return { kind: "not-started" };
   if (progress.completed_at) return { kind: "done", date: format(new Date(progress.completed_at), "dd/MM/yyyy") };
   return { kind: "stopped", step: progress.step + 1, total: t.steps.length };
+}
+
+// Only the steps added after the version the person completed; null when the
+// welcome tour was not finished or nothing new was added.
+export function whatsNew(t: Tour, progress: TourProgress | null): Tour | null {
+  if (!progress?.completed_at || progress.version >= t.version) return null;
+  const steps = t.steps.filter((s) => (s.since ?? 1) > progress.version);
+  return steps.length > 0 ? { id: t.id, version: t.version, steps } : null;
+}
+
+export function screenTourFor(tours: ScreenTour[], screenPath: string | null, roles: AppRole[]): ScreenTour | null {
+  if (!screenPath) return null;
+  return tours.find((s) => s.screen === screenPath && s.roles.some((r) => roles.includes(r))) ?? null;
+}
+
+export function asTour(s: ScreenTour): Tour {
+  return { id: s.id, version: s.version, steps: s.steps };
 }

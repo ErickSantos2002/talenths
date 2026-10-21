@@ -32,7 +32,7 @@ vi.mock("driver.js", () => ({
 vi.mock("driver.js/dist/driver.css", () => ({}));
 vi.mock("./tour.css", () => ({}));
 
-import { SHORT_WAIT_MS, TourEngine, safeText, type EngineCallbacks } from "./tourEngine";
+import { SHORT_WAIT_MS, TourEngine, onlyPresent, safeText, type EngineCallbacks } from "./tourEngine";
 
 const last = () => fake.highlights[fake.highlights.length - 1];
 const next = () => last().popover!.onNextClick!();
@@ -214,5 +214,55 @@ describe("TourEngine", () => {
     );
     await vi.advanceTimersByTimeAsync(0);
     expect(last().popover!.progressText).toBe("2 de 3");
+  });
+
+  it("step without route does not navigate nor announce a move", async () => {
+    const cb = callbacks();
+    engine = new TourEngine(cb);
+    addTarget("a");
+    engine.start(
+      tour([
+        { element: "a", title: "S0", text: "primeiro" },
+        { title: "S1", text: "segundo" },
+      ]),
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cb.navigate).not.toHaveBeenCalled();
+    expect(last().popover!.description).not.toContain("Vamos para");
+  });
+
+  it("announces the move only when both steps have different routes", async () => {
+    engine = new TourEngine(callbacks());
+    engine.start(
+      tour([
+        { route: "/dashboard", title: "S0", text: "x" },
+        { route: "/dashboard", title: "S1", text: "x" },
+        { route: "/meus-videos", title: "S2", text: "x" },
+      ]),
+    );
+    await vi.advanceTimersByTimeAsync(SHORT_WAIT_MS);
+    expect(last().popover!.description).not.toContain("Vamos para");
+    next();
+    await vi.advanceTimersByTimeAsync(SHORT_WAIT_MS);
+    expect(last().popover!.title).toBe("S1");
+    expect(last().popover!.description).toContain("Vamos para <strong>Vídeos</strong>");
+  });
+});
+
+describe("onlyPresent", () => {
+  it("drops steps whose element is not visible and keeps steps without element", () => {
+    addTarget("a");
+    const hidden = document.createElement("div");
+    hidden.setAttribute("data-tour", "b");
+    document.body.appendChild(hidden);
+    const t = tour([
+      { element: "a", title: "A", text: "x" },
+      { element: "b", title: "B", text: "x" },
+      { title: "C", text: "x" },
+    ]);
+    const r = onlyPresent(t);
+    expect(r.steps.map((s) => s.title)).toEqual(["A", "C"]);
+    expect(r.id).toBe(t.id);
+    expect(r.version).toBe(t.version);
   });
 });

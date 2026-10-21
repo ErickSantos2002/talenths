@@ -55,6 +55,11 @@ function findVisible(element: string): Element | null {
   return null;
 }
 
+// Drops steps whose element is not on screen now; steps without element stay.
+export function onlyPresent(t: Tour): Tour {
+  return { ...t, steps: t.steps.filter((s) => !s.element || findVisible(s.element) !== null) };
+}
+
 function waitForElement(element: string, ms: number, cancelled: () => boolean): Promise<Element | null> {
   return new Promise((resolve) => {
     const found = findVisible(element);
@@ -164,7 +169,7 @@ export class TourEngine {
     // during the wait would skip a step.
     this.waiting = true;
 
-    if (window.location.pathname !== step.route) {
+    if (step.route && window.location.pathname !== step.route) {
       drv.highlight({
         popover: {
           title: safeText(`Abrindo ${this.cb.screenName(step.route)}…`),
@@ -225,7 +230,7 @@ export class TourEngine {
   private description(tour: Tour, index: number, step: TourStep, extraText: string | undefined): string {
     const following = tour.steps[index + 1];
     const paragraphs = [step.text];
-    if (following && following.route !== step.route) {
+    if (following?.route && step.route && following.route !== step.route) {
       paragraphs.push(`Vamos para **${this.cb.screenName(following.route)}**.`);
     }
     if (extraText) paragraphs.push(extraText);

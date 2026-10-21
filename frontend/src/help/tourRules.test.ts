@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { audienceOf, mustTakeTour, resumeStep, tourStatus } from "./tourRules";
-import type { Tour } from "./tours/types";
+import { asTour, audienceOf, mustTakeTour, resumeStep, screenTourFor, tourStatus, whatsNew } from "./tourRules";
+import type { ScreenTour, Tour } from "./tours/types";
 import type { TourProgress } from "@/lib/api";
 
 const tour: Tour = {
@@ -70,5 +70,57 @@ describe("tourStatus", () => {
   });
   it("não iniciado", () => {
     expect(tourStatus(null, tour)).toEqual({ kind: "not-started" });
+  });
+});
+
+describe("whatsNew", () => {
+  const t2: Tour = {
+    id: "welcome",
+    version: 2,
+    steps: [
+      { route: "/", title: "old", text: "x" },
+      { route: "/", title: "new", text: "x", since: 2 },
+    ],
+  };
+  it("null sem progresso, sem conclusão ou já na versão", () => {
+    expect(whatsNew(t2, null)).toBeNull();
+    expect(whatsNew(t2, prog({ version: 1, completed_at: null }))).toBeNull();
+    expect(whatsNew(t2, prog({ version: 2, completed_at: "2026-10-02T10:00:00" }))).toBeNull();
+    expect(whatsNew(t2, prog({ version: 3, completed_at: "2026-10-02T10:00:00" }))).toBeNull();
+  });
+  it("devolve só os passos novos desde a versão concluída", () => {
+    const r = whatsNew(t2, prog({ version: 1, completed_at: "2026-10-02T10:00:00" }));
+    expect(r).toEqual({ id: "welcome", version: 2, steps: [t2.steps[1]] });
+  });
+  it("null se a versão subiu sem passo novo", () => {
+    const t: Tour = { ...t2, steps: [t2.steps[0]] };
+    expect(whatsNew(t, prog({ version: 1, completed_at: "2026-10-02T10:00:00" }))).toBeNull();
+  });
+});
+
+describe("screenTourFor", () => {
+  const st = (screen: string, roles: ScreenTour["roles"]): ScreenTour => ({
+    id: `tela-${screen}`,
+    version: 1,
+    screen,
+    roles,
+    steps: [{ title: "a", text: "b" }],
+  });
+  const tours = [st("/admin/colaboradores", ["manager", "master_admin"]), st("/dashboard", ["user", "manager"])];
+  it("acha pela tela exata e por papel em comum", () => {
+    expect(screenTourFor(tours, "/dashboard", ["user"])?.id).toBe("tela-/dashboard");
+    expect(screenTourFor(tours, "/admin/colaboradores", ["user", "master_admin"])?.id).toBe("tela-/admin/colaboradores");
+  });
+  it("null para tela nula, outro papel ou tela sem tour", () => {
+    expect(screenTourFor(tours, null, ["user"])).toBeNull();
+    expect(screenTourFor(tours, "/admin/colaboradores", ["user"])).toBeNull();
+    expect(screenTourFor(tours, "/meu-perfil", ["user"])).toBeNull();
+  });
+});
+
+describe("asTour", () => {
+  it("vira Tour sem rota", () => {
+    const s: ScreenTour = { id: "x", version: 3, screen: "/a", roles: ["user"], steps: [{ title: "a", text: "b" }] };
+    expect(asTour(s)).toEqual({ id: "x", version: 3, steps: [{ title: "a", text: "b" }] });
   });
 });
