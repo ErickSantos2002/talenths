@@ -1,16 +1,19 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.dependencies import get_current_user_id, get_db
+from app.dependencies import get_current_user_id, get_db, require_manager
 
 router = APIRouter(prefix="/tour", tags=["tour"])
 
 TOURS_PER_USER = 50
 MAX_INVITE_DECLINES = 3
+
+# Mesmos ids de frontend/src/help/tours/welcome.ts (backend.contract.test.ts confere).
+WELCOME_TOUR_IDS = {"collaborator": "boas-vindas-colaborador", "manager": "boas-vindas-gestor"}
 
 TourId = Annotated[str, Path(pattern=r"^[a-z0-9-]{1,64}$")]
 Version = Annotated[int, Field(ge=1, le=999)]
@@ -152,3 +155,51 @@ async def decline_invite(
         user_id, tour, MAX_INVITE_DECLINES,
     )
     return _out(row)
+
+
+class AdoptionRow(BaseModel):
+    user_id: str
+    name: str
+    email: str | None
+    department_id: str | None
+    department: str | None
+    audience: Literal["collaborator", "manager"]
+    tour: str
+    version: int | None
+    step: int | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    status: Literal["completed", "in_progress", "not_started"]
+
+
+@router.get("/adoption", response_model=list[AdoptionRow])
+async def adoption(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await require_manager(user_id, conn)
+    # Uma consulta só: quem é gestor vê o tour de gestor; sem linha em tour_progress = não iniciou.
+    rows = await conn.fetch(
+        """SELECT p.user_id::text AS user_id, p.name, p.email,
+                  p.department_id::text AS department_id, d.name AS department,
+                  a.audience, t.tour_id AS tour, tp.version, tp.step,
+                  tp.started_at, tp.completed_at,
+                  CASE WHEN tp.completed_at IS NOT NULL THEN 'completed'
+                       WHEN tp.started_at IS NOT NULL THEN 'in_progress'
+                       ELSE 'not_started' END AS status
+           FROM public.profiles p
+           LEFT JOIN public.departments d ON d.id = p.department_id
+           CROSS JOIN LATERAL (
+               SELECT CASE WHEN COALESCE(bool_or(r.role IN ('manager', 'master_admin')), false)
+                           THEN 'manager' ELSE 'collaborator' END AS audience
+               FROM public.user_roles r WHERE r.user_id = p.user_id
+           ) a
+           CROSS JOIN LATERAL (
+               SELECT CASE a.audience WHEN 'manager' THEN $2::text ELSE $3::text END AS tour_id
+           ) t
+           LEFT JOIN public.tour_progress tp ON tp.user_id = p.user_id AND tp.tour = t.tour_id
+           WHERE p.company_id = (SELECT company_id FROM public.profiles WHERE user_id = $1)
+           ORDER BY p.name, p.user_id""",
+        user_id, WELCOME_TOUR_IDS["manager"], WELCOME_TOUR_IDS["collaborator"],
+    )
+    return [AdoptionRow(**dict(r)) for r in rows]
