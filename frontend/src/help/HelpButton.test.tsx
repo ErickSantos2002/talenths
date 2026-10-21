@@ -15,9 +15,18 @@ vi.mock("@/help/guides", async (orig) => ({
     return guidesMock.value;
   },
 }));
-vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ roles: ["user"], profile: {} }) }));
-const tourMock = vi.hoisted(() => ({ active: false }));
-vi.mock("@/help/TourProvider", () => ({ useTour: () => ({ active: tourMock.active }) }));
+vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ roles: roleMock.roles, profile: {} }) }));
+const tourMock = vi.hoisted(() => ({
+  active: false,
+  welcome: null as unknown,
+  progress: null as unknown,
+  progressAll: [] as unknown[],
+  showScreenTour: vi.fn(),
+  viewWhatsNew: vi.fn(),
+  dismissWhatsNew: vi.fn(),
+}));
+vi.mock("@/help/TourProvider", () => ({ useTour: () => tourMock }));
+const roleMock = vi.hoisted(() => ({ roles: ["user"] }));
 vi.mock("@/help/GuideContent", () => ({ GuideContent: ({ body }: { body: string }) => <div>{body}</div> }));
 
 function guide(over: Partial<Guide>): Guide {
@@ -50,6 +59,13 @@ beforeEach(() => {
   guidesMock.value = { guides: GUIDES, isLoading: false, isError: false, refetch: () => {} };
   guidesMock.enabledArgs = [];
   tourMock.active = false;
+  tourMock.welcome = null;
+  tourMock.progress = null;
+  tourMock.progressAll = [];
+  roleMock.roles = ["user"];
+  tourMock.showScreenTour.mockClear();
+  tourMock.viewWhatsNew.mockClear();
+  tourMock.dismissWhatsNew.mockClear();
 });
 afterEach(() => {
   cleanup();
@@ -131,5 +147,78 @@ describe("HelpButton", () => {
     tourMock.active = true;
     rerender(tree("/meus-videos"));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  describe("what's new and screen tour", () => {
+    const WELCOME = {
+      id: "boas-vindas-colaborador",
+      version: 2,
+      steps: [
+        { target: "a", title: "A", body: "a" },
+        { target: "b", title: "B", body: "b", since: 2 },
+      ],
+    };
+    const done = (version: number) => ({ tour: WELCOME.id, version, step: 0, started_at: "2026-01-01", completed_at: "2026-01-02" });
+    function setWelcome(version: number) {
+      tourMock.welcome = WELCOME;
+      tourMock.progress = done(version);
+      tourMock.progressAll = [done(version)];
+    }
+
+    it("shows the dot and the block when the welcome tour has new steps", () => {
+      setWelcome(1);
+      render(tree("/dashboard"));
+      expect(screen.getByText("(há novidades)")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.getByText("O que mudou")).toBeTruthy();
+      expect(screen.getByText("O tour de boas-vindas ganhou 1 passo novo.")).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: "Ver o que mudou" }));
+      expect(tourMock.viewWhatsNew).toHaveBeenCalledTimes(1);
+      expect((tourMock.viewWhatsNew.mock.calls[0][0] as { steps: unknown[] }).steps).toHaveLength(1);
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("dismisses the what's new block", () => {
+      setWelcome(1);
+      render(tree("/dashboard"));
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Dispensar" }));
+      expect(tourMock.dismissWhatsNew).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("shows nothing when completed on the current version", () => {
+      setWelcome(2);
+      render(tree("/dashboard"));
+      expect(screen.queryByText("(há novidades)")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.queryByText("O que mudou")).toBeNull();
+    });
+
+    it("offers the screen tour on /meu-pdi for a collaborator", () => {
+      render(tree("/meu-pdi"));
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Mostrar nesta tela" }));
+      expect((tourMock.showScreenTour.mock.calls[0][0] as { id: string }).id).toBe("tela-meu-pdi");
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+
+    it("does not offer a screen tour on /dashboard", () => {
+      render(tree("/dashboard"));
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.queryByRole("button", { name: "Mostrar nesta tela" })).toBeNull();
+    });
+
+    it("does not offer an admin screen tour to a collaborator", () => {
+      render(tree("/admin/videos"));
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.queryByRole("button", { name: "Mostrar nesta tela" })).toBeNull();
+    });
+
+    it("does not offer the video tour on /meus-videos", () => {
+      render(tree("/meus-videos"));
+      fireEvent.click(screen.getByRole("button", { name: /Ajuda desta tela/ }));
+      expect(screen.queryByRole("button", { name: "Mostrar nesta tela" })).toBeNull();
+    });
   });
 });
