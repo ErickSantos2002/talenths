@@ -4,8 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { CAPTURES } from "../../scripts/captures.config";
 import { parseGuide } from "./guideParser";
+import { guidesFor, type Guide } from "./guides";
 import { RAW_GUIDES } from "./guidesBundle";
-import { SCREENS } from "./screens";
+import { SCREENS, canOpen, type ScreenContext } from "./screens";
 
 const CAPTURES_DIR = resolve(__dirname, "../../public/capturas");
 const CAPTURE_NAMES = new Set(CAPTURES.map((c) => c.name));
@@ -39,11 +40,16 @@ function links(body: string): { image: boolean; text: string; href: string }[] {
   }));
 }
 
-const routeOk = (href: string) => {
+/** The target must be openable by every role of the source guide, even without the time clock. */
+const routeOk = (href: string, source: Guide) => {
   const path = href.split(/[?#]/)[0];
-  if (SCREENS.some((s) => s.path === path && !s.path.includes(":"))) return true;
+  const everyRole = (ok: (ctx: ScreenContext) => boolean) =>
+    source.roles.every((role) => ok({ roles: [role], timeclockEnabled: false }));
+  if (SCREENS.some((s) => s.path === path && !s.path.includes(":"))) return everyRole((ctx) => canOpen(path, ctx));
   const guide = /^\/ajuda\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(path);
-  return !!guide && guides.some(({ guide: g }) => g.module === guide[1] && g.slug === guide[2]);
+  if (!guide) return false;
+  const all = guides.map((g) => g.guide);
+  return everyRole((ctx) => guidesFor(all, ctx).some((g) => g.module === guide[1] && g.slug === guide[2]));
 };
 
 describe("guides contract", () => {
@@ -88,11 +94,11 @@ describe("guides contract", () => {
     expect(problems).toEqual([]);
   });
 
-  it("every internal link points to a screen of SCREENS or an existing guide", () => {
+  it("every internal link points to a screen or guide that every role of the source guide can open", () => {
     const problems: string[] = [];
     for (const { path, guide } of guides) {
       for (const { href } of links(guide.body).filter((l) => !l.image && l.href.startsWith("/"))) {
-        if (!routeOk(href)) problems.push(`${path}: ${href}`);
+        if (!routeOk(href, guide)) problems.push(`${path}: ${href}`);
       }
     }
     expect(problems).toEqual([]);

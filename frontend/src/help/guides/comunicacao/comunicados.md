@@ -36,4 +36,4 @@ Para ficar por dentro das novidades: eventos, benefícios, avisos do RH e boas-v
 
 **Recebo uma notificação a cada comunicado novo?** Não. Os comunicados não geram notificação no sino. Passe por esta tela de vez em quando.
 
-**Sou gestor e vejo comunicados com a etiqueta Rascunho.** Gestores e administradores também veem aqui os comunicados ainda não publicados. Os colaboradores só veem os publicados. Para escrever, publicar ou apagar comunicados, use a tela [Comunicados](/admin/comunicados) do bloco **Empresa** do menu.
+**Sou gestor e vejo comunicados com a etiqueta Rascunho.** Gestores e administradores também veem aqui os comunicados ainda não publicados. Os colaboradores só veem os publicados. Para escrever, publicar ou apagar comunicados, use a tela **Comunicados** do bloco **Empresa** do menu.

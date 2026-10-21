@@ -41,7 +41,7 @@ No **Ponto Eletrônico** você acompanha as batidas de ponto de quem registra o 
 
 ## O que acontece depois
 
-- A pessoa vê o resultado na tela [Meu Ponto](/ajuda/rh/meu-ponto): a batida confirmada perde o **Aguardando RH**, e a batida com ajuste aprovado ganha o link **ajustado**, com o **Histórico de ajustes**.
+- A pessoa vê o resultado na tela **Meu Ponto**: a batida confirmada perde o **Aguardando RH**, e a batida com ajuste aprovado ganha o link **ajustado**, com o **Histórico de ajustes**.
 - As batidas que você adiciona aparecem com a etiqueta **RH**.
 
 ## Dúvidas comuns
