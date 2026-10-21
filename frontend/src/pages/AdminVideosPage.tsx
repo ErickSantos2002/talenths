@@ -29,10 +29,12 @@ export default function AdminVideosPage() {
   const lastOrder = list.reduce((max, v) => Math.max(max, v.order ?? 0), 0);
   const move = useMutation({
     mutationFn: ({ id, direction }: { id: string; direction: "up" | "down" }) => videos.move(id, direction),
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-videos"] });
-      queryClient.invalidateQueries({ queryKey: ["my-videos"] });
-    },
+    // Returning the refetch keeps the arrows disabled until the new order is on screen.
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin-videos"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-videos"] }),
+      ]),
     onError: () => toast({ title: "Não foi possível mudar a ordem", variant: "destructive" }),
   });
 

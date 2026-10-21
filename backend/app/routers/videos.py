@@ -441,7 +441,7 @@ async def list_videos_admin(
              ON w.video_id = v.id AND w.required AND NOT w.excluded AND w.user_id IS NOT NULL
            WHERE v.company_id = $1::uuid
            GROUP BY v.id
-           ORDER BY v.archived_at IS NOT NULL, v.position, v.created_at DESC""",
+           ORDER BY v.archived_at IS NOT NULL, v.position, v.created_at DESC, v.id""",
         company_id,
     )
     # O número é a posição entre os ativos: arquivado não ocupa lugar na ordem do RH.
@@ -467,17 +467,21 @@ async def move_video(
     video = await _get_video(video_id, company_id, conn)
     if video["archived_at"] is not None:
         raise HTTPException(status_code=409, detail="Vídeo arquivado não tem lugar na ordem")
-    # Trava os ativos da empresa: duas setas ao mesmo tempo não embaralham a lista.
+    # Uma mudança de ordem por empresa de cada vez: duas setas ao mesmo tempo (outra aba,
+    # outra pessoa do RH) leriam a mesma lista e uma desfaria a outra.
+    await conn.execute("SELECT pg_advisory_xact_lock(hashtext('internal_videos_order:' || $1))", company_id)
     ids = [
         r["id"]
         for r in await conn.fetch(
             """SELECT id FROM public.internal_videos
                WHERE company_id = $1::uuid AND archived_at IS NULL
-               ORDER BY position, created_at DESC
-               FOR UPDATE""",
+               ORDER BY position, created_at DESC, id""",
             company_id,
         )
     ]
+    if video_id not in ids:
+        # Arquivado (ou excluído) entre a leitura acima e a trava.
+        raise HTTPException(status_code=409, detail="Vídeo arquivado não tem lugar na ordem")
     i = ids.index(video_id)
     j = i - 1 if body.direction == "up" else i + 1
     if 0 <= j < len(ids):
@@ -725,7 +729,7 @@ async def list_my_videos(
 ):
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
-        f"{_MY_VIDEO_QUERY} ORDER BY v.position, v.created_at DESC", company_id, user_id
+        f"{_MY_VIDEO_QUERY} ORDER BY v.position, v.created_at DESC, v.id", company_id, user_id
     )
     now = datetime.now(timezone.utc)
     required, library = [], []

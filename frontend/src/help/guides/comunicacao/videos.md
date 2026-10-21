@@ -52,6 +52,6 @@ O vídeo abre na sua própria tela:
 
 **Recebi a notificação "Vídeo atualizado: assista novamente".** O vídeo foi trocado por uma versão nova e o seu progresso foi zerado. Assista de novo até o fim.
 
-**Meus vídeos pulam um número (1º, 3º).** O número é o da lista do RH, igual para todos. O vídeo que falta não é obrigatório para você. Em caso de dúvida, fale com o RH.
+**Meus vídeos pulam um número (1º, 3º).** O número é o da lista do RH, igual para todos. O vídeo que falta não é obrigatório para você e aparece na **Biblioteca**. Em caso de dúvida, fale com o RH.
 
 **Um vídeo obrigatório está como Atrasado.** O prazo passou e você ainda não concluiu. Assista até o fim assim que puder. Ele continua valendo.
