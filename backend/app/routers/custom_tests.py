@@ -1,4 +1,5 @@
 import json
+import uuid
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -349,6 +350,8 @@ async def get_my_attempt_detail(
     responses_list = []
     for resp in responses:
         rd = dict(resp)
+        if not show_answers:
+            rd.pop("explanation", None)
         if show_answers:
             opts = await conn.fetch(
                 "SELECT * FROM public.test_question_options WHERE question_id = $1 ORDER BY order_index",
@@ -483,6 +486,21 @@ async def save_responses(
         raise HTTPException(status_code=404, detail="Tentativa não encontrada")
     if attempt["status"] != "in_progress":
         raise HTTPException(status_code=400, detail="Tentativa já finalizada")
+
+    # Só perguntas do teste da tentativa: a FK aceita qualquer pergunta, e resposta
+    # de outro teste vazaria o gabarito dele no resultado desta tentativa.
+    test_question_ids = {
+        r["id"] for r in await conn.fetch(
+            "SELECT id FROM public.test_questions WHERE test_id = $1", attempt["test_id"]
+        )
+    }
+    for resp in body.responses:
+        try:
+            qid = uuid.UUID(resp.question_id)
+        except ValueError:
+            qid = None
+        if qid not in test_question_ids:
+            raise HTTPException(status_code=422, detail="Pergunta não pertence a este teste")
 
     for resp in body.responses:
         existing = await conn.fetchrow(

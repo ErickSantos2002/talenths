@@ -186,3 +186,62 @@ async def test_manager_still_gets_full_detail(db, client_as):
     assert [o["is_correct"] for o in opts] == [True, False, False]
 
     assert (await client_as(user).get(f"/tests/{test_id}")).status_code == 403
+
+
+async def _questions(db, test_id):
+    rows = await db.fetch(
+        "SELECT id FROM public.test_questions WHERE test_id = $1::uuid ORDER BY order_index", test_id
+    )
+    return [str(r["id"]) for r in rows]
+
+
+async def _correct_option(db, question_id):
+    return str(await db.fetchval(
+        "SELECT id FROM public.test_question_options WHERE question_id = $1::uuid AND is_correct", question_id
+    ))
+
+
+async def test_my_attempt_hides_explanation_until_evaluated(db, client_as):
+    company, dept, manager, user = await _setup(db)
+    test_id = await _make_test(db, company, manager, is_public=True)
+    c = client_as(user)
+    attempt = (await c.post(f"/tests/{test_id}/start")).json()["id"]
+    q1, _ = await _questions(db, test_id)
+    r = await c.post(f"/tests/attempts/{attempt}/respond",
+                     json={"responses": [{"question_id": q1, "selected_option_ids": []}]})
+    assert r.status_code == 200, r.text
+
+    r = await c.get(f"/tests/my-attempts/{attempt}")
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "in_progress"
+    assert all("explanation" not in resp for resp in r.json()["responses"]), r.json()
+    assert all("options" not in resp for resp in r.json()["responses"])
+
+    assert (await c.post(f"/tests/attempts/{attempt}/submit")).status_code == 200
+    r = await c.get(f"/tests/my-attempts/{attempt}")
+    assert r.json()["status"] == "evaluated"
+    assert r.json()["responses"][0]["explanation"] == "É às 8h, ver regulamento"
+
+
+async def test_respond_rejects_question_of_another_test(db, client_as):
+    company, dept, manager, user = await _setup(db)
+    target = await _make_test(db, company, manager)  # não atribuído ao usuário
+    probe = await _make_test(db, company, manager, is_public=True)
+    c = client_as(user)
+    attempt = (await c.post(f"/tests/{probe}/start")).json()["id"]
+    probe_q1, _ = await _questions(db, probe)
+    target_q1, _ = await _questions(db, target)
+    guess = await _correct_option(db, target_q1)
+
+    r = await c.post(f"/tests/attempts/{attempt}/respond", json={"responses": [
+        {"question_id": probe_q1, "selected_option_ids": []},
+        {"question_id": target_q1, "selected_option_ids": [guess]},
+    ]})
+    assert r.status_code == 422, r.text
+    assert await db.fetchval(
+        "SELECT COUNT(*) FROM public.test_responses WHERE attempt_id = $1::uuid", attempt
+    ) == 0
+
+    r = await c.post(f"/tests/attempts/{attempt}/respond",
+                     json={"responses": [{"question_id": "não-é-uuid", "text_response": "x"}]})
+    assert r.status_code == 422, r.text
