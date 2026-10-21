@@ -62,7 +62,7 @@ export const ADMIN_STEPS: TourStep[] = [
     route: "/admin/colaboradores",
     element: "admin-collaborators",
     title: "Colaboradores",
-    text: "Clique em **Adicionar Colaborador** para cadastrar alguém; deixe a senha em branco para enviar um convite por e-mail.",
+    text: "Clique em **Adicionar Colaborador** para cadastrar alguém. Defina a senha do primeiro acesso e passe essa senha para a pessoa.",
   },
   {
     route: "/admin/videos",

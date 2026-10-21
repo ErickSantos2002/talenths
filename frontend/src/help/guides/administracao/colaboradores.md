@@ -30,9 +30,7 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 
 1. Clique em **Adicionar Colaborador**.
 2. Preencha **Nome** e **Email**, que são obrigatórios. **CPF**, **Telefone**, **Data de Nascimento**, **Data de Admissão**, **Departamento** e **Cargo** são opcionais.
-3. Em **Senha**, defina a senha do primeiro acesso e passe essa senha para a pessoa.
-
-   Atenção: preencha sempre a **Senha**. Se ficar em branco, a tela avisa que um convite foi enviado por e-mail, mas nenhum e-mail é enviado, e a pessoa fica sem como entrar.
+3. Em **Senha**, que também é obrigatória, defina a senha do primeiro acesso, com pelo menos 6 caracteres. O TalentHS não envia e-mail: passe essa senha para a pessoa.
 4. Em **Função**, escolha **Colaborador** ou **Gerente**.
 5. Clique em **Criar Colaborador**.
 
@@ -63,6 +61,4 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 
 **Não vejo a lixeira para excluir uma pessoa.** Excluir colaboradores é só para administradores. A exclusão não pode ser desfeita.
 
-**Apareceu "Campos obrigatórios".** Confira o nome e o e-mail. Se preencheu CPF ou telefone, eles precisam estar completos, com 11 dígitos.
-
-**Cadastrei sem senha e a pessoa não recebeu nenhum e-mail.** O TalentHS não envia esse e-mail. Clique na chave, na linha da pessoa, defina a senha em **Redefinir Senha** e passe a senha para ela.
+**Apareceu "Campos obrigatórios".** Confira o nome, o e-mail e a senha, que precisa ter pelo menos 6 caracteres. Se preencheu CPF ou telefone, eles precisam estar completos, com 11 dígitos.

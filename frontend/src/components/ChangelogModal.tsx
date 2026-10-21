@@ -40,6 +40,10 @@ const CHANGELOG: ChangelogVersion[] = [
         type: "corrigido",
         text: "Correções de permissão no PDI e no Onboarding.",
       },
+      {
+        type: "corrigido",
+        text: "Cadastro de colaboradores: a senha agora é obrigatória, e a tela não promete mais um convite por e-mail.",
+      },
     ],
   },
   {

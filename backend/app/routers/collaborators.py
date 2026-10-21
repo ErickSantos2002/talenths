@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import date
 import asyncpg
@@ -19,7 +19,9 @@ class CollaboratorCreate(BaseModel):
     phone: Optional[str] = None
     birth_date: Optional[date] = None
     hire_date: Optional[date] = None
-    password: Optional[str] = None
+    # Não há envio de e-mail: sem senha a pessoa ficaria sem como entrar. O mínimo
+    # é o mesmo das telas de redefinir senha e de cadastro por convite.
+    password: str = Field(min_length=6)
     role: str = "user"
     job_title: Optional[str] = None
 
@@ -83,9 +85,7 @@ async def create_collaborator(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já cadastrado")
 
     async with conn.transaction():
-        import secrets
-        password = body.password or secrets.token_urlsafe(16)
-        user = await create_user(conn, body.email, password, body.name)
+        user = await create_user(conn, body.email, body.password, body.name)
         new_user_id = str(user["id"])
 
         await conn.execute(

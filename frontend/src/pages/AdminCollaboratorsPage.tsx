@@ -333,6 +333,7 @@ export default function AdminCollaboratorsPage() {
     if (!addEmail.trim()) missingFields.push("Email");
     if (addCpf.trim() && addCpf.replace(/\D/g, "").length < 11) missingFields.push("CPF (deve ter 11 dígitos)");
     if (addPhone.trim() && addPhone.replace(/\D/g, "").length < 11) missingFields.push("Telefone (deve ter 11 dígitos)");
+    if (addPassword.trim().length < 6) missingFields.push("Senha (mínimo 6 caracteres)");
     if (missingFields.length > 0) {
       toast({ title: `Campos obrigatórios: ${missingFields.join(", ")}`, variant: "destructive" });
       return;
@@ -348,12 +349,11 @@ export default function AdminCollaboratorsPage() {
         phone: addPhone.replace(/\D/g, "") || null,
         birth_date: addBirthDate || null,
         hire_date: addHireDate || null,
-        password: addPassword.trim() || null,
+        password: addPassword.trim(),
         role: addRole,
         job_title: addJobTitle.trim() || null,
-        origin: window.location.origin,
       });
-      toast({ title: "Colaborador criado com sucesso", description: addPassword.trim() ? "O colaborador pode fazer login com a senha definida." : "Um email de convite foi enviado para o colaborador definir sua senha." });
+      toast({ title: "Colaborador criado com sucesso", description: "O colaborador pode fazer login com a senha definida." });
       setAdding(false);
       setAddOpen(false);
       fetchData();
@@ -666,12 +666,12 @@ export default function AdminCollaboratorsPage() {
               <Input value={addJobTitle} onChange={(e) => setAddJobTitle(e.target.value)} placeholder="Ex: Analista de RH Pleno" />
             </div>
             <div className="space-y-2">
-              <Label>Senha</Label>
+              <Label>Senha *</Label>
               <Input
                 type="password"
                 value={addPassword}
                 onChange={(e) => setAddPassword(e.target.value)}
-                placeholder="Deixe em branco para enviar convite por email"
+                placeholder="Mínimo 6 caracteres"
               />
             </div>
             <div className="space-y-2">
