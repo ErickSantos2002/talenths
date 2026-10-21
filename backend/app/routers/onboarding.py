@@ -346,10 +346,12 @@ async def complete_task(
 ):
     now = datetime.now(timezone.utc)
     row = await conn.fetchrow(
-        """SELECT t.completed_at, t.responsible_role, c.user_id AS owner_id, c.company_id,
-                  EXISTS (SELECT 1 FROM user_roles ur
-                          WHERE ur.user_id = $2 AND ur.role IN ('manager', 'master_admin')) AS is_manager,
-                  (SELECT company_id FROM profiles WHERE user_id = $2) AS my_company_id
+        """SELECT t.completed_at, t.responsible_role, c.user_id = $2::uuid AS is_owner,
+                  (
+                    EXISTS (SELECT 1 FROM user_roles ur
+                            WHERE ur.user_id = $2 AND ur.role IN ('manager', 'master_admin'))
+                    AND c.company_id = (SELECT company_id FROM profiles WHERE user_id = $2)
+                  ) IS TRUE AS is_company_manager
            FROM onboarding_checklist_tasks t
            JOIN onboarding_checklists c ON c.id = t.checklist_id
            WHERE t.id = $1""",
@@ -357,9 +359,9 @@ async def complete_task(
     )
     if not row:
         raise HTTPException(404, "Tarefa não encontrada")
-    if row["is_manager"] and row["company_id"] == row["my_company_id"]:
+    if row["is_company_manager"]:
         pass  # gestor da mesma empresa alterna qualquer tarefa
-    elif str(row["owner_id"]) == str(user_id):
+    elif row["is_owner"]:
         # O colaborador já vê as tarefas do RH no próprio checklist, então 403 não
         # revela nada; a tela dele não oferece o clique nessas tarefas.
         if row["responsible_role"] != "user":
