@@ -14,6 +14,7 @@ export interface PdiAction {
 }
 
 export interface PdiPlan {
+  deactivated_at?: string | null;
   id: string;
   user_id: string;
   user_name?: string;

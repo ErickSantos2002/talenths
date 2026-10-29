@@ -21,6 +21,8 @@ import {
   Send, Archive, UserPlus, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 const QUESTION_TYPES = [
   { value: "single_choice", label: "Múltipla escolha (uma resposta)", icon: Circle },
@@ -168,9 +170,10 @@ export default function AdminTesteEditorPage() {
     });
   };
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: assignments = [] } = useQuery<TestAssignment[]>({
-    queryKey: ["test-assignments", testId],
-    queryFn: () => customTests.assignments(testId!),
+    queryKey: ["test-assignments", testId, showInactive],
+    queryFn: () => customTests.assignments(testId!, showInactive),
     enabled: !!testId,
   });
 
@@ -388,6 +391,8 @@ export default function AdminTesteEditorPage() {
               </Button>
             </div>
 
+            <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+
             {/* Lista de atribuições */}
             {assignments.length === 0 ? (
               <p className="text-xs text-muted-foreground">Nenhuma atribuição ainda.</p>
@@ -397,7 +402,7 @@ export default function AdminTesteEditorPage() {
                   <div key={a.id} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
                     <span>
                       {a.user_name
-                        ? <><span className="text-muted-foreground text-xs mr-1">Colaborador</span>{a.user_name}</>
+                        ? <><span className="text-muted-foreground text-xs mr-1">Colaborador</span>{a.user_name}{a.deactivated_at && <> <InactiveBadge /></>}</>
                         : <><span className="text-muted-foreground text-xs mr-1">Departamento</span>{a.department_name}</>
                       }
                     </span>

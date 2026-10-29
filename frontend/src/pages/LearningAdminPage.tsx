@@ -14,14 +14,22 @@ import { useToast } from "@/hooks/use-toast";
 import type { CourseCatalogItem, EmployeeCourse } from "@/types/learning";
 import { GraduationCap, Plus, Pencil, Trash2, Upload, BookOpen, Users, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function groupByUser(courses: EmployeeCourse[]) {
-  const map: Record<string, { name: string; email: string; department?: string; courses: EmployeeCourse[] }> = {};
+  const map: Record<string, { name: string; email: string; department?: string; deactivated: boolean; courses: EmployeeCourse[] }> = {};
   for (const c of courses) {
     if (!map[c.user_id]) {
-      map[c.user_id] = { name: c.user_name ?? c.user_email ?? c.user_id, email: c.user_email ?? "", department: c.department, courses: [] };
+      map[c.user_id] = {
+        name: c.user_name ?? c.user_email ?? c.user_id,
+        email: c.user_email ?? "",
+        department: c.department,
+        deactivated: !!c.deactivated_at,
+        courses: [],
+      };
     }
     map[c.user_id].courses.push(c);
   }
@@ -56,10 +64,11 @@ function TeamTab() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [showInactive, setShowInactive] = useState(false);
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ["learning-team"],
-    queryFn: learningApi.team,
+    queryKey: ["learning-team", showInactive],
+    queryFn: () => learningApi.team(showInactive),
   });
 
   const deleteMutation = useMutation({
@@ -76,8 +85,11 @@ function TeamTab() {
     ? grouped.filter(([, u]) => u.name.toLowerCase().includes(filter.toLowerCase()) || u.department?.toLowerCase().includes(filter.toLowerCase()))
     : grouped;
 
-  const totalAll = totalHours(courses);
-  const areas = areaBreakdown(courses);
+  // Indicadores só da equipe atual, mesmo com desligados visíveis na lista.
+  const counted = courses.filter(c => !c.deactivated_at);
+  const countedPeople = groupByUser(counted).length;
+  const totalAll = totalHours(counted);
+  const areas = areaBreakdown(counted);
 
   return (
     <div className="space-y-4">
@@ -86,7 +98,7 @@ function TeamTab() {
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Colaboradores</p>
-            <p className="text-2xl font-bold">{grouped.length}</p>
+            <p className="text-2xl font-bold">{countedPeople}</p>
           </CardContent>
         </Card>
         <Card>
@@ -98,14 +110,14 @@ function TeamTab() {
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Cursos concluídos</p>
-            <p className="text-2xl font-bold">{courses.length}</p>
+            <p className="text-2xl font-bold">{counted.length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Média por pessoa</p>
             <p className="text-2xl font-bold">
-              {grouped.length > 0 ? (totalAll / grouped.length).toFixed(0) : 0}h
+              {countedPeople > 0 ? (totalAll / countedPeople).toFixed(0) : 0}h
             </p>
           </CardContent>
         </Card>
@@ -122,12 +134,15 @@ function TeamTab() {
         </div>
       )}
 
-      <Input
-        placeholder="Filtrar por nome ou departamento..."
-        value={filter}
-        onChange={e => setFilter(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-wrap items-center gap-4">
+        <Input
+          placeholder="Filtrar por nome ou departamento..."
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+          className="max-w-sm"
+        />
+        <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+      </div>
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -150,6 +165,7 @@ function TeamTab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-sm">{user.name}</span>
+                      {user.deactivated && <InactiveBadge />}
                       {user.department && <span className="text-xs text-muted-foreground">· {user.department}</span>}
                     </div>
                     <div className="flex items-center gap-3 mt-1">

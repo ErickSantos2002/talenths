@@ -83,6 +83,7 @@ export interface TodayStatus extends DaySummary {
 }
 
 export interface TeamDayPerson {
+  deactivated_at?: string | null;
   user_id: string;
   user_name: string;
   department: string | null;

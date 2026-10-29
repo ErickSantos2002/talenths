@@ -17,6 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { OnboardingTemplate, OnboardingChecklist } from "@/types/onboarding";
 import { ClipboardCheck, Plus, Pencil, Trash2, Users, ChevronDown, ChevronRight, UserPlus, CheckCircle2, Circle, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 // ── Assign Dialog ─────────────────────────────────────────────────────────────
 
@@ -235,6 +237,7 @@ function ChecklistCard({ checklist }: { checklist: OnboardingChecklist }) {
           <div className="flex-1 min-w-0" onClick={() => setOpen(!open)} style={{ cursor: "pointer" }}>
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <CardTitle className="text-sm font-semibold">{checklist.user_name}</CardTitle>
+              {checklist.deactivated_at && <InactiveBadge />}
               {checklist.department && <span className="text-xs text-muted-foreground">· {checklist.department}</span>}
               {checklist.template_name && (
                 <Badge variant="outline" className="text-[10px] h-4 px-1.5">{checklist.template_name}</Badge>
@@ -422,10 +425,11 @@ function TemplatesTab() {
 export default function OnboardingAdminPage() {
   const queryClient = useQueryClient();
   const [assignOpen, setAssignOpen] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
 
   const { data: checklists = [], isLoading } = useQuery({
-    queryKey: ["onboarding-team"],
-    queryFn: onboardingApi.team,
+    queryKey: ["onboarding-team", showInactive],
+    queryFn: () => onboardingApi.team(showInactive),
   });
 
   const { data: templates = [] } = useQuery({
@@ -433,9 +437,11 @@ export default function OnboardingAdminPage() {
     queryFn: onboardingApi.listTemplates,
   });
 
-  const total = checklists.length;
-  const completed = checklists.filter(c => c.progress === 100).length;
-  const avgProgress = total > 0 ? Math.round(checklists.reduce((s, c) => s + c.progress, 0) / total) : 0;
+  // Indicadores só da equipe atual, mesmo com desligados visíveis na lista.
+  const counted = checklists.filter(c => !c.deactivated_at);
+  const total = counted.length;
+  const completed = counted.filter(c => c.progress === 100).length;
+  const avgProgress = total > 0 ? Math.round(counted.reduce((s, c) => s + c.progress, 0) / total) : 0;
 
   return (
     <AdminLayout>
@@ -445,9 +451,12 @@ export default function OnboardingAdminPage() {
             <ClipboardCheck className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">Onboarding Digital</h1>
           </div>
-          <Button size="sm" onClick={() => setAssignOpen(true)}>
-            <UserPlus className="h-4 w-4 mr-1" /> Atribuir Onboarding
-          </Button>
+          <div className="flex flex-wrap items-center gap-4">
+            <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+            <Button size="sm" onClick={() => setAssignOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-1" /> Atribuir Onboarding
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="team">

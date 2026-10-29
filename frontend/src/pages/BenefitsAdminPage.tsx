@@ -30,6 +30,8 @@ import type { BenefitCatalogItem, BenefitCategory, BenefitValueType, EmployeeBen
 import { Gift, Users, BookOpen, LayoutDashboard, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HelpTip } from "@/components/HelpTip";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 // ── Currency input ────────────────────────────────────────────────────────────
 
@@ -471,9 +473,10 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
     queryFn: benefitsApi.team,
   });
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: allCollabs = [], isLoading: loadingCollabs } = useQuery({
-    queryKey: ["collaborators"],
-    queryFn: () => collaboratorsApi.list(),
+    queryKey: ["collaborators", showInactive ? "all" : "active"],
+    queryFn: () => collaboratorsApi.list(undefined, showInactive ? "all" : "active"),
   });
 
   const deleteMutation = useMutation({
@@ -499,6 +502,7 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
     userId: c.user_id as string,
     name: (c.name as string) ?? c.user_id,
     department: (c.department_name ?? c.departmentName ?? null) as string | null,
+    deactivated: !!c.deactivated_at,
     benefits: benefitsByUser[c.user_id as string] ?? [],
   }));
 
@@ -524,11 +528,15 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
         <EditAssignmentDialog benefit={editing} onClose={() => setEditing(null)} />
       )}
 
-      <Input
-        placeholder="Buscar colaborador ou departamento..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="flex flex-wrap items-center gap-4">
+        <Input
+          placeholder="Buscar colaborador ou departamento..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+        <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+      </div>
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -544,18 +552,23 @@ function CollaboratorsTab({ catalog }: { catalog: BenefitCatalogItem[] }) {
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-sm">{user.name}</p>
+                    <p className="flex flex-wrap items-center gap-1.5 font-semibold text-sm">
+                      {user.name}
+                      {user.deactivated && <InactiveBadge />}
+                    </p>
                     {user.department && (
                       <p className="text-xs text-muted-foreground">{user.department}</p>
                     )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setAssigning({ userId: user.userId, name: user.name, existingIds: user.benefits.map((b) => b.benefit_id) })}
-                  >
-                    + Atribuir
-                  </Button>
+                  {!user.deactivated && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setAssigning({ userId: user.userId, name: user.name, existingIds: user.benefits.map((b) => b.benefit_id) })}
+                    >
+                      + Atribuir
+                    </Button>
+                  )}
                 </div>
                 {user.benefits.length > 0 ? (
                   <div className="flex flex-wrap gap-2">

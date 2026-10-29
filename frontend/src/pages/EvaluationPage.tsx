@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { EVAL_STATUS_LABELS, type EvalCycle } from "@/types/evaluations";
 import { EvaluationForm } from "@/components/evaluations/EvaluationForm";
 import { CreateEvalCycleDialog } from "@/components/evaluations/CreateEvalCycleDialog";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 export default function EvaluationPage() {
   const { toast } = useToast();
@@ -33,9 +35,10 @@ export default function EvaluationPage() {
     queryFn: evalApi.listCycles,
   });
 
-  const { data: teamStatus, isLoading: teamLoading } = useQuery({
-    queryKey: ["team-status", selectedCycleId],
-    queryFn: () => evalApi.teamStatus(selectedCycleId!),
+  const [showInactive, setShowInactive] = useState(false);
+  const { data: teamRows, isLoading: teamLoading } = useQuery({
+    queryKey: ["team-status", selectedCycleId, showInactive],
+    queryFn: () => evalApi.teamStatus(selectedCycleId!, showInactive),
     enabled: !!selectedCycleId,
   });
 
@@ -69,6 +72,8 @@ export default function EvaluationPage() {
 
   const selectedCycle = cycles?.find(c => c.id === selectedCycleId);
 
+  // Indicadores só da equipe atual, mesmo com desligados visíveis na lista.
+  const teamStatus = teamRows?.filter(m => !m.deactivated_at);
   const selfPct = teamStatus
     ? Math.round((teamStatus.filter(m => m.self_submitted).length / teamStatus.length) * 100)
     : 0;
@@ -160,6 +165,7 @@ export default function EvaluationPage() {
                 <RefreshCw className={`h-4 w-4 mr-2 ${consolidateMutation.isPending ? "animate-spin" : ""}`} />
                 Calcular Notas
               </Button>
+              <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
             </div>
 
             {/* Progress summary */}
@@ -185,7 +191,7 @@ export default function EvaluationPage() {
               <div className="space-y-2">
                 {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
-            ) : teamStatus && teamStatus.length > 0 ? (
+            ) : teamRows && teamRows.length > 0 ? (
               <div className="rounded-xl border overflow-hidden" data-tour="evaluation-table">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50">
@@ -200,7 +206,7 @@ export default function EvaluationPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {teamStatus.map(member => (
+                    {teamRows.map(member => (
                       <tr key={member.user_id} className="border-t hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -208,7 +214,10 @@ export default function EvaluationPage() {
                               <User className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium leading-snug">{member.name}</p>
+                              <p className="flex flex-wrap items-center gap-1.5 font-medium leading-snug">
+                                {member.name}
+                                {member.deactivated_at && <InactiveBadge />}
+                              </p>
                               <p className="text-xs text-muted-foreground">{member.email}</p>
                             </div>
                           </div>

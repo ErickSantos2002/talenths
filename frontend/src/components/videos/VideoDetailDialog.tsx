@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 type Props = { videoId: string | null; onClose: () => void };
 
@@ -49,9 +51,10 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
   const [removeTarget, setRemoveTarget] = useState<ViewerRow | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-video", videoId],
-    queryFn: () => videos.getAdmin(videoId!),
+    queryKey: ["admin-video", videoId, showInactive],
+    queryFn: () => videos.getAdmin(videoId!, showInactive),
     enabled: !!videoId,
   });
 
@@ -169,7 +172,12 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
           <TableBody>
             {filtered.map((r, i) => (
               <TableRow key={r.user_id ?? `former-${i}`}>
-                <TableCell>{r.name ?? "—"}</TableCell>
+                <TableCell>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {r.name ?? "—"}
+                    {r.deactivated_at && <InactiveBadge />}
+                  </span>
+                </TableCell>
                 <TableCell>{r.department ?? "—"}</TableCell>
                 <TableCell><VideoStatusBadge status={r.status} /></TableCell>
                 <TableCell>{Math.round(r.progress_pct)}%</TableCell>
@@ -281,6 +289,7 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+                <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
               </div>
 
               <Tabs defaultValue="required">

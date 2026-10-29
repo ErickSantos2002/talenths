@@ -16,6 +16,7 @@ export interface CareerTrack {
 }
 
 export interface TeamCareerEntry {
+  deactivated_at?: string | null;
   user_id: string;
   name: string;
   email: string;

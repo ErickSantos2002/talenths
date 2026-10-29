@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { timeclock as timeclockApi, collaborators as collaboratorsApi } from "@/lib/api";
 import { PunchHistoryDialog } from "@/components/PunchHistoryDialog";
 import { formatMinutes, formatPunchTime, type Punch, type DaySummary } from "@/types/timeclock";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 const todayISO = () => new Date().toLocaleDateString("en-CA");
 const monthStartISO = () => { const d = new Date(); d.setDate(1); return d.toLocaleDateString("en-CA"); };
@@ -118,9 +120,10 @@ function PunchDialog({ userId, punch, onClose }: { userId: string; punch?: Punch
 
 function TodayTab() {
   const [date, setDate] = useState(todayISO());
+  const [showInactive, setShowInactive] = useState(false);
   const { data, isLoading } = useQuery({
-    queryKey: ["timeclock-team-day", date],
-    queryFn: () => timeclockApi.teamDay(date),
+    queryKey: ["timeclock-team-day", date, showInactive],
+    queryFn: () => timeclockApi.teamDay(date, showInactive),
   });
 
   const STATUS = {
@@ -135,6 +138,9 @@ function TodayTab() {
       <div className="flex items-center gap-2">
         <Label className="text-sm text-muted-foreground">Dia:</Label>
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
+        <div className="ml-2">
+          <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+        </div>
       </div>
       {isLoading ? (
         <Skeleton className="h-64 w-full" />
@@ -155,7 +161,12 @@ function TodayTab() {
             <tbody>
               {data.people.map((p) => (
                 <tr key={p.user_id} className="border-t">
-                  <td className="px-4 py-3 font-medium">{p.user_name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      {p.user_name}
+                      {p.deactivated_at && <InactiveBadge />}
+                    </span>
+                  </td>
                   <td className="px-3 py-3 text-muted-foreground hidden md:table-cell">{p.department ?? "—"}</td>
                   <td className="px-3 py-3 text-center">
                     <Badge variant="outline" className={STATUS[p.status].cls}>{STATUS[p.status].label}</Badge>
@@ -190,13 +201,17 @@ function PeriodTab() {
   const [deleting, setDeleting] = useState<Punch | null>(null);
   const [historyPunchId, setHistoryPunchId] = useState<string | null>(null);
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: colabs = [] } = useQuery({
-    queryKey: ["collaborators"],
-    queryFn: () => collaboratorsApi.list(),
+    queryKey: ["collaborators", showInactive ? "all" : "active"],
+    queryFn: () => collaboratorsApi.list(undefined, showInactive ? "all" : "active"),
   });
   const options = (colabs as Record<string, unknown>[])
     .filter((c) => c.timeclock_enabled)
-    .map((c) => ({ value: c.user_id as string, label: c.name as string }));
+    .map((c) => ({
+      value: c.user_id as string,
+      label: c.deactivated_at ? `${c.name as string} · Desligado(a)` : (c.name as string),
+    }));
 
   const { data, isLoading } = useQuery({
     queryKey: ["timeclock-team-user", userId, start, end],
@@ -229,6 +244,9 @@ function PeriodTab() {
             searchPlaceholder="Buscar pessoa..."
             emptyText="Nenhum habilitado."
           />
+        </div>
+        <div className="pb-2">
+          <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
         </div>
         <div className="space-y-1">
           <Label className="text-xs">De</Label>

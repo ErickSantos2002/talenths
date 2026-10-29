@@ -56,6 +56,7 @@ export const EVAL_STATUS_LABELS: Record<EvalCycle["status"], string> = {
 };
 
 export interface TeamMemberStatus {
+  deactivated_at?: string | null;
   user_id: string;
   name: string;
   email: string;
@@ -73,6 +74,7 @@ export interface ScoreItem {
 }
 
 export interface NineBoxEntry {
+  deactivated_at?: string | null;
   user_id: string;
   name: string;
   email: string;

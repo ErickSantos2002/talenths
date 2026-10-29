@@ -16,6 +16,8 @@ import { ArrowLeft, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   in_progress: { label: "Em andamento", color: "bg-blue-500/15 text-blue-400 border-blue-500/20", icon: Clock },
@@ -45,9 +47,10 @@ export default function AdminTesteTentativasPage() {
     enabled: !!testId,
   });
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: attempts = [], isLoading } = useQuery<TestAttempt[]>({
-    queryKey: ["test-attempts", testId],
-    queryFn: () => customTests.attempts(testId!),
+    queryKey: ["test-attempts", testId, showInactive],
+    queryFn: () => customTests.attempts(testId!, showInactive),
     enabled: !!testId,
   });
 
@@ -133,6 +136,8 @@ export default function AdminTesteTentativasPage() {
           </div>
         )}
 
+        <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+
         {/* Lista de tentativas */}
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando tentativas...</p>
@@ -160,6 +165,7 @@ export default function AdminTesteTentativasPage() {
                         <p className="font-medium text-sm">
                           {attempt.collaborator_name ?? "Colaborador"}
                           <span className="text-muted-foreground font-normal"> · Tentativa #{attempt.attempt_number}</span>
+                          {attempt.deactivated_at && <InactiveBadge />}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           Iniciada em {fmt(attempt.started_at)}

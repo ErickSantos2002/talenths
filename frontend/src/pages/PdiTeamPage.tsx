@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import type { PdiPlan, PdiAction, ActionStatus } from "@/types/pdi";
 import { ACTION_STATUS_LABELS, ACTION_STATUS_COLORS } from "@/types/pdi";
 import { cn } from "@/lib/utils";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 export default function PdiTeamPage() {
   const { toast } = useToast();
@@ -31,9 +33,10 @@ export default function PdiTeamPage() {
   const [editingPlan, setEditingPlan] = useState<PdiPlan | null>(null);
   const [addActionPlanId, setAddActionPlanId] = useState<string | null>(null);
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: plans, isLoading } = useQuery({
-    queryKey: ["pdi-team"],
-    queryFn: pdiApi.team,
+    queryKey: ["pdi-team", showInactive],
+    queryFn: () => pdiApi.team(showInactive),
   });
 
   const deletePlanMutation = useMutation({
@@ -56,10 +59,12 @@ export default function PdiTeamPage() {
 
   const toggleExpand = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const totalPlans = plans?.length ?? 0;
-  const activePlans = plans?.filter(p => p.status === "active").length ?? 0;
-  const avgProgress = plans && plans.length > 0
-    ? Math.round(plans.reduce((s, p) => s + p.progress, 0) / plans.length)
+  // Indicadores só da equipe atual, mesmo com desligados visíveis na lista.
+  const countedPlans = plans?.filter(p => !p.deactivated_at);
+  const totalPlans = countedPlans?.length ?? 0;
+  const activePlans = countedPlans?.filter(p => p.status === "active").length ?? 0;
+  const avgProgress = countedPlans && countedPlans.length > 0
+    ? Math.round(countedPlans.reduce((s, p) => s + p.progress, 0) / countedPlans.length)
     : 0;
 
   return (
@@ -71,9 +76,12 @@ export default function PdiTeamPage() {
             <BookOpen className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight">PDI da Equipe</h1>
           </div>
-          <Button size="sm" onClick={() => setCreatePlanOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Novo PDI
-          </Button>
+          <div className="flex flex-wrap items-center gap-4">
+            <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
+            <Button size="sm" onClick={() => setCreatePlanOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo PDI
+            </Button>
+          </div>
         </div>
 
         {/* Summary */}
@@ -125,6 +133,7 @@ export default function PdiTeamPage() {
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="font-semibold text-sm">{plan.user_name}</span>
                         </div>
+                        {plan.deactivated_at && <InactiveBadge />}
                         {plan.department && <span className="text-xs text-muted-foreground">· {plan.department}</span>}
                         <Badge variant={plan.status === "active" ? "default" : "secondary"} className="text-[10px] h-4 px-1.5">
                           {plan.status === "active" ? "Ativo" : "Encerrado"}

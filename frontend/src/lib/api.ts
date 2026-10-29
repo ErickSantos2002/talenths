@@ -54,6 +54,10 @@ const patch = <T>(path: string, body?: unknown) => request<T>("PATCH", path, bod
 const put = <T>(path: string, body?: unknown) => request<T>("PUT", path, body);
 const del = (path: string) => request<void>("DELETE", path);
 
+// Telas de equipe escondem quem foi desligado; o RH pede para ver o histórico deles.
+const withInactive = (path: string, includeInactive?: boolean) =>
+  includeInactive ? `${path}${path.includes("?") ? "&" : "?"}include_inactive=true` : path;
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const auth = {
@@ -194,14 +198,17 @@ export const evaluations = {
     post<{ ok: boolean; evaluation_id: string }>("/evaluations/submit", data),
   myEvaluation: (cycleId: string) =>
     get<{ submitted: boolean; submitted_at: string | null; scores: ScoreItem[] }>(`/evaluations/my?cycle_id=${cycleId}`),
-  teamStatus: (cycleId: string) => get<TeamMemberStatus[]>(`/evaluations/team-status?cycle_id=${cycleId}`),
+  teamStatus: (cycleId: string, includeInactive?: boolean) =>
+    get<TeamMemberStatus[]>(withInactive(`/evaluations/team-status?cycle_id=${cycleId}`, includeInactive)),
   scores: (cycleId: string, evaluatedUserId: string) =>
     get<{ eval_type: string; submitted_at: string | null; scores: ScoreItem[] }[]>(`/evaluations/scores?cycle_id=${cycleId}&evaluated_user_id=${evaluatedUserId}`),
   consolidate: (cycleId: string) => post<{ ok: boolean; updated: number }>(`/evaluations/cycles/${cycleId}/consolidate`),
   calibrate: (cycleId: string, data: { user_id: string; nine_box_x: number; nine_box_y: number; calibration_note?: string }) =>
     put<{ ok: boolean; quadrant: string }>(`/evaluations/cycles/${cycleId}/calibrate`, data),
-  nineBox: (cycleId: string) =>
-    get<{ grid: Record<string, NineBoxEntry[]>; total: number }>(`/evaluations/9box?cycle_id=${cycleId}`),
+  nineBox: (cycleId: string, includeInactive?: boolean) =>
+    get<{ grid: Record<string, NineBoxEntry[]>; total: number }>(
+      withInactive(`/evaluations/9box?cycle_id=${cycleId}`, includeInactive),
+    ),
 };
 
 // ── Goals ─────────────────────────────────────────────────────────────────────
@@ -261,7 +268,7 @@ export const career = {
   createLevel: (trackId: string, data: object) => post<object>(`/career/tracks/${trackId}/levels`, data),
   updateLevel: (levelId: string, data: object) => put<object>(`/career/levels/${levelId}`, data),
   deleteLevel: (levelId: string) => del(`/career/levels/${levelId}`),
-  team: () => get<TeamCareerEntry[]>("/career/team"),
+  team: (includeInactive?: boolean) => get<TeamCareerEntry[]>(withInactive("/career/team", includeInactive)),
   my: () => get<MyCareer | null>("/career/my"),
   setEmployeeCareer: (userId: string, data: object) => put<{ ok: boolean }>(`/career/employee/${userId}`, data),
 };
@@ -272,7 +279,7 @@ import type { PdiPlan, PdiAction } from "@/types/pdi";
 
 export const pdi = {
   my: () => get<PdiPlan[]>("/pdi/my"),
-  team: () => get<PdiPlan[]>("/pdi/team"),
+  team: (includeInactive?: boolean) => get<PdiPlan[]>(withInactive("/pdi/team", includeInactive)),
   createPlan: (data: object) => post<PdiPlan>("/pdi/plans", data),
   updatePlan: (id: string, data: object) => put<PdiPlan>(`/pdi/plans/${id}`, data),
   deletePlan: (id: string) => del(`/pdi/plans/${id}`),
@@ -310,7 +317,8 @@ export const onboarding = {
   addTemplateTask: (templateId: string, data: object) => post<OnboardingTemplateTask>(`/onboarding/templates/${templateId}/tasks`, data),
   updateTemplateTask: (taskId: string, data: object) => put<OnboardingTemplateTask>(`/onboarding/template-tasks/${taskId}`, data),
   deleteTemplateTask: (taskId: string) => del(`/onboarding/template-tasks/${taskId}`),
-  team: () => get<OnboardingChecklist[]>("/onboarding/team"),
+  team: (includeInactive?: boolean) =>
+    get<OnboardingChecklist[]>(withInactive("/onboarding/team", includeInactive)),
   my: () => get<OnboardingChecklist | null>("/onboarding/my"),
   assign: (data: { user_id: string; template_id?: string; started_at?: string }) =>
     post<OnboardingChecklist>("/onboarding/assign", data),
@@ -362,7 +370,7 @@ export const learning = {
     put<CourseCatalogItem>(`/learning/catalog/${id}`, data),
   deleteCatalogItem: (id: string) => del(`/learning/catalog/${id}`),
   my: () => get<EmployeeCourse[]>("/learning/my"),
-  team: () => get<EmployeeCourse[]>("/learning/team"),
+  team: (includeInactive?: boolean) => get<EmployeeCourse[]>(withInactive("/learning/team", includeInactive)),
   addEmployeeCourse: (userId: string, data: { course_title: string; area: string; hours: number; completed_at: string; catalog_id?: string }) =>
     post<EmployeeCourse>(`/learning/employee/${userId}`, data),
   deleteEmployeeCourse: (courseId: string) => del(`/learning/employee/course/${courseId}`),
@@ -413,7 +421,8 @@ export const timeclock = {
   today: () => get<TodayStatus>("/timeclock/my/today"),
   my: (params: { start_date?: string; end_date?: string } = {}) =>
     get<DaySummary[]>(`/timeclock/my${qs(params)}`),
-  teamDay: (date?: string) => get<TeamDayResponse>(`/timeclock/team${qs({ date })}`),
+  teamDay: (date?: string, includeInactive?: boolean) =>
+    get<TeamDayResponse>(withInactive(`/timeclock/team${qs({ date })}`, includeInactive)),
   teamUser: (user_id: string, start_date?: string, end_date?: string) =>
     get<TeamUserResponse>(`/timeclock/team${qs({ user_id, start_date, end_date })}`),
   manual: (data: { user_id: string; punched_at: string; kind: "in" | "out"; note?: string }) =>
@@ -555,10 +564,12 @@ export const customTests = {
   archive: (id: string) => post<CustomTest>(`/tests/${id}/archive`),
   duplicate: (id: string) => post<CustomTest>(`/tests/${id}/duplicate`),
   stats: (id: string) => get<TestStats>(`/tests/${id}/stats`),
-  attempts: (testId: string) => get<TestAttempt[]>(`/tests/${testId}/attempts`),
+  attempts: (testId: string, includeInactive?: boolean) =>
+    get<TestAttempt[]>(withInactive(`/tests/${testId}/attempts`, includeInactive)),
   getAttempt: (attemptId: string) => get<TestAttemptDetail>(`/tests/attempts/${attemptId}`),
   evaluate: (attemptId: string, data: object) => post<TestAttempt>(`/tests/attempts/${attemptId}/evaluate`, data),
-  assignments: (testId: string) => get<TestAssignment[]>(`/tests/${testId}/assignments`),
+  assignments: (testId: string, includeInactive?: boolean) =>
+    get<TestAssignment[]>(withInactive(`/tests/${testId}/assignments`, includeInactive)),
   assign: (testId: string, data: object) => post<TestAssignment>(`/tests/${testId}/assignments`, data),
   deleteAssignment: (testId: string, assignmentId: string) => del(`/tests/${testId}/assignments/${assignmentId}`),
   // Perguntas
@@ -649,6 +660,7 @@ export interface TakeTestDetail
 }
 
 export interface TestAttempt {
+  deactivated_at?: string | null;
   id: string;
   test_id: string;
   user_id: string;
@@ -704,6 +716,7 @@ export interface TestStats {
 }
 
 export interface TestAssignment {
+  deactivated_at?: string | null;
   id: string;
   test_id: string;
   user_id: string | null;
@@ -810,6 +823,7 @@ export type AdminVideo = {
 };
 
 export type ViewerRow = {
+  deactivated_at?: string | null;
   user_id: string | null;
   name: string | null;
   department: string | null;
@@ -918,7 +932,8 @@ export const videos = {
   cancel: (uploadId: string) => del(`/videos/uploads/${encodeURIComponent(uploadId)}`),
   create: (data: CreateVideoInput) => post<VideoCore>("/videos", data),
   listAdmin: () => get<AdminVideo[]>("/videos/admin"),
-  getAdmin: (id: string) => get<AdminVideoDetail>(`/videos/${encodeURIComponent(id)}/admin`),
+  getAdmin: (id: string, includeInactive?: boolean) =>
+    get<AdminVideoDetail>(withInactive(`/videos/${encodeURIComponent(id)}/admin`, includeInactive)),
   update: (id: string, data: UpdateVideoInput) => patch<VideoCore>(`/videos/${encodeURIComponent(id)}`, data),
   removeViewer: (id: string, userId: string) =>
     post<{ ok: boolean }>(`/videos/${encodeURIComponent(id)}/viewers/${encodeURIComponent(userId)}/remove`),

@@ -21,6 +21,8 @@ import { usePageSize } from "@/hooks/use-page-size";
 import type { CareerTrack, CareerLevel, TeamCareerEntry } from "@/types/career";
 import { cn } from "@/lib/utils";
 import { NINE_BOX_QUADRANTS } from "@/types/evaluations";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 const ELIGIBLE_QUADRANTS = Object.entries(NINE_BOX_QUADRANTS)
   .filter(([, v]) => v.eligible)
@@ -42,9 +44,10 @@ export default function CareerTracksPage() {
     queryFn: careerApi.listTracks,
   });
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: team, isLoading: teamLoading } = useQuery({
-    queryKey: ["career-team"],
-    queryFn: careerApi.team,
+    queryKey: ["career-team", showInactive],
+    queryFn: () => careerApi.team(showInactive),
   });
 
   const deleteTrackMutation = useMutation({
@@ -112,7 +115,8 @@ export default function CareerTracksPage() {
           </TabsList>
 
           {/* ── Equipe ── */}
-          <TabsContent value="equipe" className="mt-4">
+          <TabsContent value="equipe" className="mt-4 space-y-3">
+            <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
             {teamLoading ? (
               <div className="space-y-2">
                 {[1,2,3,4].map(i => <Skeleton key={i} className="h-14 w-full" />)}
@@ -144,7 +148,10 @@ export default function CareerTracksPage() {
                               <User className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium leading-snug">{member.name}</p>
+                              <p className="flex flex-wrap items-center gap-1.5 font-medium leading-snug">
+                                {member.name}
+                                {member.deactivated_at && <InactiveBadge />}
+                              </p>
                               <p className="text-xs text-muted-foreground">{member.email}</p>
                             </div>
                           </div>

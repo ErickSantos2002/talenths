@@ -14,6 +14,8 @@ import {
 import { evaluations as evalApi } from "@/lib/api";
 import { EVAL_STATUS_LABELS, NINE_BOX_QUADRANTS, type NineBoxEntry } from "@/types/evaluations";
 import { cn } from "@/lib/utils";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 // 9Box grid layout: y=3 (top) → y=1 (bottom), x=1 (left) → x=3 (right)
 const GRID_DEF = [
@@ -55,7 +57,8 @@ function NineBoxCell({
             <TooltipTrigger asChild>
               <div className={cn(
                 "inline-flex items-center gap-1 rounded-full bg-background/80 border px-2 py-0.5 text-[10px] font-medium cursor-default shadow-sm",
-                m.calibrated && "border-amber-400/50"
+                m.calibrated && "border-amber-400/50",
+                m.deactivated_at && "opacity-60"
               )}>
                 {m.calibrated && <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400 shrink-0" />}
                 <span className="max-w-[80px] truncate">{m.name.split(" ")[0]}</span>
@@ -64,6 +67,7 @@ function NineBoxCell({
             <TooltipContent side="top" className="text-xs max-w-[200px]">
               <div className="space-y-0.5">
                 <p className="font-semibold">{m.name}</p>
+                {m.deactivated_at && <InactiveBadge />}
                 {m.department && <p className="text-muted-foreground">{m.department}</p>}
                 {m.score_final !== null && <p>Nota: {m.score_final.toFixed(2)}</p>}
                 {m.calibrated && <p className="text-amber-400">Calibrado manualmente</p>}
@@ -84,9 +88,10 @@ export default function NineBoxPage() {
     queryFn: evalApi.listCycles,
   });
 
+  const [showInactive, setShowInactive] = useState(false);
   const { data: nineBoxData, isLoading: boxLoading, refetch } = useQuery({
-    queryKey: ["9box", selectedCycleId],
-    queryFn: () => evalApi.nineBox(selectedCycleId!),
+    queryKey: ["9box", selectedCycleId, showInactive],
+    queryFn: () => evalApi.nineBox(selectedCycleId!, showInactive),
     enabled: !!selectedCycleId,
   });
 
@@ -109,7 +114,8 @@ export default function NineBoxPage() {
             <h1 className="text-2xl font-bold tracking-tight">Mapa de Talentos — 9Box</h1>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ShowInactiveSwitch checked={showInactive} onCheckedChange={setShowInactive} />
             {cyclesLoading ? (
               <Skeleton className="h-9 w-52" />
             ) : cycles && cycles.length > 0 ? (
