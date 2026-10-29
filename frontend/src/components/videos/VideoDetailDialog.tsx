@@ -7,6 +7,7 @@ import { uploadVideoFile } from "@/lib/videoUpload";
 import { formatDueDays, formatDuration } from "@/lib/videoFormat";
 import { VideoFormDialog } from "./VideoFormDialog";
 import { VideoStatusBadge } from "./VideoStatusBadge";
+import { RegisterCompletionDialog } from "./RegisterCompletionDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -37,6 +38,12 @@ function formatDateTime(iso: string | null) {
   return iso ? new Date(iso).toLocaleString("pt-BR") : "—";
 }
 
+// Conclusão registrada pelo RH só tem o dia: a hora seria inventada.
+function formatCompletedAt(r: ViewerRow) {
+  if (!r.completed_at) return "—";
+  return r.registered_by_hr ? new Date(r.completed_at).toLocaleDateString("pt-BR") : formatDateTime(r.completed_at);
+}
+
 export function VideoDetailDialog({ videoId, onClose }: Props) {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -49,6 +56,9 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [removeTarget, setRemoveTarget] = useState<ViewerRow | null>(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerUserId, setRegisterUserId] = useState<string | null>(null);
+  const [undoTarget, setUndoTarget] = useState<ViewerRow | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const [showInactive, setShowInactive] = useState(false);
@@ -93,6 +103,21 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
     },
     onError,
   });
+
+  const undoMut = useMutation({
+    mutationFn: (userId: string) => videos.undoCompletion(videoId!, userId),
+    onSuccess: () => {
+      refresh();
+      toast({ title: "Registro desfeito" });
+      setUndoTarget(null);
+    },
+    onError,
+  });
+
+  const openRegister = (userId: string | null) => {
+    setRegisterUserId(userId);
+    setRegisterOpen(true);
+  };
 
   const replaceMut = useMutation({
     mutationFn: async ({ file, mode }: { file: File; mode: "keep_completed" | "reset_all" }) => {
@@ -166,7 +191,7 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
               <TableHead>Progresso</TableHead>
               <TableHead>Prazo</TableHead>
               <TableHead>Concluído em</TableHead>
-              {canRemove && <TableHead />}
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,19 +204,36 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
                   </span>
                 </TableCell>
                 <TableCell>{r.department ?? "—"}</TableCell>
-                <TableCell><VideoStatusBadge status={r.status} /></TableCell>
+                <TableCell>
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    <VideoStatusBadge status={r.status} />
+                    {r.registered_by_hr && (
+                      <Badge variant="outline" className="whitespace-nowrap font-normal text-muted-foreground">Registrado pelo RH</Badge>
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell>{Math.round(r.progress_pct)}%</TableCell>
                 <TableCell>{r.due_at ? new Date(r.due_at).toLocaleDateString("pt-BR") : "—"}</TableCell>
-                <TableCell>{formatDateTime(r.completed_at)}</TableCell>
-                {canRemove && (
-                  <TableCell>
-                    {r.user_id && (
+                <TableCell>{formatCompletedAt(r)}</TableCell>
+                <TableCell>
+                  <span className="flex justify-end gap-1">
+                    {r.user_id && !r.completed_at && !r.deactivated_at && (
+                      <Button variant="ghost" size="sm" onClick={() => openRegister(r.user_id)}>
+                        Registrar
+                      </Button>
+                    )}
+                    {r.user_id && r.registered_by_hr && (
+                      <Button variant="ghost" size="sm" onClick={() => setUndoTarget(r)}>
+                        Desfazer
+                      </Button>
+                    )}
+                    {canRemove && r.user_id && (
                       <Button variant="ghost" size="sm" onClick={() => setRemoveTarget(r)}>
                         Tirar
                       </Button>
                     )}
-                  </TableCell>
-                )}
+                  </span>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -226,6 +268,9 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
                   Editar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => openRegister(null)}>
+                  Registrar conclusão
                 </Button>
                 <Button
                   variant="outline"
@@ -337,6 +382,39 @@ export function VideoDetailDialog({ videoId, onClose }: Props) {
             </AlertDialogAction>
             <AlertDialogAction onClick={() => startReplace("reset_all")}>
               Todos precisam assistir de novo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {videoId && (
+        <RegisterCompletionDialog
+          videoId={videoId}
+          open={registerOpen}
+          initialUserId={registerUserId}
+          completedUserIds={allRows.filter((r) => r.completed_at && r.user_id).map((r) => r.user_id as string)}
+          onOpenChange={setRegisterOpen}
+        />
+      )}
+
+      <AlertDialog open={!!undoTarget} onOpenChange={(o) => !o && setUndoTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desfazer o registro de {undoTarget?.name ?? "pessoa"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A conclusão registrada pelo RH é apagada. Se o vídeo é obrigatório para a pessoa, ele volta a ficar
+              pendente para ela.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (undoTarget?.user_id) undoMut.mutate(undoTarget.user_id);
+              }}
+            >
+              Desfazer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -51,7 +51,7 @@ No detalhe de um vídeo, quem foi desligado não aparece nas listas, e os númer
 
 Use os filtros de status e de departamento para encontrar quem falta.
 
-![Detalhe do vídeo Técnicas de negociação com duas pessoas pendentes e uma atrasada na aba Obrigatórios](/capturas/admin-video-detalhe.webp)
+![Detalhe do vídeo Técnicas de negociação com uma pessoa pendente, uma concluída com a marca Registrado pelo RH e uma atrasada na aba Obrigatórios](/capturas/admin-video-detalhe.webp)
 
 No detalhe, use também os botões:
 
@@ -62,12 +62,24 @@ No detalhe, use também os botões:
 - **Excluir**: apaga o arquivo e todo o histórico de quem assistiu, depois de confirmar;
 - **Tirar**, na linha de uma pessoa: tira a pessoa da lista de obrigatórios. O progresso dela é mantido.
 
+**Para registrar quem já assistiu antes do sistema:**
+
+1. No detalhe do vídeo, clique em **Registrar conclusão**. Na linha de alguém **Pendente** ou **Atrasado**, você também pode clicar em **Registrar**, que já traz a pessoa escolhida.
+2. Em **Colaborador**, escolha a pessoa. Só aparece quem ainda não concluiu o vídeo.
+3. Em **Data da conclusão**, informe o dia em que ela assistiu. Pode ser hoje ou uma data passada.
+4. Clique em **Registrar conclusão**.
+
+A pessoa passa a aparecer como **Concluído**, com a marca **Registrado pelo RH** e a data informada em **Concluído em**. Quem não é obrigado a assistir aparece em **Voluntários**.
+
+**Para desfazer um registro feito por engano:** na linha da pessoa marcada como **Registrado pelo RH**, clique em **Desfazer** e confirme. Se o vídeo é obrigatório para ela, ele volta a ficar pendente.
+
 ## O que acontece depois
 
 - Cada pessoa que passa a ser obrigada a assistir recebe a notificação **Novo vídeo para assistir** e vê o vídeo em **Obrigatórios**, na tela [Vídeos](/ajuda/comunicacao/videos).
 - O prazo de cada pessoa conta a partir do dia em que o vídeo passou a ser obrigatório para ela. Passado o prazo sem concluir, ela aparece como **Atrasado**.
 - Quem entra na empresa ou muda para um departamento escolhido também recebe o vídeo, enquanto ele não estiver arquivado.
 - Ao trocar o arquivo, quem precisa assistir de novo recebe a notificação **Vídeo atualizado: assista novamente**.
+- A conclusão registrada pelo RH conta igual a quem assistiu pelo sistema: entra em **Concluídos**, tira o vídeo das pendências da pessoa e ela não fica atrasada. Ela não recebe notificação. Com **Todos precisam assistir de novo** em **Trocar arquivo**, os registros do RH também são zerados.
 
 ## Dúvidas comuns
 
@@ -82,5 +94,7 @@ No detalhe, use também os botões:
 **A ordem obriga a assistir em sequência?** Não. O número só indica a ordem sugerida; a pessoa pode assistir na ordem que quiser.
 
 **Vídeo novo ou reativado vai para onde?** Para o fim da lista. Use as setas para mudar a posição. Vídeo arquivado não tem número.
+
+**Não consigo desfazer a conclusão de uma pessoa.** Só dá para desfazer as conclusões com a marca **Registrado pelo RH**. Quem assistiu pelo sistema não pode ser desmarcado.
 
 **Qual a diferença entre Arquivar e Excluir?** **Arquivar** esconde o vídeo e guarda o histórico; dá para reativar. **Excluir** apaga o arquivo e o histórico de vez.

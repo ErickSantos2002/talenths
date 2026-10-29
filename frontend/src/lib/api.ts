@@ -833,6 +833,7 @@ export type ViewerRow = {
   completed_at: string | null;
   assigned_at: string;
   due_at: string | null;
+  registered_by_hr?: boolean;
 };
 
 export type VideoCore = {
@@ -938,6 +939,13 @@ export const videos = {
   update: (id: string, data: UpdateVideoInput) => patch<VideoCore>(`/videos/${encodeURIComponent(id)}`, data),
   removeViewer: (id: string, userId: string) =>
     post<{ ok: boolean }>(`/videos/${encodeURIComponent(id)}/viewers/${encodeURIComponent(userId)}/remove`),
+  registerCompletion: (id: string, userId: string, completedOn: string) =>
+    post<{ ok: boolean }>(
+      `/videos/${encodeURIComponent(id)}/viewers/${encodeURIComponent(userId)}/complete`,
+      { completed_on: completedOn },
+    ),
+  undoCompletion: (id: string, userId: string) =>
+    post<{ ok: boolean }>(`/videos/${encodeURIComponent(id)}/viewers/${encodeURIComponent(userId)}/uncomplete`),
   replaceFile: (id: string, upload_id: string, mode: "keep_completed" | "reset_all") =>
     post<VideoCore>(`/videos/${encodeURIComponent(id)}/replace-file`, { upload_id, mode }),
   archive: (id: string) => post<VideoCore>(`/videos/${encodeURIComponent(id)}/archive`),

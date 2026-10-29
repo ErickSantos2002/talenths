@@ -16,9 +16,23 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.14.0",
+    version: "v1.15.0",
     date: "29/10/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Em Vídeos, o RH pode registrar quem já assistiu a um vídeo antes do sistema, informando a data. A pessoa aparece como concluída, com a marca Registrado pelo RH, e não precisa assistir de novo.",
+      },
+      {
+        type: "melhoria",
+        text: "Um registro feito por engano pode ser desfeito no próprio detalhe do vídeo.",
+      },
+    ],
+  },
+  {
+    version: "v1.14.0",
+    date: "29/10/2026",
     entries: [
       {
         type: "novidade",

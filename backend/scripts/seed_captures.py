@@ -663,6 +663,13 @@ class Seeder:
                WHERE video_id = $1 AND user_id = ANY($2::uuid[])""",
             self.video_ids[2], [self.users[k] for k in ("igor",)],
         )
+        # A Carla já tinha visto antes do sistema: conclusão registrada pela gestora.
+        await self.conn.execute(
+            """UPDATE public.internal_video_viewers
+               SET completed_at = $3, completed_by = $4, completed_registered_at = now()
+               WHERE video_id = $1 AND user_id = $2""",
+            self.video_ids[2], self.users["carla"], self.at(self.days(-60), 12), self.users["gestor"],
+        )
 
     async def bingo(self) -> None:
         rng = random.Random(42)
