@@ -5,6 +5,7 @@ import csv
 import io
 
 from app.dependencies import get_db, get_current_user_id
+from app.learning_import import decode, is_platform, parse_platform
 from app.roster import active_unless, ensure_active_targets, iso_or_none
 
 router = APIRouter(prefix="/learning", tags=["learning"])
@@ -209,6 +210,73 @@ async def delete_employee_course(
 
 # ── CSV Import ────────────────────────────────────────────────────────────────
 
+async def _find_person(conn: asyncpg.Connection, company_id: str, email: str, cpf_digits: str = ""):
+    profile = await conn.fetchrow(
+        "SELECT user_id, deactivated_at FROM profiles WHERE LOWER(email) = $1 AND company_id = $2",
+        email, company_id,
+    ) if email else None
+    if not profile and cpf_digits:
+        profile = await conn.fetchrow(
+            """SELECT user_id, deactivated_at FROM profiles
+               WHERE regexp_replace(cpf, '\\D', '', 'g') = $1 AND company_id = $2""",
+            cpf_digits, company_id,
+        )
+    return profile
+
+
+async def _import_platform(rows, company_id: str, user_id: str, conn: asyncpg.Connection) -> dict:
+    updated = completed = 0
+    errors = []
+    for row in rows:
+        who = row.email or row.name or "sem e-mail"
+        if row.error:
+            errors.append(f"Linha {row.line}: {row.error}")
+            continue
+        profile = await _find_person(conn, company_id, row.email, row.cpf_digits)
+        if not profile:
+            errors.append(f"Linha {row.line}: colaborador '{who}' não encontrado")
+            continue
+        if profile["deactivated_at"] is not None:
+            errors.append(f"Linha {row.line}: colaborador '{who}' desligado")
+            continue
+        try:
+            # Savepoint por linha: um erro aqui não aborta a transação da importação inteira.
+            async with conn.transaction():
+                track = await conn.fetchrow(
+                    """INSERT INTO learning_track_progress
+                         (company_id, user_id, external_track_id, track_name, group_name, courses,
+                          started_at, finished_at, progress_pct, score_pct, imported_at, imported_by)
+                       VALUES ($1, $2, $3, $4, $5, $6,
+                               $7::timestamp AT TIME ZONE 'America/Sao_Paulo',
+                               $8::timestamp AT TIME ZONE 'America/Sao_Paulo', $9, $10, now(), $11)
+                       ON CONFLICT (company_id, user_id, external_track_id) DO UPDATE SET
+                         track_name = EXCLUDED.track_name, group_name = EXCLUDED.group_name,
+                         courses = EXCLUDED.courses, started_at = EXCLUDED.started_at,
+                         finished_at = EXCLUDED.finished_at, progress_pct = EXCLUDED.progress_pct,
+                         score_pct = EXCLUDED.score_pct, imported_at = now(), imported_by = EXCLUDED.imported_by
+                       RETURNING id, employee_course_id""",
+                    company_id, profile["user_id"], row.external_track_id, row.track_name, row.group or None,
+                    row.courses, row.started_at, row.finished_at, row.progress_pct, row.score_pct, user_id,
+                )
+                if row.finished_at and track["employee_course_id"] is None:
+                    course_id = await conn.fetchval(
+                        """INSERT INTO employee_courses (company_id, user_id, course_title, area, hours, completed_at, source)
+                           VALUES ($1, $2, $3, $4, 0, $5, 'csv') RETURNING id""",
+                        company_id, profile["user_id"], row.track_name, row.group or row.track_name,
+                        row.finished_at.date(),
+                    )
+                    await conn.execute(
+                        "UPDATE learning_track_progress SET employee_course_id = $2 WHERE id = $1",
+                        track["id"], course_id,
+                    )
+                    completed += 1
+            updated += 1
+        except Exception as e:
+            errors.append(f"Linha {row.line}: {str(e)}")
+    return {"format": "plataforma", "inserted": completed, "tracks_updated": updated,
+            "tracks_completed": completed, "errors": errors}
+
+
 @router.post("/import-csv")
 async def import_csv(
     file: UploadFile = File(...),
@@ -218,8 +286,11 @@ async def import_csv(
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
 
-    content = await file.read()
-    text = content.decode("utf-8-sig")  # handle BOM
+    text = decode(await file.read())
+    first_line = text.split("\n", 1)[0]
+    if is_platform(first_line.strip().split(";")):
+        return await _import_platform(parse_platform(text), company_id, user_id, conn)
+
     reader = csv.DictReader(io.StringIO(text))
 
     inserted = 0
@@ -232,10 +303,7 @@ async def import_csv(
                 errors.append(f"Linha {i}: email ausente")
                 continue
 
-            profile = await conn.fetchrow(
-                "SELECT user_id, deactivated_at FROM profiles WHERE LOWER(email) = $1 AND company_id = $2",
-                email, company_id,
-            )
+            profile = await _find_person(conn, company_id, email)
             if not profile:
                 errors.append(f"Linha {i}: colaborador '{email}' não encontrado")
                 continue
@@ -255,14 +323,66 @@ async def import_csv(
             hours = float(hours_raw) if hours_raw else 0.0
             completed_at = date_type.fromisoformat(date_raw) if date_raw else date_type.today()
 
-            await conn.execute(
-                """INSERT INTO employee_courses
-                       (company_id, user_id, course_title, area, hours, completed_at, source)
-                   VALUES ($1, $2, $3, $4, $5, $6, 'csv')""",
-                company_id, str(profile["user_id"]), title, area, hours, completed_at,
-            )
+            async with conn.transaction():
+                await conn.execute(
+                    """INSERT INTO employee_courses
+                           (company_id, user_id, course_title, area, hours, completed_at, source)
+                       VALUES ($1, $2, $3, $4, $5, $6, 'csv')""",
+                    company_id, str(profile["user_id"]), title, area, hours, completed_at,
+                )
             inserted += 1
         except Exception as e:
             errors.append(f"Linha {i}: {str(e)}")
 
-    return {"inserted": inserted, "errors": errors}
+    return {"format": "padrao", "inserted": inserted, "tracks_updated": 0, "tracks_completed": 0, "errors": errors}
+
+
+def _ser_track(r) -> dict:
+    return {
+        "id": str(r["id"]),
+        "user_id": str(r["user_id"]),
+        "user_name": r.get("user_name"),
+        "department": r.get("department"),
+        "deactivated_at": iso_or_none(r.get("deactivated_at")),
+        "track_name": r["track_name"],
+        "group_name": r["group_name"],
+        "courses": list(r["courses"] or []),
+        "started_at": iso_or_none(r["started_at"]),
+        "finished_at": iso_or_none(r["finished_at"]),
+        "progress_pct": float(r["progress_pct"]),
+        "score_pct": float(r["score_pct"]) if r["score_pct"] is not None else None,
+        "imported_at": iso_or_none(r["imported_at"]),
+    }
+
+
+@router.get("/team-tracks")
+async def get_team_tracks(
+    include_inactive: bool = False,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    rows = await conn.fetch(
+        f"""SELECT t.*, p.name AS user_name, p.deactivated_at, d.name AS department
+            FROM learning_track_progress t
+            JOIN profiles p ON p.user_id = t.user_id
+            LEFT JOIN departments d ON d.id = p.department_id
+            WHERE t.company_id = $1 AND t.finished_at IS NULL AND {active_unless("p", 2)}
+            ORDER BY p.name, t.track_name""",
+        company_id, include_inactive,
+    )
+    return [_ser_track(r) for r in rows]
+
+
+@router.get("/my-tracks")
+async def get_my_tracks(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    rows = await conn.fetch(
+        """SELECT * FROM learning_track_progress
+           WHERE user_id = $1 AND finished_at IS NULL ORDER BY track_name""",
+        user_id,
+    )
+    return [_ser_track(r) for r in rows]

@@ -1,0 +1,3 @@
+Id do Colaborador;Matrícula Interna;Nome do Colaborador;CPF;Cargo;E-mail;Celular;Grupo;Id da Trilha;Nome da Trilha;Cursos da Trilha;Data que Iniciou a Trilha;Data que Finalizou a Trilha;Progresso na Trilha em %;Aproveitamento na Trilha em %
+1001;;Ana Exemplo;00000000191;;ana@exemplo.com.br;;MARKETING;14427;MARKETING;ChatGPT Marketing: Crie Campanhas com ChatGPT, Copywriting e Redação Publicitária, Fotografia e Vídeo com Celular;2026-07-09 10:08:41;;6;100
+1002;;Bruno Exemplo;00000000272;;bruno@exemplo.com.br;;VENDAS;15001;Técnicas de Vendas;Negociação, Atendimento;2026-05-02 09:00:00;2026-08-20 17:30:00;100;92
