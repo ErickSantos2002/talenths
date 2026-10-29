@@ -251,3 +251,40 @@ async def test_test_stats_exclude_deactivated(db, client_as):
 
     assert r.status_code == 200, r.text
     assert (r.json()["total_attempts"], r.json()["submitted"], r.json()["approved"]) == (1, 1, 1)
+
+
+async def test_absence_calendar_hides_future_absences_of_deactivated(db, client_as):
+    company, manager, active, gone = await setup(db)
+    absence_type = await db.fetchval(
+        "INSERT INTO public.absence_types (company_id, name) VALUES ($1, 'Férias') RETURNING id", company
+    )
+    today = date.today()
+    for uid, start in ((gone, today - timedelta(days=40)), (gone, today + timedelta(days=10)),
+                       (active, today + timedelta(days=10))):
+        await db.execute(
+            """INSERT INTO public.absence_requests (company_id, user_id, type_id, start_date, end_date, days, status)
+               VALUES ($1, $2, $3, $4, $4, 1, 'approved')""",
+            company, uid, absence_type, start,
+        )
+
+    r = await client_as(manager).get("/absences/calendar")
+
+    assert r.status_code == 200, r.text
+    rows = sorted((a["user_name"], a["start_date"] > today.isoformat()) for a in r.json())
+    assert rows == [("Ativa", True), ("Saiu", False)]
+
+
+async def test_test_list_attempt_count_excludes_deactivated(db, client_as):
+    from tests.db.test_custom_tests_take_api import CUSTOM_TESTS_DDL, _make_test
+
+    await db.execute("DROP TABLE public.test_responses")
+    await db.execute(CUSTOM_TESTS_DDL.read_text())
+    company, manager, active, gone = await setup(db)
+    test_id = await _make_test(db, company, manager)
+    for uid in (active, gone):
+        await db.execute("INSERT INTO public.test_attempts (test_id, user_id) VALUES ($1, $2)", test_id, uid)
+
+    r = await client_as(manager).get("/tests")
+
+    assert r.status_code == 200, r.text
+    assert [t["attempt_count"] for t in r.json() if str(t["id"]) == str(test_id)] == [1]

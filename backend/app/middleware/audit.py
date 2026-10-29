@@ -29,6 +29,8 @@ _ACTION_MAP: list[tuple[re.Pattern, str]] = [
     (re.compile(r"DELETE /invitations/"), "Convite removido"),
 
     (re.compile(r"PUT /collaborators/"), "Colaborador atualizado"),
+    (re.compile(r"POST /collaborators/[^/]+/deactivate$"), "Colaborador desligado"),
+    (re.compile(r"POST /collaborators/[^/]+/reactivate$"), "Colaborador reativado"),
 
     (re.compile(r"POST /absences/request"), "Solicitação de ausência criada"),
     (re.compile(r"PUT /absences/.+/approve"), "Ausência aprovada"),

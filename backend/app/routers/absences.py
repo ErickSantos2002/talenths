@@ -186,7 +186,9 @@ async def get_calendar(
 ):
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
-        REQUEST_JOIN + " WHERE ar.company_id = $1 AND ar.status = 'approved' ORDER BY ar.start_date",
+        REQUEST_JOIN + """ WHERE ar.company_id = $1 AND ar.status = 'approved'
+              AND (p.deactivated_at IS NULL OR ar.start_date <= CURRENT_DATE)
+            ORDER BY ar.start_date""",
         company_id,
     )
     return [_ser_request(r) for r in rows]

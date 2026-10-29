@@ -34,3 +34,8 @@ def test_tour_routes_not_logged():
     assert not _should_log("PUT", base)
     for suffix in ("complete", "dismiss", "decline-invite"):
         assert not _should_log("POST", f"{base}/{suffix}")
+
+
+def test_collaborator_status_labels():
+    assert _resolve_action("POST", f"/collaborators/{VID}/deactivate") == "Colaborador desligado"
+    assert _resolve_action("POST", f"/collaborators/{VID}/reactivate") == "Colaborador reativado"

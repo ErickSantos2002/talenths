@@ -632,7 +632,9 @@ async def list_tests(
         """
         SELECT t.*,
           (SELECT COUNT(*) FROM public.test_questions WHERE test_id = t.id) AS question_count,
-          (SELECT COUNT(*) FROM public.test_attempts WHERE test_id = t.id) AS attempt_count
+          (SELECT COUNT(*) FROM public.test_attempts a
+             JOIN public.profiles p ON p.user_id = a.user_id AND p.deactivated_at IS NULL
+            WHERE a.test_id = t.id) AS attempt_count
         FROM public.custom_tests t
         WHERE t.company_id = $1
         ORDER BY t.created_at DESC
