@@ -19,14 +19,22 @@ A **Universidade Corporativa** registra os cursos que os colaboradores concluír
 ## Passo a passo
 
 1. No menu, no bloco **Empresa**, em **Desenvolvimento**, clique em **Universidade**.
-2. Na aba **Progresso da Equipe**, veja o resumo: **Colaboradores**, **Total de horas**, **Cursos concluídos** e **Média por pessoa**. Logo abaixo, as horas de cada área.
-3. Clique no nome de uma pessoa para ver os cursos dela, com a área, as horas e a data de conclusão. Para achar alguém, digite o nome ou o departamento no campo de filtro.
+2. Na aba **Progresso da Equipe**, veja o resumo: **Colaboradores**, **Total de horas**, **Cursos concluídos**, **Média por pessoa** e **Trilhas em andamento**. Logo abaixo, as horas de cada área.
+3. Clique no nome de uma pessoa para ver as trilhas que ela está fazendo, com o percentual, o início e o dia da última importação (**Atualizado em**), e os cursos concluídos, com a área, as horas e a data de conclusão. Para achar alguém, digite o nome ou o departamento no campo de filtro.
 
 Quem foi desligado não aparece na lista nem entra no resumo. Para ver os cursos de quem saiu, ligue **Mostrar desligados**, ao lado do campo de filtro: a pessoa aparece com a etiqueta **Desligado(a)**.
 
 ![Universidade Corporativa com a importação por CSV, o resumo de horas da equipe e a lista de colaboradores](/capturas/admin-universidade.webp)
 
-**Para registrar cursos com uma planilha:**
+**Para importar as trilhas da plataforma de cursos:**
+
+1. Na plataforma de cursos, exporte o relatório das trilhas em CSV.
+2. Em **Importar cursos via CSV**, clique em **Selecionar CSV** e escolha o arquivo exportado, sem alterar nada nele.
+3. Confira o resultado: quantas trilhas foram atualizadas, quantas concluídas foram registradas e, em vermelho, as linhas com problema.
+
+A pessoa é encontrada pelo e-mail e, se o e-mail não bater, pelo CPF. Trilha em andamento aparece com o percentual do arquivo. Trilha que já tem data de finalização também entra como um curso concluído, com 0 h, porque o arquivo não traz a carga horária. Pode importar o arquivo completo sempre que quiser: o percentual é atualizado e nada é registrado duas vezes.
+
+**Para registrar cursos com uma planilha própria:**
 
 1. Monte um arquivo CSV, separado por vírgulas, com as colunas `email`, `titulo`, `area`, `horas` e `data`.
    - `email` é o e-mail da pessoa no TalentHS;
@@ -44,10 +52,13 @@ Quem foi desligado não aparece na lista nem entra no resumo. Para ver os cursos
 
 - Os cursos importados entram no histórico de cada pessoa, em [Minha Universidade](/ajuda/desenvolvimento/minha-universidade), com a etiqueta **CSV**.
 - O resumo e as horas por área da equipe são atualizados na hora.
+- As trilhas em andamento aparecem também para a própria pessoa, em **Minha Universidade**.
 
 ## Dúvidas comuns
 
 **Uma linha deu "colaborador não encontrado".** O e-mail da linha não corresponde a ninguém da empresa. Corrija o e-mail e importe só essa linha de novo.
+
+**A trilha de uma pessoa continua com o percentual antigo.** O percentual muda só quando você importa um arquivo novo da plataforma. Veja em **Atualizado em** o dia da última importação.
 
 **Uma linha deu "título ou área ausente".** As colunas `titulo` e `area` são obrigatórias em todas as linhas.
 

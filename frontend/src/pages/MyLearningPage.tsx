@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import type { EmployeeCourse } from "@/types/learning";
 import { GraduationCap, Clock, CalendarDays, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TrackProgressList } from "@/components/learning/TrackProgressList";
 
 const AREA_COLORS = [
   "bg-blue-500/15 text-blue-400",
@@ -29,6 +30,11 @@ export default function MyLearningPage() {
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ["learning-my"],
     queryFn: learningApi.my,
+  });
+
+  const { data: tracks = [] } = useQuery({
+    queryKey: ["learning-my-tracks"],
+    queryFn: learningApi.myTracks,
   });
 
   const totalHours = courses.reduce((s, c) => s + c.hours, 0);
@@ -107,6 +113,19 @@ export default function MyLearningPage() {
               </CardContent>
             </Card>
           </>
+        )}
+
+        {tracks.length > 0 && (
+          <Card>
+            <CardHeader className="pb-1">
+              <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Trilhas em andamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-0 pb-2">
+              <TrackProgressList tracks={tracks} />
+            </CardContent>
+          </Card>
         )}
 
         {/* Course list */}

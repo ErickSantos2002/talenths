@@ -22,3 +22,19 @@ export interface EmployeeCourse {
   source: "manual" | "csv";
   created_at?: string;
 }
+
+export interface TrackProgress {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  department?: string | null;
+  deactivated_at?: string | null;
+  track_name: string;
+  group_name: string | null;
+  courses: string[];
+  started_at: string | null;
+  finished_at: string | null;
+  progress_pct: number;
+  score_pct: number | null;
+  imported_at: string;
+}

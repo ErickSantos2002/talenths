@@ -360,7 +360,15 @@ export const workshops = {
 
 // ── Learning ──────────────────────────────────────────────────────────────────
 
-import type { CourseCatalogItem, EmployeeCourse } from "@/types/learning";
+import type { CourseCatalogItem, EmployeeCourse, TrackProgress } from "@/types/learning";
+
+export type LearningImportResult = {
+  format: "plataforma" | "padrao";
+  inserted: number;
+  tracks_updated: number;
+  tracks_completed: number;
+  errors: string[];
+};
 
 export const learning = {
   catalog: () => get<CourseCatalogItem[]>("/learning/catalog"),
@@ -371,6 +379,9 @@ export const learning = {
   deleteCatalogItem: (id: string) => del(`/learning/catalog/${id}`),
   my: () => get<EmployeeCourse[]>("/learning/my"),
   team: (includeInactive?: boolean) => get<EmployeeCourse[]>(withInactive("/learning/team", includeInactive)),
+  teamTracks: (includeInactive?: boolean) =>
+    get<TrackProgress[]>(withInactive("/learning/team-tracks", includeInactive)),
+  myTracks: () => get<TrackProgress[]>("/learning/my-tracks"),
   addEmployeeCourse: (userId: string, data: { course_title: string; area: string; hours: number; completed_at: string; catalog_id?: string }) =>
     post<EmployeeCourse>(`/learning/employee/${userId}`, data),
   deleteEmployeeCourse: (courseId: string) => del(`/learning/employee/course/${courseId}`),
@@ -382,7 +393,7 @@ export const learning = {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
-    }).then(r => r.json()) as Promise<{ inserted: number; errors: string[] }>;
+    }).then(r => r.json()) as Promise<LearningImportResult>;
   },
 };
 

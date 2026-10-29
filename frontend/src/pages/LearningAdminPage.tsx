@@ -12,29 +12,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import type { CourseCatalogItem, EmployeeCourse } from "@/types/learning";
+import type { LearningImportResult } from "@/lib/api";
+import { groupByUser } from "@/lib/learningGroups";
+import { TrackProgressList } from "@/components/learning/TrackProgressList";
 import { GraduationCap, Plus, Pencil, Trash2, Upload, BookOpen, Users, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { InactiveBadge } from "@/components/InactiveBadge";
 import { ShowInactiveSwitch } from "@/components/ShowInactiveSwitch";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function groupByUser(courses: EmployeeCourse[]) {
-  const map: Record<string, { name: string; email: string; department?: string; deactivated: boolean; courses: EmployeeCourse[] }> = {};
-  for (const c of courses) {
-    if (!map[c.user_id]) {
-      map[c.user_id] = {
-        name: c.user_name ?? c.user_email ?? c.user_id,
-        email: c.user_email ?? "",
-        department: c.department,
-        deactivated: !!c.deactivated_at,
-        courses: [],
-      };
-    }
-    map[c.user_id].courses.push(c);
-  }
-  return Object.entries(map).sort((a, b) => a[1].name.localeCompare(b[1].name));
-}
 
 function totalHours(courses: EmployeeCourse[]) {
   return courses.reduce((s, c) => s + c.hours, 0);
@@ -70,6 +56,10 @@ function TeamTab() {
     queryKey: ["learning-team", showInactive],
     queryFn: () => learningApi.team(showInactive),
   });
+  const { data: tracks = [] } = useQuery({
+    queryKey: ["learning-team-tracks", showInactive],
+    queryFn: () => learningApi.teamTracks(showInactive),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: learningApi.deleteEmployeeCourse,
@@ -80,7 +70,7 @@ function TeamTab() {
     onError: () => toast({ title: "Erro ao remover", variant: "destructive" }),
   });
 
-  const grouped = groupByUser(courses);
+  const grouped = groupByUser(courses, tracks);
   const filtered = filter
     ? grouped.filter(([, u]) => u.name.toLowerCase().includes(filter.toLowerCase()) || u.department?.toLowerCase().includes(filter.toLowerCase()))
     : grouped;
@@ -90,11 +80,12 @@ function TeamTab() {
   const countedPeople = groupByUser(counted).length;
   const totalAll = totalHours(counted);
   const areas = areaBreakdown(counted);
+  const tracksInProgress = tracks.filter(t => !t.deactivated_at).length;
 
   return (
     <div className="space-y-4">
       {/* Summary bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Colaboradores</p>
@@ -119,6 +110,12 @@ function TeamTab() {
             <p className="text-2xl font-bold">
               {countedPeople > 0 ? (totalAll / countedPeople).toFixed(0) : 0}h
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
+            <p className="text-xs text-muted-foreground">Trilhas em andamento</p>
+            <p className="text-2xl font-bold">{tracksInProgress}</p>
           </CardContent>
         </Card>
       </div>
@@ -170,12 +167,23 @@ function TeamTab() {
                     </div>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-xs text-muted-foreground">{user.courses.length} curso{user.courses.length !== 1 ? "s" : ""}</span>
+                      {user.tracks.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          · {user.tracks.length} trilha{user.tracks.length !== 1 ? "s" : ""} em andamento
+                        </span>
+                      )}
                       <span className="flex items-center gap-1 text-xs font-medium text-primary">
                         <Clock className="h-3 w-3" />{total.toFixed(0)}h
                       </span>
                     </div>
                   </div>
                 </button>
+                {open && user.tracks.length > 0 && (
+                  <div className="border-t bg-muted/20">
+                    <p className="px-4 pt-2.5 text-xs font-semibold text-muted-foreground">Trilhas em andamento</p>
+                    <TrackProgressList tracks={user.tracks} />
+                  </div>
+                )}
                 {open && (
                   <div className="border-t bg-muted/20 divide-y">
                     {user.courses.map(c => (
@@ -368,7 +376,7 @@ function CsvImportSection() {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ inserted: number; errors: string[] } | null>(null);
+  const [result, setResult] = useState<LearningImportResult | null>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -378,9 +386,10 @@ function CsvImportSection() {
     try {
       const res = await learningApi.importCsv(file);
       setResult(res);
-      if (res.inserted > 0) {
+      if (res.inserted > 0 || res.tracks_updated > 0) {
         queryClient.invalidateQueries({ queryKey: ["learning-team"] });
-        toast({ title: `${res.inserted} registro(s) importado(s)` });
+        queryClient.invalidateQueries({ queryKey: ["learning-team-tracks"] });
+        toast({ title: "Importação concluída" });
       }
     } catch {
       toast({ title: "Erro ao importar CSV", variant: "destructive" });
@@ -396,7 +405,8 @@ function CsvImportSection() {
         <div>
           <p className="font-medium text-sm">Importar cursos via CSV</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Colunas: <code className="bg-muted px-1 rounded text-[11px]">email, titulo, area, horas, data</code>
+            Aceita o arquivo exportado da plataforma de cursos (trilhas) ou uma planilha com as colunas{" "}
+            <code className="bg-muted px-1 rounded text-[11px]">email, titulo, area, horas, data</code>
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={loading}>
@@ -408,7 +418,13 @@ function CsvImportSection() {
 
       {result && (
         <div className="space-y-1">
-          <p className="text-sm text-emerald-600 font-medium">{result.inserted} registro(s) importado(s)</p>
+          {result.format === "plataforma" ? (
+            <p className="text-sm text-emerald-600 font-medium">
+              {result.tracks_updated} trilha(s) atualizada(s), {result.tracks_completed} concluída(s) registrada(s)
+            </p>
+          ) : (
+            <p className="text-sm text-emerald-600 font-medium">{result.inserted} registro(s) importado(s)</p>
+          )}
           {result.errors.length > 0 && (
             <div className="rounded-md bg-destructive/10 p-2 space-y-0.5">
               {result.errors.map((e, i) => (

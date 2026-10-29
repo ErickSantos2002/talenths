@@ -495,6 +495,14 @@ class Seeder:
                 await self.ins("employee_courses", company_id=self.company_id, user_id=self.users[key],
                                catalog_id=cid, course_title=title, area=area, hours=hours,
                                completed_at=self.days(-20 - 35 * n))
+        # Trilhas em andamento, como vêm da importação do CSV da plataforma de cursos.
+        tracks = [("ana", "5001", "Marketing Digital", "MARKETING", ["Copywriting", "Social Selling", "Fotografia com Celular"], 45),
+                  ("igor", "5002", "Atendimento ao Cliente", "COMERCIAL", ["Escuta ativa", "Pós-venda"], 20)]
+        for key, ext_id, name, group, track_courses, pct in tracks:
+            await self.ins("learning_track_progress", company_id=self.company_id, user_id=self.users[key],
+                           external_track_id=ext_id, track_name=name, group_name=group, courses=track_courses,
+                           started_at=self.now - timedelta(days=40), progress_pct=pct,
+                           imported_at=self.now - timedelta(days=2), imported_by=self.users["gestor"])
 
     async def workshops(self) -> None:
         rows = [("Primeiros socorros na prática", "Segurança", 7, "open", 20),

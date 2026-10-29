@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.15.0",
+    version: "v1.16.0",
     date: "29/10/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "A Universidade agora importa o arquivo exportado da plataforma de cursos, do jeito que ele vem, sem precisar ajustar a planilha.",
+      },
+      {
+        type: "novidade",
+        text: "As trilhas em andamento aparecem com o percentual concluído e a data da última atualização, para o RH e para o próprio colaborador em Minha Universidade.",
+      },
+      {
+        type: "melhoria",
+        text: "Trilhas concluídas entram sozinhas no histórico de cursos, e importar o mesmo arquivo de novo não duplica nada.",
+      },
+    ],
+  },
+  {
+    version: "v1.15.0",
+    date: "29/10/2026",
     entries: [
       {
         type: "novidade",
