@@ -27,7 +27,10 @@ import { Combobox } from "@/components/Combobox";
 import { Switch } from "@/components/ui/switch";
 import { TablePagination } from "@/components/TablePagination";
 import { usePageSize } from "@/hooks/use-page-size";
-import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound } from "lucide-react";
+import { InactiveBadge } from "@/components/InactiveBadge";
+import { DeactivateCollaboratorDialog, type DeactivateInput } from "@/components/collaborators/DeactivateCollaboratorDialog";
+import { canManageStatus, reasonLabel } from "@/lib/termination";
+import { Users, Building2, Pencil, Trash2, Search, Plus, KeyRound, UserX, UserCheck } from "lucide-react";
 
 type AppRole = "master_admin" | "manager" | "user";
 
@@ -48,7 +51,12 @@ interface Collaborator {
   daily_work_hours: number;
   role: AppRole;
   roleId: string | null;
+  roles: AppRole[];
+  deactivated_at: string | null;
+  termination: { termination_date: string; reason: string; note: string | null } | null;
 }
+
+type StatusFilter = "active" | "inactive" | "all";
 
 interface Department {
   id: string;
@@ -97,6 +105,7 @@ export default function AdminCollaboratorsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [collabPage, setCollabPage] = useState(1);
   const [collabPageSize, setCollabPageSize] = usePageSize("collaborators", PAGE_SIZE);
 
@@ -137,6 +146,11 @@ export default function AdminCollaboratorsPage() {
   // Delete collaborator dialog
   const [deleteTarget, setDeleteTarget] = useState<Collaborator | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Deactivate / reactivate
+  const [deactivateTarget, setDeactivateTarget] = useState<Collaborator | null>(null);
+  const [reactivateTarget, setReactivateTarget] = useState<Collaborator | null>(null);
+  const [reactivating, setReactivating] = useState(false);
 
   // ── Departments tab ──────────────────────────────────────────────────────────
   const [deptDialogOpen, setDeptDialogOpen] = useState(false);
@@ -194,7 +208,7 @@ export default function AdminCollaboratorsPage() {
     setLoading(true);
     try {
       const [collabsData, deptsData] = await Promise.all([
-        collaboratorsApi.list(),
+        collaboratorsApi.list(undefined, "all"),
         departmentsApi.list(),
       ]);
 
@@ -224,6 +238,9 @@ export default function AdminCollaboratorsPage() {
           daily_work_hours: p.daily_work_hours != null ? Number(p.daily_work_hours) : 8.5,
           role: primaryRole,
           roleId: primaryRoleId,
+          roles: rolesList.map((rl) => rl.role),
+          deactivated_at: p.deactivated_at ?? null,
+          termination: p.termination ?? null,
         };
       });
 
@@ -237,15 +254,22 @@ export default function AdminCollaboratorsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const filtered = collaborators
+  const activeCollaborators = collaborators.filter((c) => !c.deactivated_at);
+  const inStatus = collaborators.filter((c) =>
+    statusFilter === "all" ? true : statusFilter === "active" ? !c.deactivated_at : !!c.deactivated_at
+  );
+  const filtered = inStatus
     .filter((c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => ROLE_PRIORITY.indexOf(a.role) - ROLE_PRIORITY.indexOf(b.role));
 
-  // Reset page when search changes
-  useEffect(() => { setCollabPage(1); }, [search]);
+  // Reset page when search or status changes
+  useEffect(() => { setCollabPage(1); }, [search, statusFilter]);
+
+  const canChangeStatus = (c: Collaborator) =>
+    canManageStatus(currentUserRoles as AppRole[], c.roles, c.user_id === currentProfile?.user_id);
 
   const totalCollabPages = Math.ceil(filtered.length / collabPageSize);
   const collabStartIdx = (collabPage - 1) * collabPageSize;
@@ -402,6 +426,33 @@ export default function AdminCollaboratorsPage() {
     fetchData();
   };
 
+  // --- Deactivate / reactivate ---
+  const handleDeactivate = async (input: DeactivateInput) => {
+    if (!deactivateTarget) return;
+    try {
+      await collaboratorsApi.deactivate(deactivateTarget.id, input);
+      toast({ title: "Colaborador desligado", description: `${deactivateTarget.name} não tem mais acesso ao TalentHS.` });
+      setDeactivateTarget(null);
+      fetchData();
+    } catch (err) {
+      toast({ title: "Erro ao desligar colaborador", description: (err as Error).message, variant: "destructive" });
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!reactivateTarget) return;
+    setReactivating(true);
+    try {
+      await collaboratorsApi.reactivate(reactivateTarget.id);
+      toast({ title: "Colaborador reativado", description: `${reactivateTarget.name} pode entrar de novo com a mesma senha.` });
+      fetchData();
+    } catch (err) {
+      toast({ title: "Erro ao reativar colaborador", description: (err as Error).message, variant: "destructive" });
+    }
+    setReactivating(false);
+    setReactivateTarget(null);
+  };
+
   const availableRoles: AppRole[] = ["manager", "user"];
 
   return (
@@ -441,6 +492,16 @@ export default function AdminCollaboratorsPage() {
                   className="w-full pl-9"
                 />
               </div>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-full sm:w-40" aria-label="Situação">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Ativos</SelectItem>
+                  <SelectItem value="inactive">Desligados</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
               <Button onClick={openAdd} className="w-full gap-2 sm:w-auto">
                 <Plus className="h-4 w-4" /> Adicionar Colaborador
               </Button>
@@ -448,9 +509,9 @@ export default function AdminCollaboratorsPage() {
 
             {!loading && (
               <p className="text-xs text-muted-foreground">
-                {filtered.length === collaborators.length
-                  ? `${collaborators.length} colaborador${collaborators.length !== 1 ? "es" : ""}`
-                  : `${filtered.length} de ${collaborators.length} colaborador${collaborators.length !== 1 ? "es" : ""}`}
+                {filtered.length === inStatus.length
+                  ? `${inStatus.length} colaborador${inStatus.length !== 1 ? "es" : ""}`
+                  : `${filtered.length} de ${inStatus.length} colaborador${inStatus.length !== 1 ? "es" : ""}`}
               </p>
             )}
 
@@ -467,7 +528,11 @@ export default function AdminCollaboratorsPage() {
                   <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                     <Users className="mb-4 h-12 w-12 opacity-40" />
                     <p className="text-lg font-medium">
-                      {search ? "Nenhum colaborador encontrado" : "Nenhum colaborador cadastrado"}
+                      {search
+                        ? "Nenhum colaborador encontrado"
+                        : statusFilter === "inactive"
+                          ? "Nenhum colaborador desligado"
+                          : "Nenhum colaborador cadastrado"}
                     </p>
                   </div>
                 ) : (
@@ -488,7 +553,24 @@ export default function AdminCollaboratorsPage() {
                         <TableBody>
                           {paginated.map((collab) => (
                             <TableRow key={collab.id} className="transition-colors hover:bg-muted/40">
-                              <TableCell className="font-medium">{collab.name}</TableCell>
+                              <TableCell className="font-medium">
+                                <div className="flex flex-col gap-1">
+                                  <span>{collab.name}</span>
+                                  {collab.deactivated_at && (
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <InactiveBadge since={collab.termination?.termination_date ?? collab.deactivated_at} />
+                                      {collab.termination && (
+                                        <span
+                                          className="text-xs font-normal text-muted-foreground"
+                                          title={collab.termination.note ?? undefined}
+                                        >
+                                          {reasonLabel(collab.termination.reason)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
                               <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">{collab.email}</TableCell>
                               <TableCell className="hidden text-sm lg:table-cell">{collab.phone ? formatPhone(collab.phone) : "—"}</TableCell>
                               <TableCell className="hidden text-sm lg:table-cell">{collab.departmentName ?? "—"}</TableCell>
@@ -500,20 +582,45 @@ export default function AdminCollaboratorsPage() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-1.5">
-                                  <button
-                                    onClick={() => openEdit(collab)}
-                                    title="Editar"
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => openResetPassword(collab)}
-                                    title="Redefinir senha"
-                                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-colors hover:bg-blue-500/25"
-                                  >
-                                    <KeyRound className="h-3.5 w-3.5" />
-                                  </button>
+                                  {!collab.deactivated_at && (
+                                    <>
+                                      <button
+                                        onClick={() => openEdit(collab)}
+                                        title="Editar"
+                                        aria-label={`Editar ${collab.name}`}
+                                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => openResetPassword(collab)}
+                                        title="Redefinir senha"
+                                        aria-label={`Redefinir senha de ${collab.name}`}
+                                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-500 transition-colors hover:bg-blue-500/25"
+                                      >
+                                        <KeyRound className="h-3.5 w-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+                                  {canChangeStatus(collab) && (collab.deactivated_at ? (
+                                    <button
+                                      onClick={() => setReactivateTarget(collab)}
+                                      title="Reativar"
+                                      aria-label={`Reativar ${collab.name}`}
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 transition-colors hover:bg-emerald-500/25"
+                                    >
+                                      <UserCheck className="h-3.5 w-3.5" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => setDeactivateTarget(collab)}
+                                      title="Desligar"
+                                      aria-label={`Desligar ${collab.name}`}
+                                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/15 text-orange-600 transition-colors hover:bg-orange-500/25"
+                                    >
+                                      <UserX className="h-3.5 w-3.5" />
+                                    </button>
+                                  ))}
                                   {isMasterAdmin && (
                                     <button
                                       onClick={() => setDeleteTarget(collab)}
@@ -582,7 +689,7 @@ export default function AdminCollaboratorsPage() {
                       </TableHeader>
                       <TableBody>
                         {departments.map((dept) => {
-                          const count = collaborators.filter((c) => c.department_id === dept.id).length;
+                          const count = activeCollaborators.filter((c) => c.department_id === dept.id).length;
                           return (
                             <TableRow key={dept.id}>
                               <TableCell className="font-medium">{dept.name}</TableCell>
@@ -888,6 +995,31 @@ export default function AdminCollaboratorsPage() {
             <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <DeactivateCollaboratorDialog
+        name={deactivateTarget?.name ?? null}
+        open={!!deactivateTarget}
+        onOpenChange={(open) => !open && setDeactivateTarget(null)}
+        onConfirm={handleDeactivate}
+      />
+
+      <AlertDialog open={!!reactivateTarget} onOpenChange={(open) => !open && setReactivateTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reativar colaborador</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{reactivateTarget?.name}</strong> volta a ter acesso com a mesma senha e a aparecer nas
+              listas e contagens. Benefícios encerrados no desligamento precisam ser cadastrados de novo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reactivating}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReactivate} disabled={reactivating}>
+              {reactivating ? "Reativando..." : "Reativar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

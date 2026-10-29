@@ -133,9 +133,16 @@ export const departments = {
 
 // ── Collaborators ─────────────────────────────────────────────────────────────
 
+import type { TerminationReason } from "@/lib/termination";
+
+export type CollaboratorStatus = "active" | "inactive" | "all";
+
 export const collaborators = {
-  list: (companyId?: string) =>
-    get<Record<string, unknown>[]>(`/collaborators${companyId ? `?company_id=${companyId}` : ""}`),
+  list: (companyId?: string, status: CollaboratorStatus = "active") => {
+    const qs = new URLSearchParams({ status });
+    if (companyId) qs.set("company_id", companyId);
+    return get<Record<string, unknown>[]>(`/collaborators?${qs}`);
+  },
   create: (data: Record<string, unknown>) =>
     post<Record<string, unknown>>("/collaborators", data),
   update: (profileId: string, data: Record<string, unknown>) =>
@@ -145,6 +152,9 @@ export const collaborators = {
   resetPassword: (profileId: string, password: string) =>
     patch<void>(`/collaborators/${profileId}/password`, { password }),
   delete: (profileId: string) => del(`/collaborators/${profileId}`),
+  deactivate: (profileId: string, body: { termination_date: string; reason: TerminationReason; note?: string }) =>
+    post<void>(`/collaborators/${profileId}/deactivate`, body),
+  reactivate: (profileId: string) => post<void>(`/collaborators/${profileId}/reactivate`),
 };
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
