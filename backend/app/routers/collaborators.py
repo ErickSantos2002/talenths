@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, EmailStr, Field, model_validator
+from typing import Literal, Optional
 from datetime import date
 import asyncpg
 
 from app.auth.service import create_user, update_user_password
 from app.dependencies import get_db, get_current_user_id, require_manager, require_master_admin
+from app.roster import TERMINATION_REASONS
 
 router = APIRouter(prefix="/collaborators", tags=["collaborators"])
 
@@ -47,28 +50,137 @@ class RoleUpdate(BaseModel):
     role: str
 
 
+class DeactivateBody(BaseModel):
+    termination_date: date
+    reason: Literal[TERMINATION_REASONS]
+    note: Optional[str] = Field(default=None, max_length=1000)
+
+    @model_validator(mode="after")
+    def check(self):
+        if self.termination_date > date.today():
+            raise ValueError("A data do desligamento não pode ser futura")
+        self.note = (self.note or "").strip() or None
+        if self.reason == "other" and not self.note:
+            raise ValueError("Descreva o motivo na observação")
+        return self
+
+
 @router.get("")
 async def list_collaborators(
     company_id: Optional[str] = None,
+    status_filter: Literal["active", "inactive", "all"] = Query("active", alias="status"),
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await require_manager(user_id, conn)
-    if company_id:
-        rows = await conn.fetch(
-            "SELECT * FROM public.profiles WHERE company_id = $1", company_id
+    if not company_id:
+        company_id = await conn.fetchval(
+            "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
         )
-    else:
-        rows = await conn.fetch("SELECT * FROM public.profiles")
+    status_clause = {
+        "active": "AND p.deactivated_at IS NULL",
+        "inactive": "AND p.deactivated_at IS NOT NULL",
+        "all": "",
+    }[status_filter]
+    rows = await conn.fetch(
+        f"""SELECT p.*, t.termination_date, t.reason AS termination_reason, t.note AS termination_note
+            FROM public.profiles p
+            LEFT JOIN public.collaborator_terminations t
+              ON t.profile_id = p.id AND t.reactivated_at IS NULL
+            WHERE p.company_id = $1 {status_clause}""",
+        company_id,
+    )
 
     result = []
-    for p in rows:
+    for row in rows:
+        p = dict(row)
+        termination_date = p.pop("termination_date")
+        reason = p.pop("termination_reason")
+        note = p.pop("termination_note")
         roles = await conn.fetch(
             "SELECT id, role FROM public.user_roles WHERE user_id = $1", p["user_id"]
         )
-        result.append({**dict(p), "roles": [dict(r) for r in roles]})
+        p["termination"] = (
+            {"termination_date": termination_date, "reason": reason, "note": note}
+            if p["deactivated_at"] is not None and termination_date is not None
+            else None
+        )
+        result.append({**p, "roles": [dict(r) for r in roles]})
 
     return result
+
+
+async def _status_target(profile_id: str, user_id: str, conn: asyncpg.Connection):
+    """Quem pode desligar/reativar: gerente mexe em colaborador e gerente; administrador
+    só por administrador; ninguém em si mesmo. Fora da empresa de quem chama é 404."""
+    await require_manager(user_id, conn)
+    target = await conn.fetchrow(
+        """SELECT p.id, p.user_id, p.company_id, p.deactivated_at
+           FROM public.profiles p
+           WHERE p.id = $1
+             AND p.company_id = (SELECT company_id FROM public.profiles WHERE user_id = $2)""",
+        profile_id, user_id,
+    )
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Colaborador não encontrado")
+    if str(target["user_id"]) == str(user_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Você não pode desligar a si mesmo")
+    is_admin = await conn.fetchval(
+        "SELECT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = $1 AND role = 'master_admin')",
+        target["user_id"],
+    )
+    if is_admin:
+        await require_master_admin(user_id, conn)
+    return target
+
+
+@router.post("/{profile_id}/deactivate", status_code=status.HTTP_204_NO_CONTENT)
+async def deactivate_collaborator(
+    profile_id: uuid.UUID,
+    body: DeactivateBody,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    target = await _status_target(str(profile_id), user_id, conn)
+    if target["deactivated_at"] is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Colaborador já está desligado")
+
+    async with conn.transaction():
+        await conn.execute(
+            """INSERT INTO public.collaborator_terminations
+                 (profile_id, company_id, termination_date, reason, note, deactivated_by)
+               VALUES ($1, $2, $3, $4, $5, $6)""",
+            target["id"], target["company_id"], body.termination_date, body.reason, body.note, user_id,
+        )
+        await conn.execute(
+            "UPDATE public.profiles SET deactivated_at = now() WHERE id = $1", target["id"]
+        )
+        await conn.execute(
+            """UPDATE public.employee_benefits SET end_date = $2
+               WHERE user_id = $1 AND (end_date IS NULL OR end_date > $2)""",
+            target["user_id"], body.termination_date,
+        )
+
+
+@router.post("/{profile_id}/reactivate", status_code=status.HTTP_204_NO_CONTENT)
+async def reactivate_collaborator(
+    profile_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    target = await _status_target(str(profile_id), user_id, conn)
+    if target["deactivated_at"] is None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Colaborador já está ativo")
+
+    async with conn.transaction():
+        await conn.execute(
+            """UPDATE public.collaborator_terminations SET reactivated_at = now(), reactivated_by = $2
+               WHERE profile_id = $1 AND reactivated_at IS NULL""",
+            target["id"], user_id,
+        )
+        await conn.execute(
+            "UPDATE public.profiles SET deactivated_at = NULL WHERE id = $1", target["id"]
+        )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
