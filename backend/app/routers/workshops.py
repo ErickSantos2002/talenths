@@ -70,7 +70,10 @@ async def list_workshops(
     result = []
     for w in workshops:
         seats_taken = await conn.fetchval(
-            "SELECT COUNT(*) FROM workshop_registrations WHERE workshop_id = $1", w["id"]
+            """SELECT COUNT(*) FROM workshop_registrations r
+               JOIN profiles p ON p.user_id = r.user_id AND p.deactivated_at IS NULL
+               WHERE r.workshop_id = $1""",
+            w["id"],
         )
         reg = await conn.fetchrow(
             "SELECT status FROM workshop_registrations WHERE workshop_id = $1 AND user_id = $2",
@@ -160,7 +163,10 @@ async def register(
 
     if workshop["max_seats"]:
         seats_taken = await conn.fetchval(
-            "SELECT COUNT(*) FROM workshop_registrations WHERE workshop_id = $1", workshop_id
+            """SELECT COUNT(*) FROM workshop_registrations r
+               JOIN profiles p ON p.user_id = r.user_id AND p.deactivated_at IS NULL
+               WHERE r.workshop_id = $1""",
+            workshop_id,
         )
         if seats_taken >= workshop["max_seats"]:
             raise HTTPException(400, "Vagas esgotadas")

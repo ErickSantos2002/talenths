@@ -440,6 +440,8 @@ async def list_videos_admin(
            FROM public.internal_videos v
            LEFT JOIN public.internal_video_viewers w
              ON w.video_id = v.id AND w.required AND NOT w.excluded AND w.user_id IS NOT NULL
+             AND NOT EXISTS (SELECT 1 FROM public.profiles p
+                             WHERE p.user_id = w.user_id AND p.deactivated_at IS NOT NULL)
            WHERE v.company_id = $1::uuid
            GROUP BY v.id
            ORDER BY v.archived_at IS NOT NULL, v.position, v.created_at DESC, v.id""",

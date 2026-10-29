@@ -273,7 +273,7 @@ async def get_positioning(
                AND e.job_family = p.job_family
                AND e.seniority = p.seniority
                AND e.company_id = p.company_id
-           WHERE p.company_id = $1
+           WHERE p.company_id = $1 AND p.deactivated_at IS NULL
            ORDER BY p.name""",
         company_id, reference_id,
     )

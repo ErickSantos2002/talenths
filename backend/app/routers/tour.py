@@ -199,6 +199,7 @@ async def adoption(
            ) t
            LEFT JOIN public.tour_progress tp ON tp.user_id = p.user_id AND tp.tour = t.tour_id
            WHERE p.company_id = (SELECT company_id FROM public.profiles WHERE user_id = $1)
+             AND p.deactivated_at IS NULL
            ORDER BY p.name, p.user_id""",
         user_id, WELCOME_TOUR_IDS["manager"], WELCOME_TOUR_IDS["collaborator"],
     )

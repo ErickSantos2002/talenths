@@ -147,6 +147,7 @@ async def get_birthdays(
            FROM profiles p
            LEFT JOIN departments d ON d.id = p.department_id
            WHERE p.company_id = $1
+             AND p.deactivated_at IS NULL
              AND p.birth_date IS NOT NULL
              AND EXTRACT(MONTH FROM p.birth_date) = $2
            ORDER BY EXTRACT(DAY FROM p.birth_date)""",
@@ -180,6 +181,7 @@ async def get_milestones(
            FROM profiles p
            LEFT JOIN departments d ON d.id = p.department_id
            WHERE p.company_id = $1
+             AND p.deactivated_at IS NULL
              AND p.hire_date IS NOT NULL
              AND EXTRACT(MONTH FROM p.hire_date) = $2
            ORDER BY EXTRACT(DAY FROM p.hire_date)""",

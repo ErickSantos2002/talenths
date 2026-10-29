@@ -14,6 +14,15 @@ TERMINATION_REASONS = (
     "other",
 )
 
+TERMINATION_REASON_LABELS = {
+    "resignation": "Pedido de demissão",
+    "dismissal_without_cause": "Demissão sem justa causa",
+    "dismissal_with_cause": "Demissão por justa causa",
+    "contract_end": "Fim de contrato ou de experiência",
+    "mutual_agreement": "Acordo entre as partes",
+    "other": "Outro",
+}
+
 
 def active_only(alias: str = "p") -> str:
     return f"{alias}.deactivated_at IS NULL"

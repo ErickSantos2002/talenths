@@ -157,6 +157,7 @@ async def get_feed(
                JOIN profiles p ON p.user_id = ar.user_id
                JOIN absence_types at ON at.id = ar.type_id
                WHERE ar.company_id = $1 AND ar.status = 'approved'
+                 AND (p.deactivated_at IS NULL OR ar.start_date <= CURRENT_DATE)
                ORDER BY ar.start_date""",
             company_id,
         )
@@ -175,7 +176,7 @@ async def get_feed(
     birthdays = await conn.fetch(
         """SELECT p.name, p.birth_date
            FROM profiles p
-           WHERE p.company_id = $1 AND p.birth_date IS NOT NULL
+           WHERE p.company_id = $1 AND p.deactivated_at IS NULL AND p.birth_date IS NOT NULL
            ORDER BY EXTRACT(MONTH FROM p.birth_date), EXTRACT(DAY FROM p.birth_date)""",
         company_id,
     )

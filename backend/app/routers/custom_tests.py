@@ -606,7 +606,7 @@ async def submit_attempt(
             """SELECT DISTINCT ur.user_id FROM public.user_roles ur
                JOIN public.profiles p ON p.user_id = ur.user_id
                WHERE ur.role IN ('manager', 'master_admin')
-                 AND p.company_id = $1""",
+                 AND p.company_id = $1 AND p.deactivated_at IS NULL""",
             test["company_id"],
         )
         for mgr in managers:

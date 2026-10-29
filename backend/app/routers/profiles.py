@@ -4,6 +4,7 @@ from typing import Optional
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import active_only
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -64,10 +65,10 @@ async def list_profiles(
 ):
     if company_id:
         rows = await conn.fetch(
-            "SELECT * FROM public.profiles WHERE company_id = $1", company_id
+            f"SELECT * FROM public.profiles p WHERE p.company_id = $1 AND {active_only()}", company_id
         )
     else:
-        rows = await conn.fetch("SELECT * FROM public.profiles")
+        rows = await conn.fetch(f"SELECT * FROM public.profiles p WHERE {active_only()}")
     return [dict(r) for r in rows]
 
 

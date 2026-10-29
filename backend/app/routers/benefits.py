@@ -242,6 +242,8 @@ async def get_summary(
            FROM benefit_catalog bc
            LEFT JOIN employee_benefits eb ON eb.benefit_id = bc.id
                AND (eb.end_date IS NULL OR eb.end_date >= CURRENT_DATE)
+               AND NOT EXISTS (SELECT 1 FROM profiles p
+                               WHERE p.user_id = eb.user_id AND p.deactivated_at IS NOT NULL)
            WHERE bc.company_id = $1
            GROUP BY bc.id, bc.name, bc.category
            ORDER BY bc.category, bc.name""",

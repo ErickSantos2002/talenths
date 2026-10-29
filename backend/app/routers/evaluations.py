@@ -423,7 +423,7 @@ async def consolidate_scores(
 
     # Get all collaborators
     profiles = await conn.fetch(
-        "SELECT user_id, department_id FROM public.profiles WHERE company_id = $1",
+        "SELECT user_id, department_id FROM public.profiles WHERE company_id = $1 AND deactivated_at IS NULL",
         company_id,
     )
 

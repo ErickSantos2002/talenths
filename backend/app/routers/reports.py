@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import TERMINATION_REASON_LABELS, active_unless
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -60,20 +61,23 @@ def _fmt_money(val) -> str:
 
 @router.get("/collaborators")
 async def report_collaborators(
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
-        """SELECT p.name, p.email, d.name AS department, ur.role,
-                  p.birth_date, p.hire_date, p.phone, p.position
-           FROM profiles p
-           LEFT JOIN departments d ON d.id = p.department_id
-           LEFT JOIN user_roles ur ON ur.user_id = p.user_id
-           WHERE p.company_id = $1
-           ORDER BY p.name""",
-        company_id,
+        f"""SELECT p.name, p.email, d.name AS department, ur.role,
+                   p.birth_date, p.hire_date, p.phone, p.position,
+                   p.deactivated_at, t.termination_date, t.reason
+            FROM profiles p
+            LEFT JOIN departments d ON d.id = p.department_id
+            LEFT JOIN user_roles ur ON ur.user_id = p.user_id
+            LEFT JOIN collaborator_terminations t ON t.profile_id = p.id AND t.reactivated_at IS NULL
+            WHERE p.company_id = $1 AND {active_unless("p", 2)}
+            ORDER BY p.name""",
+        company_id, include_inactive,
     )
     ROLE_PT = {"master_admin": "Administrador", "manager": "Gestor", "user": "Colaborador"}
     data = [
@@ -90,6 +94,15 @@ async def report_collaborators(
         for r in rows
     ]
     headers = ["Nome", "E-mail", "Departamento", "Perfil", "Cargo", "Data de Nascimento", "Data de Admissão", "Telefone"]
+    if include_inactive:
+        headers += ["Situação", "Data do desligamento", "Motivo"]
+        for row, r in zip(data, rows):
+            gone = r["deactivated_at"] is not None
+            row += [
+                "Desligado(a)" if gone else "Ativo",
+                _fmt_date(r["termination_date"]) if gone else "",
+                TERMINATION_REASON_LABELS.get(r["reason"], "") if gone else "",
+            ]
     return _csv_response(data, headers, "colaboradores.csv")
 
 
