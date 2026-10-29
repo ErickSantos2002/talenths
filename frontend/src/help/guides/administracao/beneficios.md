@@ -21,6 +21,8 @@ Em **Benefícios** você mantém o catálogo de benefícios da empresa e diz qua
 1. No menu, no bloco **Empresa**, em **Gestão de RH**, clique em **Benefícios**.
 2. Na aba **Visão Geral**, veja quantos benefícios há **No catálogo**, as **Atribuições ativas**, os **Colaboradores contemplados** e, em **Adesão por benefício**, quantas pessoas recebem cada um.
 
+Quem foi desligado não aparece na aba **Colaboradores** nem entra nos números da **Visão Geral**. Os benefícios em aberto da pessoa são encerrados na data do desligamento. Para ver os benefícios de quem saiu, ligue **Mostrar desligados**, ao lado da busca.
+
 **Para cadastrar um benefício no catálogo:**
 
 1. Abra a aba **Catálogo** e clique em **+ Novo benefício**.

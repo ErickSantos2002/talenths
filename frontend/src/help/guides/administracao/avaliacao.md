@@ -26,6 +26,8 @@ Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tel
 3. Veja o resumo: **Colaboradores**, **Autoavaliação** e **Aval. Gestor** (quantas já foram enviadas) e **Notas calc.**.
 4. Na tabela, as colunas **Auto** e **Gestor** mostram um visto verde para avaliação enviada e um relógio para pendente. Ao lado ficam a **Nota Final** e o quadrante do **9Box**.
 
+Quem foi desligado não aparece na tabela nem entra no resumo, e o **Calcular Notas** não calcula nota para essa pessoa. Para ver a avaliação de quem saiu, ligue **Mostrar desligados**, ao lado de **Calcular Notas**: a pessoa aparece com a etiqueta **Desligado(a)**.
+
 ![Avaliação de Desempenho com o resumo do ciclo e a tabela de colaboradores com as notas e o quadrante 9Box](/capturas/admin-avaliacao.webp)
 
 **Para avaliar um colaborador:**

@@ -29,6 +29,8 @@ Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tel
 4. Em cada quadrante, veja o nome e a quantidade de pessoas. Passe o mouse sobre um nome para ver o nome completo, o departamento e a nota.
 5. Se as notas mudaram, clique em **Atualizar**.
 
+Quem foi desligado não aparece no quadro. Para ver a posição de quem saiu, ligue **Mostrar desligados**, no topo: o nome aparece mais claro e, ao passar o mouse, com a etiqueta **Desligado(a)**.
+
 ![Mapa 9Box com os nove quadrantes, as pessoas em cada um e os eixos de avaliação e de metas](/capturas/admin-9box.webp)
 
 A coroa marca os quadrantes elegíveis para a trilha de carreira: **Futuro Talento**, **Alta Competência**, **Forte Talento** e **Super Talento**. Uma estrela ao lado do nome indica que a posição da pessoa foi calibrada manualmente.

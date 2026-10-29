@@ -21,6 +21,8 @@ No **Ponto Eletrônico** você acompanha as batidas de ponto de quem registra o 
 1. No menu, no bloco **Empresa**, em **Gestão de RH**, clique em **Ponto Eletrônico**.
 2. Na aba **Hoje**, veja cada pessoa com o **Status** (**Trabalhando**, **Encerrado**, **Incompleto** ou **Sem registro**), as horas **Trabalhado** sobre as horas previstas e as **Batidas** do dia. Para ver outro dia, mude o **Dia**.
 
+Quem foi desligado não aparece na aba **Hoje** nem na escolha de **Colaborador**. Para ver o ponto de quem saiu, ligue **Mostrar desligados** na aba: a pessoa aparece marcada como **Desligado(a)**.
+
 ![Ponto Eletrônico na aba Hoje com três colaboradores trabalhando, cada um com a entrada do dia](/capturas/admin-ponto.webp)
 
 **Para conferir e corrigir o ponto de uma pessoa:**

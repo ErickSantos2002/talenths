@@ -16,9 +16,31 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.14.0",
+    date: "29/10/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "O RH agora pode desligar quem saiu da empresa, registrando a data e o motivo. A pessoa perde o acesso e deixa de aparecer nas listas e contagens, mas todo o histórico continua guardado.",
+      },
+      {
+        type: "novidade",
+        text: "As telas de gestão ganharam a opção Mostrar desligados, para consultar o histórico de quem saiu.",
+      },
+      {
+        type: "melhoria",
+        text: "Quem foi desligado pode ser reativado, por exemplo numa recontratação, e volta a entrar com a mesma senha.",
+      },
+      {
+        type: "corrigido",
+        text: "O relatório Colaboradores voltou a ser baixado e agora pode incluir quem foi desligado.",
+      },
+    ],
+  },
+  {
     version: "v1.13.0",
     date: "21/10/2026",
-    current: true,
     entries: [
       {
         type: "novidade",

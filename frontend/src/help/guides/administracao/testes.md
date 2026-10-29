@@ -21,6 +21,8 @@ Em **Testes** você monta os testes que os colaboradores fazem pelo TalentHS: es
 1. No menu, no bloco **Empresa**, em **Desempenho**, clique em **Testes**.
 2. Veja a lista de testes. Cada um mostra a situação (**Rascunho** ou **Publicado**; testes antigos podem aparecer como **Arquivado**), o modo de avaliação, o número de perguntas, o total de pontos e quantas tentativas já houve.
 
+Nas tentativas e nas atribuições de um teste, quem foi desligado não aparece, e os números do teste não contam essa pessoa. Para ver o histórico dela, ligue **Mostrar desligados**: ela aparece com a etiqueta **Desligado(a)**.
+
 ![Lista de testes com um rascunho e dois testes publicados](/capturas/admin-testes.webp)
 
 **Para criar um teste:**

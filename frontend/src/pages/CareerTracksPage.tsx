@@ -68,8 +68,10 @@ export default function CareerTracksPage() {
 
   const toggleExpand = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const eligibleCount = team?.filter(m => m.eligible_for_next).length ?? 0;
-  const noTrackCount = team?.filter(m => !m.track_id).length ?? 0;
+  // Indicadores só da equipe atual, mesmo com desligados visíveis na lista.
+  const countedTeam = team?.filter(m => !m.deactivated_at);
+  const eligibleCount = countedTeam?.filter(m => m.eligible_for_next).length ?? 0;
+  const noTrackCount = countedTeam?.filter(m => !m.track_id).length ?? 0;
 
   const totalTeamPages = Math.ceil((team?.length ?? 0) / teamPageSize);
   const teamStartIdx = (teamPage - 1) * teamPageSize;
@@ -95,7 +97,7 @@ export default function CareerTracksPage() {
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-xl border bg-card p-4">
               <p className="text-xs text-muted-foreground">Colaboradores</p>
-              <p className="text-2xl font-bold mt-1">{team.length}</p>
+              <p className="text-2xl font-bold mt-1">{countedTeam?.length ?? 0}</p>
             </div>
             <div className="rounded-xl border bg-card p-4">
               <p className="text-xs text-muted-foreground">Sem trilha</p>

@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { loginErrorMessage } from "@/lib/loginError";
 
 const FEATURES = [
   {
@@ -60,7 +61,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Erro ao entrar",
-        description: "Email ou senha incorretos. Verifique suas credenciais.",
+        description: loginErrorMessage(error),
       });
     } else {
       navigate("/apresentacao");

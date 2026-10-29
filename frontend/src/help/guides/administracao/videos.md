@@ -25,6 +25,8 @@ Clique no **?** e em **Mostrar nesta tela** para um passeio rápido por esta tel
 1. No menu, no bloco **Empresa**, em **Comunicação**, clique em **Vídeos**.
 2. Veja a lista de vídeos na ordem definida pelo RH. Para cada um, a tabela mostra a **Ordem**, a **Duração**, o **Prazo**, quantos **Concluídos** há entre os obrigatórios e quantos **Atrasados**.
 
+No detalhe de um vídeo, quem foi desligado não aparece nas listas, e os números da lista de vídeos não contam essa pessoa. Para ver o que ela assistiu, ligue **Mostrar desligados**, ao lado dos filtros.
+
 ![Tela Vídeos com quatro vídeos numerados, com as setas de ordem, a duração, o prazo, os concluídos e os atrasados de cada um](/capturas/admin-videos.webp)
 
 **Para mudar a ordem dos vídeos:**

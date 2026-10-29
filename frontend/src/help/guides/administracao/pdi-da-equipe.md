@@ -23,6 +23,8 @@ O **PDI da Equipe** reúne os Planos de Desenvolvimento Individual dos colaborad
 3. Em cada plano, veja a pessoa, o departamento, a situação (**Ativo** ou **Encerrado**), o ciclo de avaliação ligado e a barra com quantas ações já foram concluídas.
 4. Clique no plano para ver as ações dele.
 
+Quem foi desligado não aparece na lista nem entra no resumo. Para ver o PDI de quem saiu, ligue **Mostrar desligados**, ao lado de **Novo PDI**: a pessoa aparece com a etiqueta **Desligado(a)**.
+
 ![PDI da Equipe com o resumo e os planos de três colaboradores, cada um com a barra de progresso](/capturas/admin-pdi.webp)
 
 **Para criar um PDI:**

@@ -22,6 +22,8 @@ A **Universidade Corporativa** registra os cursos que os colaboradores concluír
 2. Na aba **Progresso da Equipe**, veja o resumo: **Colaboradores**, **Total de horas**, **Cursos concluídos** e **Média por pessoa**. Logo abaixo, as horas de cada área.
 3. Clique no nome de uma pessoa para ver os cursos dela, com a área, as horas e a data de conclusão. Para achar alguém, digite o nome ou o departamento no campo de filtro.
 
+Quem foi desligado não aparece na lista nem entra no resumo. Para ver os cursos de quem saiu, ligue **Mostrar desligados**, ao lado do campo de filtro: a pessoa aparece com a etiqueta **Desligado(a)**.
+
 ![Universidade Corporativa com a importação por CSV, o resumo de horas da equipe e a lista de colaboradores](/capturas/admin-universidade.webp)
 
 **Para registrar cursos com uma planilha:**

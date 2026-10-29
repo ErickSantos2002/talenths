@@ -24,6 +24,8 @@ Na **Trilha de Carreira** você desenha os caminhos de crescimento da empresa, c
 
    Atenção: a estrela e o número de **Elegíveis para promoção** são só uma indicação aproximada. A conta pode incluir quem nem tem trilha e não confere os critérios do próximo nível. Antes de decidir uma promoção, confira a nota da pessoa e os critérios do próximo nível, na aba **Trilhas & Níveis**.
 
+Quem foi desligado não aparece na aba **Equipe** nem entra no resumo. Para ver a trilha de quem saiu, ligue **Mostrar desligados**, no topo da aba: a pessoa aparece com a etiqueta **Desligado(a)**.
+
 ![Trilha de Carreira com o resumo da equipe e a tabela de colaboradores com trilha, nível e nota](/capturas/admin-trilhas.webp)
 
 **Para colocar uma pessoa numa trilha:**

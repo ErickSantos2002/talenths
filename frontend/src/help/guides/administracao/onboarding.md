@@ -22,6 +22,8 @@ No **Onboarding Digital** você monta os roteiros de integração de quem chega 
 2. Na aba **Equipe**, veja o resumo: **Em onboarding**, **Concluídos** e **Progresso médio**.
 3. Em cada pessoa, veja o template usado e a barra com quantas tarefas já foram concluídas. Clique na pessoa para ver as tarefas, com o responsável (**Colaborador** ou **RH**) e o prazo.
 
+Quem foi desligado não aparece na aba **Equipe** nem entra no resumo. Para ver o onboarding de quem saiu, ligue **Mostrar desligados**, ao lado de **Atribuir Onboarding**: a pessoa aparece com a etiqueta **Desligado(a)**.
+
 ![Onboarding Digital com o resumo da equipe e duas pessoas em integração, com a barra de progresso](/capturas/admin-onboarding.webp)
 
 **Para montar um template:**

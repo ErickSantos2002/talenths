@@ -800,6 +800,37 @@ class Seeder:
                 self.users[who], self.names[who], self.company_id, method, path, action, status, n * 5 + 1,
             )
 
+    async def former_employee(self) -> None:
+        """Um desligado com histórico, para as telas com "Mostrar desligados". Entra por
+        último: nenhuma seção anterior pode atribuir nada a ele."""
+        uid = str(await self.conn.fetchval(
+            """INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, raw_user_meta_data)
+               VALUES ('carlos@exemplo.com.br', $1, now(), jsonb_build_object('name', 'Carlos Exemplo'))
+               RETURNING id""",
+            hash_pw(PASSWORD),
+        ))
+        await self.conn.execute(
+            """UPDATE public.profiles SET company_id = $2, department_id = $3, job_title = 'Assistente Comercial',
+                      birth_date = $4, hire_date = $5
+               WHERE user_id = $1""",
+            uid, self.company_id, self.depts["Comercial"], date(1996, 5, 17), date(self.today.year - 2, 4, 1),
+        )
+        await self.conn.execute(
+            "UPDATE public.user_roles SET company_id = $2 WHERE user_id = $1", uid, self.company_id
+        )
+        pid = await self.ins("pdi_plans", company_id=self.company_id, user_id=uid, eval_cycle_id=self.eval_cycle,
+                             title=f"PDI {self.today.year} — Carlos Exemplo",
+                             description="Plano combinado na conversa de feedback.", created_by=self.users["gestor"])
+        await self.ins("pdi_actions", plan_id=pid, title="Fazer o curso de atendimento ao cliente", position=0,
+                       status="done", completed_at=self.now - timedelta(days=60))
+        profile_id = await self.conn.fetchval("SELECT id FROM public.profiles WHERE user_id = $1", uid)
+        await self.ins("collaborator_terminations", profile_id=profile_id, company_id=self.company_id,
+                       termination_date=self.days(-15), reason="contract_end",
+                       note="Fim do contrato de experiência.", deactivated_by=self.users["gestor"])
+        await self.conn.execute(
+            "UPDATE public.profiles SET deactivated_at = $2 WHERE user_id = $1", uid, self.now - timedelta(days=15)
+        )
+
     async def run(self) -> dict:
         await self.reset()
         await self.company()
@@ -825,6 +856,7 @@ class Seeder:
         await self.timeclock()
         await self.salary()
         await self.misc()
+        await self.former_employee()
         return {
             "company": self.company_id,
             "users": self.users,
