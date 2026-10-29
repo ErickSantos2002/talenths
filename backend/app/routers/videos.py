@@ -2,7 +2,7 @@ import asyncio
 import os
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 import asyncpg
@@ -230,6 +230,10 @@ class ReplaceFileBody(BaseModel):
     mode: Literal["keep_completed", "reset_all"]
 
 
+class CompleteBody(BaseModel):
+    completed_on: date
+
+
 class MoveBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     direction: Literal["up", "down"]
@@ -404,6 +408,7 @@ def _viewer_out(row, video, now: datetime) -> dict:
         "name": row["name"],
         "department": row["department"],
         "deactivated_at": iso_or_none(row.get("deactivated_at")),
+        "registered_by_hr": row.get("completed_by") is not None,
         "status": viewer_status(row["completed_at"], watched, row["assigned_at"], due_days, now),
         "progress_pct": pct,
         "completed_at": row["completed_at"],
@@ -519,7 +524,7 @@ async def get_video_admin(
     video = await _get_video(video_id, company_id, conn)
     rows = await conn.fetch(
         f"""SELECT w.user_id, w.required, w.excluded, w.assigned_at, w.max_watched_s, w.completed_at,
-                   COALESCE(p.name, w.user_name_snapshot) AS name, p.deactivated_at,
+                   w.completed_by, COALESCE(p.name, w.user_name_snapshot) AS name, p.deactivated_at,
                    CASE WHEN w.user_id IS NULL THEN w.department_name_snapshot ELSE d.name END AS department
             FROM public.internal_video_viewers w
             LEFT JOIN public.profiles p ON p.user_id = w.user_id
@@ -600,6 +605,67 @@ async def remove_viewer(
 
 # Arquivo só sai do disco depois do commit: o commit de get_db roda após a resposta, e
 # uma falha ali deixaria o banco apontando para um arquivo já apagado.
+@router.post("/{video_id}/viewers/{target_user_id}/complete")
+async def register_completion(
+    video_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+    body: CompleteBody,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    """O RH registra que a pessoa já viu o vídeo antes do sistema, na data informada."""
+    if body.completed_on > date.today():
+        raise HTTPException(status_code=422, detail="A data da conclusão não pode ser futura")
+    company_id = await _manager_company(user_id, conn)
+    await _get_video(video_id, company_id, conn, lock=True)
+    if not await conn.fetchval(
+        "SELECT 1 FROM public.profiles WHERE user_id = $1 AND company_id = $2::uuid", target_user_id, company_id
+    ):
+        raise HTTPException(status_code=404, detail="Colaborador não encontrado")
+    await ensure_active_targets(conn, [str(target_user_id)])
+    # Meio-dia de Brasília: a data não muda de dia em nenhum fuso do país.
+    saved = await conn.fetchval(
+        """INSERT INTO public.internal_video_viewers
+             (video_id, user_id, required, completed_at, completed_by, completed_registered_at)
+           VALUES ($1, $2, false, ($3::date + time '12:00') AT TIME ZONE 'America/Sao_Paulo', $4::uuid, now())
+           ON CONFLICT (video_id, user_id) DO UPDATE
+             SET completed_at = EXCLUDED.completed_at, completed_by = EXCLUDED.completed_by,
+                 completed_registered_at = EXCLUDED.completed_registered_at
+             WHERE internal_video_viewers.completed_at IS NULL
+           RETURNING id""",
+        video_id, target_user_id, body.completed_on, user_id,
+    )
+    if not saved:
+        raise HTTPException(status_code=409, detail="Esta pessoa já concluiu este vídeo")
+    return {"ok": True}
+
+
+@router.post("/{video_id}/viewers/{target_user_id}/uncomplete")
+async def undo_completion(
+    video_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _manager_company(user_id, conn)
+    await _get_video(video_id, company_id, conn, lock=True)
+    viewer = await conn.fetchrow(
+        "SELECT id, completed_by FROM public.internal_video_viewers WHERE video_id = $1 AND user_id = $2 FOR UPDATE",
+        video_id, target_user_id,
+    )
+    if not viewer:
+        raise HTTPException(status_code=404, detail="Pessoa não está na lista deste vídeo")
+    if viewer["completed_by"] is None:
+        raise HTTPException(status_code=409, detail="Só dá para desfazer conclusões registradas pelo RH")
+    await conn.execute(
+        """UPDATE public.internal_video_viewers
+           SET completed_at = NULL, completed_by = NULL, completed_registered_at = NULL
+           WHERE id = $1""",
+        viewer["id"],
+    )
+    return {"ok": True}
+
+
 @router.post("/{video_id}/replace-file")
 async def replace_file(
     video_id: uuid.UUID,
@@ -624,7 +690,8 @@ async def replace_file(
         await conn.execute(
             f"""WITH reset AS (
                   UPDATE public.internal_video_viewers
-                  SET max_watched_s = 0, completed_at = NULL, last_report_at = NULL
+                  SET max_watched_s = 0, completed_at = NULL, last_report_at = NULL,
+                      completed_by = NULL, completed_registered_at = NULL
                   WHERE video_id = $1 {reset_filter}
                     AND (max_watched_s > 0 OR completed_at IS NOT NULL)
                   RETURNING user_id, required, excluded

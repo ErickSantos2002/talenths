@@ -39,3 +39,8 @@ def test_tour_routes_not_logged():
 def test_collaborator_status_labels():
     assert _resolve_action("POST", f"/collaborators/{VID}/deactivate") == "Colaborador desligado"
     assert _resolve_action("POST", f"/collaborators/{VID}/reactivate") == "Colaborador reativado"
+
+
+def test_video_completion_labels():
+    assert _resolve_action("POST", f"/videos/{VID}/viewers/{UID}/complete") == "Conclusão de vídeo registrada"
+    assert _resolve_action("POST", f"/videos/{VID}/viewers/{UID}/uncomplete") == "Registro de conclusão desfeito"

@@ -111,6 +111,8 @@ _ACTION_MAP: list[tuple[re.Pattern, str]] = [
     (re.compile(r"POST /videos/[^/]+/archive$"), "Vídeo arquivado"),
     (re.compile(r"POST /videos/[^/]+/unarchive$"), "Vídeo desarquivado"),
     (re.compile(r"POST /videos/[^/]+/viewers/[^/]+/remove$"), "Colaborador removido de vídeo"),
+    (re.compile(r"POST /videos/[^/]+/viewers/[^/]+/complete$"), "Conclusão de vídeo registrada"),
+    (re.compile(r"POST /videos/[^/]+/viewers/[^/]+/uncomplete$"), "Registro de conclusão desfeito"),
     (re.compile(r"DELETE /videos/(?!uploads/)[^/]+$"), "Vídeo removido"),
 ]
 
