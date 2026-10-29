@@ -8,6 +8,7 @@ import os
 import uuid
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import ensure_active_targets
 from app.config import settings
 
 router = APIRouter(prefix="/goals", tags=["goals"])
@@ -436,6 +437,7 @@ async def create_goal(
         body.cycle_id, company_id,
     ):
         raise HTTPException(status_code=404, detail="Ciclo não encontrado")
+    await ensure_active_targets(conn, [body.responsible_user_id])
 
     if not await conn.fetchrow(
         "SELECT id FROM public.departments WHERE id = $1 AND company_id = $2",
@@ -556,6 +558,13 @@ async def update_goal(
     # exclude_unset: só os campos enviados. Campos de curva podem ser setados para NULL
     # (limpar a curva); os demais só atualizam quando têm valor.
     data = body.model_dump(exclude_unset=True)
+    if data.get("responsible_user_id"):
+        current = await conn.fetchval(
+            "SELECT responsible_user_id::text FROM public.goals WHERE id = $1 AND company_id = $2",
+            goal_id, company_id,
+        )
+        if data["responsible_user_id"] != current:
+            await ensure_active_targets(conn, [data["responsible_user_id"]])
     nullable = {"curve_v80", "curve_v100", "curve_v120"}
     fields = {k: v for k, v in data.items() if v is not None or k in nullable}
     if not fields:

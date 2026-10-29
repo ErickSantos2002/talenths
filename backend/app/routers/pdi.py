@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
-from app.roster import active_unless, iso_or_none
+from app.roster import active_unless, ensure_active_targets, iso_or_none
 
 router = APIRouter(prefix="/pdi", tags=["pdi"])
 
@@ -152,6 +152,7 @@ async def create_plan(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await ensure_active_targets(conn, [body["user_id"]])
 
     plan = await conn.fetchrow(
         """INSERT INTO pdi_plans (company_id, user_id, eval_cycle_id, title, description, created_by)

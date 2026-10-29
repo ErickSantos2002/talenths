@@ -5,6 +5,7 @@ import secrets
 import json
 
 from app.dependencies import get_db, get_current_user_id, require_manager
+from app.roster import ensure_active_targets
 from app import bingo_logic
 
 router = APIRouter(prefix="/bingo", tags=["bingo"])
@@ -82,6 +83,7 @@ async def create_game(body: GameCreate, user_id: str = Depends(get_current_user_
     parts = list(dict.fromkeys(body.participant_user_ids))
     if not parts:
         raise HTTPException(status_code=400, detail="Selecione ao menos um participante")
+    await ensure_active_targets(conn, parts)
     if body.winners_target < 1 or body.winners_target > len(parts):
         raise HTTPException(status_code=400, detail="Nº de ganhadores deve ser entre 1 e o total de participantes")
     if body.near_threshold not in (1, 2):

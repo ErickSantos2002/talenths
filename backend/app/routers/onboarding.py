@@ -3,7 +3,7 @@ from datetime import datetime, timezone, date as date_type, timedelta
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
-from app.roster import active_unless, iso_or_none
+from app.roster import active_unless, ensure_active_targets, iso_or_none
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
@@ -273,6 +273,7 @@ async def assign_checklist(
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     target_user_id = body["user_id"]
+    await ensure_active_targets(conn, [target_user_id])
     template_id = body.get("template_id")
     started_at_raw = body.get("started_at")
     started_at = date_type.fromisoformat(started_at_raw) if started_at_raw else date_type.today()

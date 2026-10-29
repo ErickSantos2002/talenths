@@ -15,7 +15,7 @@ from app import video_storage
 from app.config import settings
 from app.database import get_pool
 from app.dependencies import ensure_active_user, get_current_user_id, get_db, require_manager
-from app.roster import active_unless, iso_or_none
+from app.roster import active_unless, ensure_active_targets, iso_or_none
 from app.video_logic import (
     MAX_FILE_SIZE,
     due_at,
@@ -307,7 +307,7 @@ def _parse_ids(values: list[str]) -> list[uuid.UUID]:
         raise HTTPException(status_code=400, detail="Seleção de pessoas ou departamentos inválida.")
 
 
-async def _validated_targets(rules: RulesIn, company_id: str, conn: asyncpg.Connection):
+async def _validated_targets(rules: RulesIn, company_id: str, conn: asyncpg.Connection, video_id=None):
     dept_ids = _parse_ids(rules.department_ids)
     user_ids = _parse_ids(rules.user_ids)
     if dept_ids:
@@ -324,6 +324,14 @@ async def _validated_targets(rules: RulesIn, company_id: str, conn: asyncpg.Conn
         )
         if found != len(user_ids):
             raise HTTPException(status_code=400, detail="Colaborador não encontrado.")
+        # Regra já salva para quem depois foi desligado não impede editar o vídeo.
+        kept = set()
+        if video_id is not None:
+            kept = {r["user_id"] for r in await conn.fetch(
+                "SELECT user_id FROM public.internal_video_rules WHERE video_id = $1 AND target_type = 'user'",
+                video_id,
+            )}
+        await ensure_active_targets(conn, [u for u in user_ids if u not in kept])
     targets = {("department", d) for d in dept_ids} | {("user", u) for u in user_ids}
     if rules.all:
         targets.add(("all", None))
@@ -548,7 +556,7 @@ async def update_video(
 ):
     company_id = await _manager_company(user_id, conn)
     await _get_video(video_id, company_id, conn, lock=True)
-    targets = None if body.rules is None else await _validated_targets(body.rules, company_id, conn)
+    targets = None if body.rules is None else await _validated_targets(body.rules, company_id, conn, video_id)
     fields = body.model_dump(exclude_unset=True, exclude={"rules"})
     if "title" in fields:
         fields["title"] = _clean_title(fields["title"])

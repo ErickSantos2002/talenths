@@ -5,7 +5,7 @@ from typing import Optional
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id, require_manager
-from app.roster import active_unless, iso_or_none
+from app.roster import active_unless, ensure_active_targets, iso_or_none
 
 router = APIRouter(prefix="/timeclock", tags=["timeclock"])
 
@@ -295,6 +295,7 @@ async def manual_punch(
         "SELECT user_id FROM public.profiles WHERE user_id = $1 AND company_id = $2", target, company_id
     ):
         raise HTTPException(status_code=404, detail="Colaborador não encontrado")
+    await ensure_active_targets(conn, [target])
 
     punched_at = datetime.fromisoformat(punched_at_raw)
     if punched_at.tzinfo is None:

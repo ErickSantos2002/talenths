@@ -5,7 +5,7 @@ import csv
 import io
 
 from app.dependencies import get_db, get_current_user_id
-from app.roster import active_unless, iso_or_none
+from app.roster import active_unless, ensure_active_targets, iso_or_none
 
 router = APIRouter(prefix="/learning", tags=["learning"])
 
@@ -171,6 +171,7 @@ async def add_employee_course(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await ensure_active_targets(conn, [target_user_id])
     completed_at = date_type.fromisoformat(body["completed_at"]) if body.get("completed_at") else date_type.today()
     row = await conn.fetchrow(
         """INSERT INTO employee_courses
@@ -232,11 +233,14 @@ async def import_csv(
                 continue
 
             profile = await conn.fetchrow(
-                "SELECT user_id FROM profiles WHERE LOWER(email) = $1 AND company_id = $2",
+                "SELECT user_id, deactivated_at FROM profiles WHERE LOWER(email) = $1 AND company_id = $2",
                 email, company_id,
             )
             if not profile:
                 errors.append(f"Linha {i}: colaborador '{email}' não encontrado")
+                continue
+            if profile["deactivated_at"] is not None:
+                errors.append(f"Linha {i}: colaborador '{email}' desligado")
                 continue
 
             title = (row.get("titulo") or row.get("title") or "").strip()

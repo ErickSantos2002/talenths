@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id, require_manager
-from app.roster import active_unless, iso_or_none
+from app.roster import active_unless, ensure_active_targets, iso_or_none
 
 router = APIRouter(prefix="/tests", tags=["custom_tests"])
 
@@ -1002,6 +1002,7 @@ async def create_assignment(
     await require_manager(user_id, conn)
     if not body.user_id and not body.department_id:
         raise HTTPException(status_code=400, detail="Informe user_id ou department_id")
+    await ensure_active_targets(conn, [body.user_id])
     row = await conn.fetchrow(
         "INSERT INTO public.test_assignments (test_id, user_id, department_id) VALUES ($1, $2, $3) RETURNING *",
         test_id, body.user_id, body.department_id,
