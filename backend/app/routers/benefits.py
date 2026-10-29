@@ -3,6 +3,7 @@ from datetime import date as date_type
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import ensure_active_targets
 
 router = APIRouter(prefix="/benefits", tags=["benefits"])
 
@@ -268,6 +269,7 @@ async def assign_benefit(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await ensure_active_targets(conn, [body["user_id"]])
     start = date_type.fromisoformat(body.get("start_date", str(date_type.today())))
     end = date_type.fromisoformat(body["end_date"]) if body.get("end_date") else None
 

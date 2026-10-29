@@ -1058,27 +1058,23 @@ async def get_test_stats(
     await require_manager(user_id, conn)
     await _get_test_or_404(conn, test_id)
 
-    total = await conn.fetchval(
-        "SELECT COUNT(*) FROM public.test_attempts WHERE test_id = $1", test_id
-    )
-    submitted = await conn.fetchval(
-        "SELECT COUNT(*) FROM public.test_attempts WHERE test_id = $1 AND status = 'submitted'", test_id
-    )
-    evaluated = await conn.fetchval(
-        "SELECT COUNT(*) FROM public.test_attempts WHERE test_id = $1 AND status = 'evaluated'", test_id
-    )
-    in_progress = await conn.fetchval(
-        "SELECT COUNT(*) FROM public.test_attempts WHERE test_id = $1 AND status = 'in_progress'", test_id
-    )
-    approved = await conn.fetchval(
-        "SELECT COUNT(*) FROM public.test_attempts WHERE test_id = $1 AND passed = true", test_id
-    )
-    score_stats = await conn.fetchrow(
-        """SELECT AVG(final_score) AS avg_score, MIN(final_score) AS min_score,
-                  MAX(final_score) AS max_score
-           FROM public.test_attempts WHERE test_id = $1 AND status = 'evaluated'""",
+    # Tentativas de quem foi desligado ficam no histórico, mas fora dos números.
+    row = await conn.fetchrow(
+        """SELECT COUNT(*) AS total,
+                  COUNT(*) FILTER (WHERE a.status = 'submitted') AS submitted,
+                  COUNT(*) FILTER (WHERE a.status = 'evaluated') AS evaluated,
+                  COUNT(*) FILTER (WHERE a.status = 'in_progress') AS in_progress,
+                  COUNT(*) FILTER (WHERE a.passed = true) AS approved,
+                  AVG(a.final_score) FILTER (WHERE a.status = 'evaluated') AS avg_score,
+                  MIN(a.final_score) FILTER (WHERE a.status = 'evaluated') AS min_score,
+                  MAX(a.final_score) FILTER (WHERE a.status = 'evaluated') AS max_score
+           FROM public.test_attempts a
+           JOIN public.profiles p ON p.user_id = a.user_id AND p.deactivated_at IS NULL
+           WHERE a.test_id = $1""",
         test_id,
     )
+    total, submitted, evaluated = row["total"], row["submitted"], row["evaluated"]
+    in_progress, approved, score_stats = row["in_progress"], row["approved"], row
 
     return {
         "total_attempts": total,

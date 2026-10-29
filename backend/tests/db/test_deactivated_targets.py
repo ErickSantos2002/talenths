@@ -167,3 +167,16 @@ async def test_goal_responsible(db, client_as):
     await db.execute("UPDATE public.goals SET responsible_user_id = $2 WHERE id = $1", goal_id, gone)
     r = await c.put(f"/goals/{goal_id}", json={"responsible_user_id": gone, "title": "Vendas 2"})
     assert r.status_code == 200, r.text
+
+
+async def test_benefit_assign(db, client_as):
+    company, manager, active, gone = await setup(db)
+    benefit = await db.fetchval(
+        "INSERT INTO public.benefit_catalog (company_id, name, category) VALUES ($1, 'VR', 'alimentacao') RETURNING id",
+        company,
+    )
+
+    r = await client_as(manager).post("/benefits/assign", json={"user_id": gone, "benefit_id": str(benefit)})
+
+    assert status(r) == GONE
+    assert await count(db, "employee_benefits", gone) == 0

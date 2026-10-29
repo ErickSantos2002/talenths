@@ -231,3 +231,22 @@ async def test_test_submit_does_not_notify_deactivated_manager(db, client_as):
         "SELECT array_agg(user_id) FROM public.notifications WHERE type = 'test_pending_evaluation'"
     ) or []}
     assert manager in notified and old_manager not in notified
+
+
+async def test_test_stats_exclude_deactivated(db, client_as):
+    from tests.db.test_custom_tests_take_api import CUSTOM_TESTS_DDL, _make_test
+
+    await db.execute("DROP TABLE public.test_responses")
+    await db.execute(CUSTOM_TESTS_DDL.read_text())
+    company, manager, active, gone = await setup(db)
+    test_id = await _make_test(db, company, manager)
+    for uid in (active, gone):
+        await db.execute(
+            "INSERT INTO public.test_attempts (test_id, user_id, status, passed) VALUES ($1, $2, 'submitted', true)",
+            test_id, uid,
+        )
+
+    r = await client_as(manager).get(f"/tests/{test_id}/stats")
+
+    assert r.status_code == 200, r.text
+    assert (r.json()["total_attempts"], r.json()["submitted"], r.json()["approved"]) == (1, 1, 1)
