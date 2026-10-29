@@ -5,6 +5,7 @@ from typing import Optional
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id, require_manager
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/timeclock", tags=["timeclock"])
 
@@ -202,6 +203,7 @@ async def team(
     user_id_filter: Optional[str] = Query(None, alias="user_id"),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -230,12 +232,12 @@ async def team(
     # Todos os habilitados → resumo de um dia
     day = date_type.fromisoformat(date) if date else today
     people = await conn.fetch(
-        """SELECT p.user_id, p.name, p.daily_work_hours, d.name AS department
-           FROM public.profiles p
-           LEFT JOIN public.departments d ON d.id = p.department_id
-           WHERE p.company_id = $1 AND p.timeclock_enabled = true
-           ORDER BY p.name""",
-        company_id,
+        f"""SELECT p.user_id, p.name, p.daily_work_hours, p.deactivated_at, d.name AS department
+            FROM public.profiles p
+            LEFT JOIN public.departments d ON d.id = p.department_id
+            WHERE p.company_id = $1 AND p.timeclock_enabled = true AND {active_unless("p", 2)}
+            ORDER BY p.name""",
+        company_id, include_inactive,
     )
     punch_rows = await conn.fetch(
         """SELECT * FROM public.timeclock_punches
@@ -264,6 +266,7 @@ async def team(
             "user_id": uid,
             "user_name": person["name"],
             "department": person["department"],
+            "deactivated_at": iso_or_none(person["deactivated_at"]),
             "expected_minutes": int(round(float(person["daily_work_hours"]) * 60)),
             "worked_minutes": worked,
             "open": has_unpaired and is_today,

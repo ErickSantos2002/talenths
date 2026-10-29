@@ -15,6 +15,7 @@ from app import video_storage
 from app.config import settings
 from app.database import get_pool
 from app.dependencies import ensure_active_user, get_current_user_id, get_db, require_manager
+from app.roster import active_unless, iso_or_none
 from app.video_logic import (
     MAX_FILE_SIZE,
     due_at,
@@ -394,6 +395,7 @@ def _viewer_out(row, video, now: datetime) -> dict:
         "user_id": str(row["user_id"]) if row["user_id"] else None,
         "name": row["name"],
         "department": row["department"],
+        "deactivated_at": iso_or_none(row.get("deactivated_at")),
         "status": viewer_status(row["completed_at"], watched, row["assigned_at"], due_days, now),
         "progress_pct": pct,
         "completed_at": row["completed_at"],
@@ -501,21 +503,22 @@ async def move_video(
 @router.get("/{video_id}/admin")
 async def get_video_admin(
     video_id: uuid.UUID,
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     company_id = await _manager_company(user_id, conn)
     video = await _get_video(video_id, company_id, conn)
     rows = await conn.fetch(
-        """SELECT w.user_id, w.required, w.excluded, w.assigned_at, w.max_watched_s, w.completed_at,
-                  COALESCE(p.name, w.user_name_snapshot) AS name,
-                  CASE WHEN w.user_id IS NULL THEN w.department_name_snapshot ELSE d.name END AS department
-           FROM public.internal_video_viewers w
-           LEFT JOIN public.profiles p ON p.user_id = w.user_id
-           LEFT JOIN public.departments d ON d.id = p.department_id
-           WHERE w.video_id = $1
-           ORDER BY name""",
-        video_id,
+        f"""SELECT w.user_id, w.required, w.excluded, w.assigned_at, w.max_watched_s, w.completed_at,
+                   COALESCE(p.name, w.user_name_snapshot) AS name, p.deactivated_at,
+                   CASE WHEN w.user_id IS NULL THEN w.department_name_snapshot ELSE d.name END AS department
+            FROM public.internal_video_viewers w
+            LEFT JOIN public.profiles p ON p.user_id = w.user_id
+            LEFT JOIN public.departments d ON d.id = p.department_id
+            WHERE w.video_id = $1 AND (w.user_id IS NULL OR {active_unless("p", 2)})
+            ORDER BY name""",
+        video_id, include_inactive,
     )
     now = datetime.now(timezone.utc)
     required, voluntary, former = [], [], []

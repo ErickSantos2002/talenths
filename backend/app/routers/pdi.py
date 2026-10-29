@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/pdi", tags=["pdi"])
 
@@ -34,6 +35,7 @@ def _serialize_plan(plan, actions):
         "user_name": plan.get("user_name"),
         "user_email": plan.get("user_email"),
         "department": plan.get("department"),
+        "deactivated_at": iso_or_none(plan.get("deactivated_at")),
         "eval_cycle_id": str(plan["eval_cycle_id"]) if plan["eval_cycle_id"] else None,
         "eval_cycle_name": plan.get("eval_cycle_name"),
         "title": plan["title"],
@@ -114,6 +116,7 @@ async def get_my_pdi(
 
 @router.get("/team")
 async def get_team_pdi(
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -121,15 +124,15 @@ async def get_team_pdi(
     company_id = await _get_company_id(user_id, conn)
 
     plans = await conn.fetch(
-        """SELECT pp.*, p.name AS user_name, p.email AS user_email,
-                  d.name AS department, ec.name AS eval_cycle_name
-           FROM pdi_plans pp
-           JOIN profiles p ON p.user_id = pp.user_id
-           LEFT JOIN departments d ON d.id = p.department_id
-           LEFT JOIN evaluation_cycles ec ON ec.id = pp.eval_cycle_id
-           WHERE pp.company_id = $1
-           ORDER BY p.name, pp.created_at DESC""",
-        company_id,
+        f"""SELECT pp.*, p.name AS user_name, p.email AS user_email, p.deactivated_at,
+                   d.name AS department, ec.name AS eval_cycle_name
+            FROM pdi_plans pp
+            JOIN profiles p ON p.user_id = pp.user_id
+            LEFT JOIN departments d ON d.id = p.department_id
+            LEFT JOIN evaluation_cycles ec ON ec.id = pp.eval_cycle_id
+            WHERE pp.company_id = $1 AND {active_unless("p", 2)}
+            ORDER BY p.name, pp.created_at DESC""",
+        company_id, include_inactive,
     )
     result = []
     for plan in plans:

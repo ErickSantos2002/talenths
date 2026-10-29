@@ -3,6 +3,7 @@ from datetime import datetime, timezone, date as date_type, timedelta
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
@@ -70,6 +71,7 @@ def _ser_checklist(c, tasks: list) -> dict:
         "user_name": c.get("user_name"),
         "user_email": c.get("user_email"),
         "department": c.get("department"),
+        "deactivated_at": iso_or_none(c.get("deactivated_at")),
         "template_id": str(c["template_id"]) if c["template_id"] else None,
         "template_name": c["template_name"],
         "started_at": c["started_at"].isoformat() if c["started_at"] else None,
@@ -215,19 +217,21 @@ async def delete_template_task(
 
 @router.get("/team")
 async def get_team_checklists(
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     checklists = await conn.fetch(
-        """SELECT oc.*, p.name AS user_name, p.email AS user_email, d.name AS department
-           FROM onboarding_checklists oc
-           JOIN profiles p ON p.user_id = oc.user_id
-           LEFT JOIN departments d ON d.id = p.department_id
-           WHERE oc.company_id = $1
-           ORDER BY oc.created_at DESC""",
-        company_id,
+        f"""SELECT oc.*, p.name AS user_name, p.email AS user_email, p.deactivated_at,
+                   d.name AS department
+            FROM onboarding_checklists oc
+            JOIN profiles p ON p.user_id = oc.user_id
+            LEFT JOIN departments d ON d.id = p.department_id
+            WHERE oc.company_id = $1 AND {active_unless("p", 2)}
+            ORDER BY oc.created_at DESC""",
+        company_id, include_inactive,
     )
     result = []
     for c in checklists:

@@ -5,6 +5,7 @@ import csv
 import io
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/learning", tags=["learning"])
 
@@ -45,6 +46,7 @@ def _ser_course(r) -> dict:
         "user_name": r.get("user_name"),
         "user_email": r.get("user_email"),
         "department": r.get("department"),
+        "deactivated_at": iso_or_none(r.get("deactivated_at")),
         "catalog_id": str(r["catalog_id"]) if r["catalog_id"] else None,
         "course_title": r["course_title"],
         "area": r["area"],
@@ -142,19 +144,21 @@ async def get_my_courses(
 
 @router.get("/team")
 async def get_team_courses(
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
-        """SELECT ec.*, p.name AS user_name, p.email AS user_email, d.name AS department
-           FROM employee_courses ec
-           JOIN profiles p ON p.user_id = ec.user_id
-           LEFT JOIN departments d ON d.id = p.department_id
-           WHERE ec.company_id = $1
-           ORDER BY p.name, ec.completed_at DESC""",
-        company_id,
+        f"""SELECT ec.*, p.name AS user_name, p.email AS user_email, p.deactivated_at,
+                   d.name AS department
+            FROM employee_courses ec
+            JOIN profiles p ON p.user_id = ec.user_id
+            LEFT JOIN departments d ON d.id = p.department_id
+            WHERE ec.company_id = $1 AND {active_unless("p", 2)}
+            ORDER BY p.name, ec.completed_at DESC""",
+        company_id, include_inactive,
     )
     return [_ser_course(r) for r in rows]
 

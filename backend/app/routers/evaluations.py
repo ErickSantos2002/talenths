@@ -5,6 +5,7 @@ from datetime import date, datetime
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 
@@ -316,6 +317,7 @@ async def get_my_evaluation(
 @router.get("/team-status")
 async def get_team_status(
     cycle_id: str = Query(...),
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -324,12 +326,12 @@ async def get_team_status(
     company_id = await _get_company_id(user_id, conn)
 
     profiles = await conn.fetch(
-        """SELECT p.user_id, p.name, p.email, d.name AS department_name
-           FROM public.profiles p
-           LEFT JOIN public.departments d ON d.id = p.department_id
-           WHERE p.company_id = $1
-           ORDER BY d.name, p.name""",
-        company_id,
+        f"""SELECT p.user_id, p.name, p.email, p.deactivated_at, d.name AS department_name
+            FROM public.profiles p
+            LEFT JOIN public.departments d ON d.id = p.department_id
+            WHERE p.company_id = $1 AND {active_unless("p", 2)}
+            ORDER BY d.name, p.name""",
+        company_id, include_inactive,
     )
 
     eval_rows = await conn.fetch(
@@ -362,6 +364,7 @@ async def get_team_status(
             "name": p["name"],
             "email": p["email"],
             "department": p["department_name"],
+            "deactivated_at": iso_or_none(p["deactivated_at"]),
             "self_submitted": ev.get("self", False),
             "manager_submitted": ev.get("manager", False),
             "score_final": float(cs["score_final"]) if cs and cs["score_final"] else None,
@@ -595,6 +598,7 @@ async def calibrate(
 @router.get("/9box")
 async def get_9box(
     cycle_id: str = Query(...),
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -602,16 +606,16 @@ async def get_9box(
     company_id = await _get_company_id(user_id, conn)
 
     consolidated = await conn.fetch(
-        """SELECT cs.user_id::text, cs.score_final, cs.score_cultura, cs.score_entregas,
-                  cs.score_desenvolvimento, cs.nine_box_x, cs.nine_box_y, cs.nine_box_quadrant,
-                  cs.calibrated, cs.calibration_note, p.name, p.email,
-                  d.name AS department_name
-           FROM public.consolidated_scores cs
-           JOIN public.profiles p ON p.user_id = cs.user_id
-           LEFT JOIN public.departments d ON d.id = p.department_id
-           WHERE cs.eval_cycle_id = $1 AND cs.company_id = $2
-           ORDER BY cs.nine_box_y DESC, cs.nine_box_x DESC""",
-        cycle_id, company_id,
+        f"""SELECT cs.user_id::text, cs.score_final, cs.score_cultura, cs.score_entregas,
+                   cs.score_desenvolvimento, cs.nine_box_x, cs.nine_box_y, cs.nine_box_quadrant,
+                   cs.calibrated, cs.calibration_note, p.name, p.email, p.deactivated_at,
+                   d.name AS department_name
+            FROM public.consolidated_scores cs
+            JOIN public.profiles p ON p.user_id = cs.user_id
+            LEFT JOIN public.departments d ON d.id = p.department_id
+            WHERE cs.eval_cycle_id = $1 AND cs.company_id = $2 AND {active_unless("p", 3)}
+            ORDER BY cs.nine_box_y DESC, cs.nine_box_x DESC""",
+        cycle_id, company_id, include_inactive,
     )
 
     # Group by quadrant position
@@ -625,6 +629,7 @@ async def get_9box(
             "name": r["name"],
             "email": r["email"],
             "department": r["department_name"],
+            "deactivated_at": iso_or_none(r["deactivated_at"]),
             "score_final": float(r["score_final"]) if r["score_final"] else None,
             "nine_box_x": r["nine_box_x"],
             "nine_box_y": r["nine_box_y"],

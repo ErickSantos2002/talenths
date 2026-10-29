@@ -4,6 +4,7 @@ from datetime import date
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/career", tags=["career"])
 
@@ -186,6 +187,7 @@ async def delete_level(
 
 @router.get("/team")
 async def get_team_career(
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -193,8 +195,8 @@ async def get_team_career(
     company_id = await _get_company_id(user_id, conn)
 
     rows = await conn.fetch(
-        """SELECT
-             p.user_id, p.name, p.email,
+        f"""SELECT
+             p.user_id, p.name, p.email, p.deactivated_at,
              d.name AS department,
              ec.id AS career_id,
              ec.track_id, ct.name AS track_name,
@@ -213,9 +215,9 @@ async def get_team_career(
              WHERE user_id = p.user_id AND company_id = p.company_id
              ORDER BY computed_at DESC LIMIT 1
            ) cs ON true
-           WHERE p.company_id = $1
+           WHERE p.company_id = $1 AND {active_unless("p", 2)}
            ORDER BY p.name""",
-        company_id,
+        company_id, include_inactive,
     )
 
     result = []
@@ -240,6 +242,7 @@ async def get_team_career(
             "name": r["name"],
             "email": r["email"],
             "department": r["department"],
+            "deactivated_at": iso_or_none(r["deactivated_at"]),
             "career_id": str(r["career_id"]) if r["career_id"] else None,
             "track_id": str(r["track_id"]) if r["track_id"] else None,
             "track_name": r["track_name"],

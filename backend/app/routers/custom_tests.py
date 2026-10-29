@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id, require_manager
+from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/tests", tags=["custom_tests"])
 
@@ -973,19 +974,20 @@ async def delete_option(
 @router.get("/{test_id}/assignments")
 async def list_assignments(
     test_id: str,
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await require_manager(user_id, conn)
     rows = await conn.fetch(
-        """
-        SELECT ta.*, p.name AS user_name, d.name AS department_name
+        f"""
+        SELECT ta.*, p.name AS user_name, p.deactivated_at, d.name AS department_name
         FROM public.test_assignments ta
         LEFT JOIN public.profiles p ON p.user_id = ta.user_id
         LEFT JOIN public.departments d ON d.id = ta.department_id
-        WHERE ta.test_id = $1
+        WHERE ta.test_id = $1 AND (ta.user_id IS NULL OR {active_unless("p", 2)})
         """,
-        test_id,
+        test_id, include_inactive,
     )
     return [dict(r) for r in rows]
 
@@ -1028,19 +1030,20 @@ async def delete_assignment(
 @router.get("/{test_id}/attempts")
 async def list_attempts(
     test_id: str,
+    include_inactive: bool = False,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await require_manager(user_id, conn)
     rows = await conn.fetch(
-        """
-        SELECT a.*, p.name AS collaborator_name
+        f"""
+        SELECT a.*, p.name AS collaborator_name, p.deactivated_at
         FROM public.test_attempts a
         LEFT JOIN public.profiles p ON p.user_id = a.user_id
-        WHERE a.test_id = $1
+        WHERE a.test_id = $1 AND {active_unless("p", 2)}
         ORDER BY a.started_at DESC
         """,
-        test_id,
+        test_id, include_inactive,
     )
     return [dict(r) for r in rows]
 

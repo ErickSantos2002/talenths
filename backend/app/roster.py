@@ -24,6 +24,10 @@ TERMINATION_REASON_LABELS = {
 }
 
 
+def iso_or_none(value):
+    return value.isoformat() if value else None
+
+
 def active_only(alias: str = "p") -> str:
     return f"{alias}.deactivated_at IS NULL"
 
