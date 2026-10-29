@@ -254,11 +254,11 @@ async def _import_platform(rows, company_id: str, user_id: str, conn: asyncpg.Co
                          courses = EXCLUDED.courses, started_at = EXCLUDED.started_at,
                          finished_at = EXCLUDED.finished_at, progress_pct = EXCLUDED.progress_pct,
                          score_pct = EXCLUDED.score_pct, imported_at = now(), imported_by = EXCLUDED.imported_by
-                       RETURNING id, employee_course_id""",
+                       RETURNING id, course_registered_at""",
                     company_id, profile["user_id"], row.external_track_id, row.track_name, row.group or None,
                     row.courses, row.started_at, row.finished_at, row.progress_pct, row.score_pct, user_id,
                 )
-                if row.finished_at and track["employee_course_id"] is None:
+                if row.finished_at and track["course_registered_at"] is None:
                     course_id = await conn.fetchval(
                         """INSERT INTO employee_courses (company_id, user_id, course_title, area, hours, completed_at, source)
                            VALUES ($1, $2, $3, $4, 0, $5, 'csv') RETURNING id""",
@@ -266,7 +266,8 @@ async def _import_platform(rows, company_id: str, user_id: str, conn: asyncpg.Co
                         row.finished_at.date(),
                     )
                     await conn.execute(
-                        "UPDATE learning_track_progress SET employee_course_id = $2 WHERE id = $1",
+                        """UPDATE learning_track_progress SET employee_course_id = $2, course_registered_at = now()
+                           WHERE id = $1""",
                         track["id"], course_id,
                     )
                     completed += 1
@@ -346,7 +347,7 @@ def _ser_track(r) -> dict:
         "deactivated_at": iso_or_none(r.get("deactivated_at")),
         "track_name": r["track_name"],
         "group_name": r["group_name"],
-        "courses": list(r["courses"] or []),
+        "courses": r["courses"] or "",
         "started_at": iso_or_none(r["started_at"]),
         "finished_at": iso_or_none(r["finished_at"]),
         "progress_pct": float(r["progress_pct"]),

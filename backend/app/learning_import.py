@@ -1,7 +1,7 @@
 """Leitura do CSV exportado pela plataforma de cursos (uma linha por pessoa em cada trilha)."""
 import csv
 import io
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 COL_EMAIL = "E-mail"
@@ -27,7 +27,7 @@ class PlatformRow:
     group: str = ""
     external_track_id: str = ""
     track_name: str = ""
-    courses: list[str] = field(default_factory=list)
+    courses: str = ""
     started_at: datetime | None = None
     finished_at: datetime | None = None
     progress_pct: float = 0.0
@@ -82,7 +82,8 @@ def parse_platform(text: str) -> list[PlatformRow]:
             group=get(COL_GROUP),
             external_track_id=get(COL_TRACK_ID),
             track_name=get(COL_TRACK),
-            courses=[c.strip() for c in get(COL_COURSES).split(", ") if c.strip()],
+            # Nome de curso pode ter vírgula; não dá para separar a lista com segurança.
+            courses=get(COL_COURSES),
         )
         try:
             if not row.external_track_id or not row.track_name:

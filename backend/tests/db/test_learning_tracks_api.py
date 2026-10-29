@@ -44,7 +44,7 @@ async def test_import_in_progress_track(db, client_as):
     )
     [t] = await tracks(db, ana)
     assert (t["track_name"], t["group_name"], float(t["progress_pct"]), t["finished_at"]) == ("MARKETING", "MARKETING", 6.0, None)
-    assert list(t["courses"]) == ["Copywriting", "Social Selling"]
+    assert t["courses"] == "Copywriting, Social Selling"
     assert str(t["imported_by"]) == manager
     assert await courses(db, ana) == []
 
@@ -145,10 +145,24 @@ async def test_team_and_my_tracks_show_only_in_progress(db, client_as):
 
     team = (await c.get("/learning/team-tracks")).json()
     assert [(t["user_name"], t["track_name"], t["progress_pct"]) for t in team] == [("Ana", "MARKETING", 6.0)]
-    assert team[0]["imported_at"] and team[0]["courses"] == ["Copywriting", "Social Selling"]
+    assert team[0]["imported_at"] and team[0]["courses"] == "Copywriting, Social Selling"
     full = (await c.get("/learning/team-tracks?include_inactive=true")).json()
     assert sorted(t["track_name"] for t in full) == ["Da que saiu", "MARKETING"]
 
     mine = (await client_as(ana).get("/learning/my-tracks")).json()
     assert [t["track_name"] for t in mine] == ["MARKETING"]
     assert (await client_as(ana).get("/learning/team-tracks")).status_code == 403
+
+
+async def test_course_deleted_by_hr_does_not_come_back(db, client_as):
+    company, manager, ana, email = await setup(db)
+    c = client_as(manager)
+    done = line(email, finished="2026-08-20 17:30:00", progress="100")
+    await c.post("/learning/import-csv", files=csv_file(done))
+    [course] = await courses(db, ana)
+
+    assert (await c.delete(f"/learning/employee/course/{course['id']}")).status_code == 204
+    r = await c.post("/learning/import-csv", files=csv_file(done))
+
+    assert (r.json()["inserted"], r.json()["tracks_completed"]) == (0, 0)
+    assert await courses(db, ana) == []

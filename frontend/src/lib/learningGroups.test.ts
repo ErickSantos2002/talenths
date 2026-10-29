@@ -8,7 +8,7 @@ const course = (user_id: string, user_name: string): EmployeeCourse => ({
 });
 const track = (user_id: string, user_name: string, deactivated_at: string | null = null): TrackProgress => ({
   id: `t-${user_id}`, user_id, user_name, department: "Comercial", deactivated_at, track_name: "MARKETING",
-  group_name: "MARKETING", courses: [], started_at: null, finished_at: null, progress_pct: 6, score_pct: null,
+  group_name: "MARKETING", courses: "", started_at: null, finished_at: null, progress_pct: 6, score_pct: null,
   imported_at: "2026-10-29T12:00:00Z",
 });
 

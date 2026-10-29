@@ -17,11 +17,8 @@ export function TrackProgressList({ tracks }: { tracks: TrackProgress[] }) {
           <Progress value={t.progress_pct} className="h-1.5" aria-label={`Progresso na trilha ${t.track_name}`} />
           <p className="text-xs text-muted-foreground">
             Iniciada em {formatDate(t.started_at)} · Atualizado em {formatDate(t.imported_at)}
-            {t.courses.length > 0 && ` · ${t.courses.length} curso${t.courses.length !== 1 ? "s" : ""}`}
           </p>
-          {t.courses.length > 0 && (
-            <p className="text-xs text-muted-foreground">{t.courses.join(" · ")}</p>
-          )}
+          {t.courses && <p className="text-xs text-muted-foreground">Cursos: {t.courses}</p>}
         </div>
       ))}
     </div>

@@ -31,7 +31,8 @@ export interface TrackProgress {
   deactivated_at?: string | null;
   track_name: string;
   group_name: string | null;
-  courses: string[];
+  // Texto como a plataforma manda: nomes de curso podem ter vírgula.
+  courses: string;
   started_at: string | null;
   finished_at: string | null;
   progress_pct: number;

@@ -34,11 +34,10 @@ def test_parse_real_layout():
     ana, bruno = rows
     assert (ana.email, ana.cpf_digits, ana.name, ana.group) == ("ana@exemplo.com.br", "00000000191", "Ana Exemplo", "MARKETING")
     assert (ana.external_track_id, ana.track_name) == ("14427", "MARKETING")
-    assert ana.courses == [
-        "ChatGPT Marketing: Crie Campanhas com ChatGPT",
-        "Copywriting e Redação Publicitária",
-        "Fotografia e Vídeo com Celular",
-    ]
+    # Nomes de curso podem ter vírgula: o texto fica como a plataforma mandou.
+    assert ana.courses == (
+        "ChatGPT Marketing: Crie Campanhas com ChatGPT, Copywriting e Redação Publicitária, Fotografia e Vídeo com Celular"
+    )
     assert ana.started_at == datetime(2026, 7, 9, 10, 8, 41)
     assert (ana.finished_at, ana.progress_pct, ana.score_pct, ana.error) == (None, 6.0, 100.0, None)
     assert bruno.finished_at == datetime(2026, 8, 20, 17, 30)
