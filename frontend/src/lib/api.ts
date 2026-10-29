@@ -510,7 +510,8 @@ async function downloadReport(path: string, filename: string): Promise<void> {
 }
 
 export const reports = {
-  collaborators: () => downloadReport("/reports/collaborators", "colaboradores.csv"),
+  collaborators: (includeInactive?: boolean) =>
+    downloadReport(withInactive("/reports/collaborators", includeInactive), "colaboradores.csv"),
   absences: () => downloadReport("/reports/absences", "ausencias.csv"),
   benefits: () => downloadReport("/reports/benefits", "beneficios.csv"),
   pdi: () => downloadReport("/reports/pdi", "pdi.csv"),

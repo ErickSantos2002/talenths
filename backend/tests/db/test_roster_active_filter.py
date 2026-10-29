@@ -15,7 +15,6 @@ async def prod_columns(db, monkeypatch):
     monkeypatch.setattr(video_storage, "PART_SIZE", SMALL)
     # Colunas que só existem em produção (ver backend/scripts/captures-db.sh).
     await db.execute("ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS job_title text")
-    await db.execute("ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS position text")
 
 
 async def deactivate(db, user_id):
@@ -127,6 +126,7 @@ async def test_reports_collaborators_default_and_include_inactive(db, client_as)
     assert sorted(row[0] for row in default[1:]) == ["Ativa", "Gestora"]
     assert "Situação" not in default[0]
 
+    await db.execute("UPDATE public.profiles SET job_title = 'Vendedora' WHERE user_id = $1", active)
     full = _csv((await c.get("/reports/collaborators?include_inactive=true")).text)
     head = full[0]
     assert head[-3:] == ["Situação", "Data do desligamento", "Motivo"]
@@ -134,6 +134,7 @@ async def test_reports_collaborators_default_and_include_inactive(db, client_as)
     assert set(rows) == {"Ativa", "Gestora", "Saiu"}
     assert rows["Saiu"][-3:] == ["Desligado(a)", "2026-10-01", "Fim de contrato ou de experiência"]
     assert rows["Ativa"][-3:] == ["Ativo", "", ""]
+    assert rows["Ativa"][head.index("Cargo")] == "Vendedora"
 
 
 async def test_consolidate_skips_deactivated(db, client_as):

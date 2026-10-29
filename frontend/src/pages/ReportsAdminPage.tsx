@@ -4,6 +4,8 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { FileDown, Users, CalendarOff, Gift, BookOpen, Target } from "lucide-react";
 
 interface ReportCard {
@@ -13,7 +15,9 @@ interface ReportCard {
   icon: React.ElementType;
   iconBg: string;
   iconColor: string;
-  fn: () => Promise<void>;
+  fn: (includeInactive: boolean) => Promise<void>;
+  // Só o de colaboradores: os demais já trazem o histórico de quem saiu.
+  canIncludeInactive?: boolean;
 }
 
 const REPORTS: ReportCard[] = [
@@ -25,6 +29,7 @@ const REPORTS: ReportCard[] = [
     iconBg: "bg-primary/10",
     iconColor: "text-primary",
     fn: reportsApi.collaborators,
+    canIncludeInactive: true,
   },
   {
     title: "Ausências",
@@ -67,11 +72,12 @@ const REPORTS: ReportCard[] = [
 export default function ReportsAdminPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  const [includeInactive, setIncludeInactive] = useState(false);
 
   const handleDownload = async (report: ReportCard) => {
     setLoading(report.filename);
     try {
-      await report.fn();
+      await report.fn(includeInactive);
       toast({ title: `Relatório "${report.title}" baixado com sucesso.` });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Erro desconhecido";
@@ -105,6 +111,14 @@ export default function ReportsAdminPage() {
                   <h2 className="font-semibold text-sm">{report.title}</h2>
                 </div>
                 <p className="text-xs text-muted-foreground flex-1">{report.description}</p>
+                {report.canIncludeInactive && (
+                  <div className="flex items-center gap-2">
+                    <Switch id="report-include-inactive" checked={includeInactive} onCheckedChange={setIncludeInactive} />
+                    <Label htmlFor="report-include-inactive" className="cursor-pointer text-xs font-normal text-muted-foreground">
+                      Incluir desligados
+                    </Label>
+                  </div>
+                )}
                 <Button
                   size="sm"
                   variant="outline"

@@ -31,7 +31,7 @@ Os relatórios disponíveis:
 - **PDI** (**Baixar pdi.csv**): os planos e as ações, com status, prazos e datas de conclusão;
 - o último cartão, de cursos e capacitações: os cursos concluídos por pessoa, com área, horas, data e origem.
 
-Atenção: hoje o relatório **Colaboradores** não funciona. Ao clicar em **Baixar colaboradores.csv**, aparece **Erro ao gerar relatório** e nenhum arquivo é baixado. Enquanto isso, consulte os colaboradores em [Gestão de Colaboradores](/ajuda/administracao/colaboradores) ou em [Minha Empresa](/ajuda/administracao/minha-empresa).
+O relatório **Colaboradores** traz só quem está ativo. Para incluir quem foi desligado, ligue **Incluir desligados** antes de baixar: o arquivo ganha as colunas **Situação**, **Data do desligamento** e **Motivo**.
 
 ## O que acontece depois
 

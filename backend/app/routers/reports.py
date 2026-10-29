@@ -69,7 +69,7 @@ async def report_collaborators(
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
         f"""SELECT p.name, p.email, d.name AS department, ur.role,
-                   p.birth_date, p.hire_date, p.phone, p.position,
+                   p.birth_date, p.hire_date, p.phone, p.job_title,
                    p.deactivated_at, t.termination_date, t.reason
             FROM profiles p
             LEFT JOIN departments d ON d.id = p.department_id
@@ -86,7 +86,7 @@ async def report_collaborators(
             r["email"] or "",
             r["department"] or "",
             ROLE_PT.get(r["role"] or "", r["role"] or ""),
-            r["position"] or "",
+            r["job_title"] or "",
             _fmt_date(r["birth_date"]),
             _fmt_date(r["hire_date"]),
             r["phone"] or "",
