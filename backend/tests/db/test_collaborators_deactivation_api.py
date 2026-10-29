@@ -296,3 +296,26 @@ async def test_ensure_active_targets(db):
     with pytest.raises(HTTPException) as exc:
         await ensure_active_targets(db, [active, gone])
     assert (exc.value.status_code, exc.value.detail) == (422, "Colaborador desligado")
+
+
+async def test_manager_cannot_list_other_company(db, client_as):
+    company = await make_company(db)
+    other_company = await make_company(db)
+    manager = await make_user(db, company, role="manager")
+    await make_user(db, other_company, name="Estranha")
+
+    r = await client_as(manager).get(f"/collaborators?company_id={other_company}&status=all")
+
+    assert r.status_code == 403, r.text
+
+
+async def test_master_admin_lists_other_company(db, client_as):
+    company = await make_company(db)
+    other_company = await make_company(db)
+    admin = await make_user(db, company, role="master_admin")
+    await make_user(db, other_company, name="Estranha")
+
+    r = await client_as(admin).get(f"/collaborators?company_id={other_company}&status=all")
+
+    assert r.status_code == 200, r.text
+    assert [p["name"] for p in r.json()] == ["Estranha"]

@@ -52,11 +52,13 @@ class RoleUpdate(BaseModel):
 
 class DeactivateBody(BaseModel):
     termination_date: date
-    reason: Literal[TERMINATION_REASONS]
+    reason: str
     note: Optional[str] = Field(default=None, max_length=1000)
 
     @model_validator(mode="after")
     def check(self):
+        if self.reason not in TERMINATION_REASONS:
+            raise ValueError("Motivo de desligamento inválido")
         if self.termination_date > date.today():
             raise ValueError("A data do desligamento não pode ser futura")
         self.note = (self.note or "").strip() or None
@@ -73,10 +75,13 @@ async def list_collaborators(
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await require_manager(user_id, conn)
+    own_company = await conn.fetchval(
+        "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
+    )
     if not company_id:
-        company_id = await conn.fetchval(
-            "SELECT company_id FROM public.profiles WHERE user_id = $1", user_id
-        )
+        company_id = own_company
+    elif company_id != str(own_company):
+        await require_master_admin(user_id, conn)
     status_clause = {
         "active": "AND p.deactivated_at IS NULL",
         "inactive": "AND p.deactivated_at IS NOT NULL",
