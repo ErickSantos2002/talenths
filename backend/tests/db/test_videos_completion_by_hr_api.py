@@ -226,3 +226,16 @@ async def test_replace_file_keep_completed_keeps_registration(db, client_as, sam
 
     assert r.status_code == 200, r.text
     assert (await _viewer(db, video["id"], ana))["completed_by"] is not None
+
+
+async def test_registration_survives_deleting_who_registered(db, client_as, sample_mp4):
+    company, manager, ana, bia = await setup(db)
+    other_manager = await make_user(db, company, name="Outra Gestora", role="manager")
+    video = await _create(client_as(manager), sample_mp4, _rules(user_ids=[ana]))
+    assert (await register(client_as(other_manager), video["id"], ana)).status_code == 200
+
+    await db.execute("DELETE FROM auth.users WHERE id = $1", other_manager)
+
+    c = client_as(manager)
+    assert row((await detail(c, video["id"]))["required"], ana)["registered_by_hr"] is True
+    assert (await undo(c, video["id"], ana)).status_code == 200
