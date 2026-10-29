@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app import video_storage
 from app.config import settings
 from app.database import get_pool
-from app.dependencies import get_current_user_id, get_db, require_manager
+from app.dependencies import ensure_active_user, get_current_user_id, get_db, require_manager
 from app.video_logic import (
     MAX_FILE_SIZE,
     due_at,
@@ -36,6 +36,7 @@ async def _open_conn(user_id: str):
     async with get_pool().acquire() as conn:
         async with conn.transaction():
             await conn.execute("SELECT set_config('app.current_user_id', $1, true)", str(user_id))
+            await ensure_active_user(conn, str(user_id))
             yield conn
 
 
@@ -762,6 +763,7 @@ async def stream_video(token: str, open_conn=Depends(get_conn_opener)):
         row = await conn.fetchrow(
             """SELECT v.file_path, v.file_version FROM public.internal_videos v
                JOIN public.profiles p ON p.company_id = v.company_id AND p.user_id = $2
+                 AND p.deactivated_at IS NULL
                WHERE v.id = $1 AND v.archived_at IS NULL""",
             video_id, user_id,
         )

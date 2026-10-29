@@ -30,12 +30,22 @@ def get_current_user_id(
     return sub
 
 
+async def ensure_active_user(conn: asyncpg.Connection, user_id: str) -> None:
+    # O JWT vale 24h e não tem revogação: é aqui que quem foi desligado perde a sessão.
+    deactivated = await conn.fetchval(
+        "SELECT deactivated_at IS NOT NULL FROM public.profiles WHERE user_id = $1", user_id
+    )
+    if deactivated:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Acesso desativado")
+
+
 async def get_db(
     user_id: str = Depends(get_current_user_id),
 ) -> AsyncGenerator[asyncpg.Connection, None]:
     async with get_pool().acquire() as conn:
         async with conn.transaction():
             await conn.execute("SELECT set_config('app.current_user_id', $1, true)", str(user_id))
+            await ensure_active_user(conn, user_id)
             yield conn
 
 

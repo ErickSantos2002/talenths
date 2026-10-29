@@ -10,6 +10,7 @@ const USER_KEY = "talenths_user";
 const ERROR_MESSAGES: Record<string, string> = {
   microsoft_auth_failed: "Falha na autenticação com Microsoft. Tente novamente.",
   user_not_found: "Nenhuma conta encontrada para este e-mail Microsoft. Contate o administrador.",
+  account_deactivated: "Seu acesso foi desativado. Procure o RH.",
 };
 
 export default function AuthCallback() {

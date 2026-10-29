@@ -18,6 +18,8 @@ from app.database import get_pool
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+DEACTIVATED_DETAIL = "Seu acesso foi desativado. Procure o RH."
+
 
 @router.post("/login", response_model=AuthResponse)
 async def login(body: LoginRequest):
@@ -25,6 +27,9 @@ async def login(body: LoginRequest):
         user = await service.get_user_by_email(conn, body.email)
         if not user or not service.verify_password(body.password, user["encrypted_password"]):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha incorretos")
+        # Só depois da senha: sem ela, a resposta não pode revelar que o e-mail existe.
+        if await service.is_deactivated(conn, str(user["id"])):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=DEACTIVATED_DETAIL)
 
         token = service.create_access_token(str(user["id"]))
         return AuthResponse(
@@ -174,9 +179,12 @@ async def microsoft_callback(code: str = None, error: str = None):
 
     async with get_pool().acquire() as conn:
         user = await service.get_user_by_email(conn, email)
+        deactivated = bool(user) and await service.is_deactivated(conn, str(user["id"]))
 
     if not user:
         return RedirectResponse(url=f"{frontend_url}/auth/callback?error=user_not_found", status_code=302)
+    if deactivated:
+        return RedirectResponse(url=f"{frontend_url}/auth/callback?error=account_deactivated", status_code=302)
 
     access_token = service.create_access_token(str(user["id"]))
     return RedirectResponse(

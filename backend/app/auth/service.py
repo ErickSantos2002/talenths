@@ -31,6 +31,12 @@ async def get_user_by_email(conn: asyncpg.Connection, email: str) -> Optional[as
     )
 
 
+async def is_deactivated(conn: asyncpg.Connection, user_id: str) -> bool:
+    return bool(await conn.fetchval(
+        "SELECT deactivated_at IS NOT NULL FROM public.profiles WHERE user_id = $1", user_id
+    ))
+
+
 async def get_user_by_id(conn: asyncpg.Connection, user_id: str) -> Optional[asyncpg.Record]:
     return await conn.fetchrow(
         "SELECT id, email, raw_user_meta_data FROM auth.users WHERE id = $1",
