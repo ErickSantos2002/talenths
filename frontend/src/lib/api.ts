@@ -465,6 +465,7 @@ export interface AuditLog {
   action?: string;
   status_code?: number;
   ip_address?: string;
+  via?: string | null;
   created_at: string;
 }
 

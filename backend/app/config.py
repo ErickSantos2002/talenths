@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:8080"
     UPLOADS_DIR: str = "/app/uploads"
 
+    # PEM Ed25519 do HS.OS (token do Guardi). Vazio: todo token de agente dá 401.
+    HSOS_AGENTE_CHAVE_PUBLICA: str = ""
+
     MS_CLIENT_ID: str = ""
     MS_TENANT_ID: str = ""
     MS_CLIENT_SECRET: str = ""

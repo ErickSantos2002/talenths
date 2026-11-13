@@ -135,6 +135,11 @@ def _should_log(method: str, path: str) -> bool:
     return not any(p.search(key) for p in _SKIP_PATTERNS)
 
 
+def _should_log_agent(path: str) -> bool:
+    # Leitura feita pelo Guardi também entra: é o rastro de o que o assistente consultou.
+    return path not in _SKIP_PATHS and not any(path.startswith(p) for p in _SKIP_PREFIXES)
+
+
 def _get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
@@ -151,6 +156,7 @@ async def _write_log(
     action: str,
     status_code: int,
     ip_address: str,
+    via: str | None = None,
 ):
     pool = get_pool()
     if not pool:
@@ -170,10 +176,10 @@ async def _write_log(
 
             await conn.execute(
                 """INSERT INTO audit_logs
-                       (user_id, user_name, company_id, method, path, action, status_code, ip_address)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8)""",
+                       (user_id, user_name, company_id, method, path, action, status_code, ip_address, via)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)""",
                 user_id, user_name, company_id,
-                method, path, action, status_code, ip_address,
+                method, path, action, status_code, ip_address, via,
             )
     except Exception:
         pass  # never let logging break the request
@@ -186,13 +192,18 @@ class AuditMiddleware(BaseHTTPMiddleware):
         method = request.method
         path = request.url.path
 
-        if not _should_log(method, path):
+        # Postos por get_current_user_id quando o token é de agente e passou na validação.
+        via = getattr(request.state, "agente_bot", None)
+        if via:
+            if not _should_log_agent(path):
+                return response
+        elif not _should_log(method, path):
             return response
 
         # Decode JWT without raising (token may be absent for public routes)
-        user_id: str | None = None
+        user_id: str | None = getattr(request.state, "agente_user_id", None)
         auth = request.headers.get("Authorization", "")
-        if auth.startswith("Bearer "):
+        if not via and auth.startswith("Bearer "):
             try:
                 payload = jwt.decode(
                     auth[7:], settings.JWT_SECRET,
@@ -202,11 +213,11 @@ class AuditMiddleware(BaseHTTPMiddleware):
             except Exception:
                 pass
 
-        action = _resolve_action(method, path)
+        action = "Consulta pelo assistente" if via and method == "GET" else _resolve_action(method, path)
         ip = _get_client_ip(request)
         status_code = response.status_code
 
         # Fire-and-forget — don't await, doesn't block response
-        asyncio.create_task(_write_log(user_id, method, path, action, status_code, ip))
+        asyncio.create_task(_write_log(user_id, method, path, action, status_code, ip, via))
 
         return response

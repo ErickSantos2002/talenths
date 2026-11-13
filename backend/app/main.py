@@ -1,6 +1,6 @@
 import math
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +9,7 @@ from app.middleware.audit import AuditMiddleware
 
 from app.config import settings
 from app.database import init_db, close_db
+from app.dependencies import bloquear_agente_fora_da_lista
 from app.auth.router import router as auth_router
 from app.routers.companies import router as companies_router
 from app.routers.departments import router as departments_router
@@ -53,6 +54,7 @@ app = FastAPI(
     description="API do sistema de RH e desenvolvimento pessoal TalentHS",
     version="1.0.0",
     lifespan=lifespan,
+    dependencies=[Depends(bloquear_agente_fora_da_lista)],
 )
 
 

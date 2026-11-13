@@ -156,6 +156,9 @@ function LogsTable({ items }: { items: AuditLog[] }) {
                   <span className="truncate block" title={log.action ?? log.path}>
                     {log.action ?? "—"}
                   </span>
+                  {log.via && (
+                    <span className="truncate block text-muted-foreground">via {log.via}</span>
+                  )}
                 </td>
                 <td className="px-4 py-2.5">
                   <MethodBadge method={log.method} />

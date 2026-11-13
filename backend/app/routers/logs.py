@@ -59,7 +59,7 @@ async def list_logs(
 
     total = await conn.fetchval(f"SELECT COUNT(*) FROM audit_logs WHERE {where}", *params)
     rows = await conn.fetch(
-        f"""SELECT id, user_id, user_name, method, path, action, status_code, ip_address, created_at
+        f"""SELECT id, user_id, user_name, method, path, action, status_code, ip_address, via, created_at
             FROM audit_logs WHERE {where}
             ORDER BY created_at DESC
             LIMIT ${idx} OFFSET ${idx + 1}""",

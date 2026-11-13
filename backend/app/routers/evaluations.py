@@ -382,6 +382,9 @@ async def get_scores(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    # Notas de cada avaliação, por tipo de avaliador: só o RH. O avaliado vê as dele
+    # consolidadas pela /evaluations/my.
+    await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
 
     evals = await conn.fetch(

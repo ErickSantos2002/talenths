@@ -16,9 +16,27 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.17.0",
+    date: "13/11/2026",
+    current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "O Guardi, seu assistente pessoal, passa a responder perguntas sobre o TalentHS — férias, ponto, metas, PDI, cursos e mais — vendo só o que você já vê aqui, e sem alterar nada.",
+      },
+      {
+        type: "melhoria",
+        text: "Mais privacidade: salário, CPF, telefone e data de nascimento aparecem só para o próprio colaborador e para o RH.",
+      },
+      {
+        type: "melhoria",
+        text: "No registro de atividades, as consultas feitas pelo assistente aparecem identificadas.",
+      },
+    ],
+  },
+  {
     version: "v1.16.0",
     date: "29/10/2026",
-    current: true,
     entries: [
       {
         type: "novidade",
