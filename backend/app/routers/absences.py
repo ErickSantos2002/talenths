@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from datetime import datetime, timezone, date as date_type, time as time_type
 import asyncpg
 
-from app.dependencies import get_db, get_current_user_id
+from app.dependencies import get_db, get_current_user_id, via_agente
 
 router = APIRouter(prefix="/absences", tags=["absences"])
 
@@ -287,6 +287,7 @@ async def reject_request(
 @router.delete("/{request_id}", status_code=204)
 async def delete_request(
     request_id: str,
+    request: Request,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -295,7 +296,9 @@ async def delete_request(
         "SELECT id FROM public.user_roles WHERE user_id = $1 AND role IN ('manager', 'master_admin')",
         user_id,
     )
-    if is_manager:
+    # Pelo assistente só existe "cancelar o meu pedido pendente"; excluir pedido de
+    # outra pessoa (ou já decidido) fica para o RH na tela.
+    if is_manager and not via_agente(request):
         await conn.execute("DELETE FROM absence_requests WHERE id = $1 AND company_id = $2", request_id, company_id)
     else:
         await conn.execute(

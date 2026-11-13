@@ -8,7 +8,7 @@ import httpx
 import pytest
 
 from app.middleware import audit
-from tests.db.conftest import make_company, make_user
+from tests.db.conftest import make_company, make_department, make_user
 from tests.test_agente_token import PUB, emitir
 
 
@@ -201,3 +201,47 @@ async def test_escrita_do_agente_na_auditoria_com_rotulo_e_via(db, agente, audit
 
     (user_id, method, _path, action, status_code, _ip, via), = audit_calls
     assert (user_id, method, action, status_code, via) == (hr, "PUT", "Ausência recusada", 200, "erick-bot")
+
+
+async def test_rh_pelo_agente_so_cancela_o_proprio_pedido_pendente(db, agente):
+    from tests.db.test_rh_writes_scope_api import make_absence
+
+    company = await make_company(db)
+    user = await make_user(db, company)
+    hr = await make_user(db, company, role="manager")
+    colleague_req = await make_absence(db, company, user)
+    own_approved = await make_absence(db, company, hr, status="approved")
+    own_pending = await make_absence(db, company, hr)
+    token = emitir(sub=await email_of(db, hr))
+
+    for req in (colleague_req, own_approved, own_pending):
+        await agente(f"/absences/{req}", token, method="DELETE")
+
+    left = {str(r["id"]) for r in await db.fetch("SELECT id FROM public.absence_requests WHERE company_id = $1", company)}
+    assert left == {colleague_req, own_approved}
+
+
+async def test_comentario_de_meta_pelo_agente_sem_anexo(db, agente):
+    company = await make_company(db)
+    dept = await make_department(db, company, "Vendas")
+    hr = await make_user(db, company, role="manager")
+    cycle = await db.fetchval(
+        """INSERT INTO public.management_cycles (company_id, name, start_date, end_date)
+           VALUES ($1, '2026', '2026-01-01', '2026-12-31') RETURNING id""",
+        company,
+    )
+    goal = await db.fetchval(
+        "INSERT INTO public.goals (cycle_id, department_id, company_id, title) VALUES ($1, $2, $3, 'Vendas') RETURNING id",
+        cycle, dept, company,
+    )
+    token = emitir(sub=await email_of(db, hr))
+
+    with_file = await agente(
+        f"/goals/{goal}/comments", token, method="POST",
+        data={"body": "oi"}, files={"files": ("x.txt", b"conteudo", "text/plain")},
+    )
+    text_only = await agente(f"/goals/{goal}/comments", token, method="POST", data={"body": "Bom mês"})
+
+    assert with_file.status_code == 403
+    assert text_only.status_code == 201
+    assert await db.fetchval("SELECT count(*) FROM public.goal_comments WHERE goal_id = $1", goal) == 1

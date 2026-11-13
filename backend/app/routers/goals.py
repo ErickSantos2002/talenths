@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, List
@@ -7,7 +7,7 @@ import asyncpg
 import os
 import uuid
 
-from app.dependencies import get_db, get_current_user_id
+from app.dependencies import get_db, get_current_user_id, via_agente
 from app.roster import ensure_active_targets
 from app.config import settings
 
@@ -843,6 +843,7 @@ async def list_comments(
 @router.post("/{goal_id}/comments", status_code=status.HTTP_201_CREATED)
 async def add_comment(
     goal_id: str,
+    request: Request,
     body: str = Form(""),
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id),
@@ -854,6 +855,8 @@ async def add_comment(
 
     body = (body or "").strip()
     real_files = [f for f in files if f and f.filename]
+    if real_files and via_agente(request):
+        raise HTTPException(status_code=403, detail="O assistente não envia anexos")
     if not body and not real_files:
         raise HTTPException(status_code=400, detail="Escreva um comentário ou anexe um arquivo.")
 

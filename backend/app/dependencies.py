@@ -55,6 +55,11 @@ async def _user_id_do_agente(request: Request, token: str, conn_opener) -> str:
     return user_id
 
 
+def via_agente(request: Request) -> bool:
+    """Requisição autenticada por token de agente (posto por get_current_user_id)."""
+    return bool(getattr(request.state, "agente_bot", None))
+
+
 def bloquear_agente_fora_da_lista(request: Request) -> None:
     """Dependência global do app: vale também para rota pública, que não passa por
     get_current_user_id. Aqui só se decide o caminho; quem valida a assinatura é
