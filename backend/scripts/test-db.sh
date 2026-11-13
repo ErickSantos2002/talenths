@@ -27,5 +27,15 @@ for f in "${MIGRATIONS_DIR}"/0*.sql; do
   psql -v ON_ERROR_STOP=1 -q -X -d "${DB_NAME}" -f "$f" >/dev/null
 done
 
+# Registra o que foi aplicado, para o backend (app/migrate.py) não aplicar de novo.
+values=""
+for f in "${MIGRATIONS_DIR}"/0*.sql; do
+  name="$(basename "$f")"
+  [[ "$name" == 000_* ]] && continue
+  values+="${values:+,}($((10#${name:0:3})), '${name}')"
+done
+psql -v ON_ERROR_STOP=1 -q -X -d "${DB_NAME}" \
+  -c "INSERT INTO public.schema_migrations (version, name) VALUES ${values} ON CONFLICT DO NOTHING"
+
 echo
 echo "export TEST_DATABASE_URL=postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${DB_NAME}"

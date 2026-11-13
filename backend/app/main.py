@@ -8,7 +8,8 @@ from fastapi.responses import JSONResponse
 from app.middleware.audit import AuditMiddleware
 
 from app.config import settings
-from app.database import init_db, close_db
+from app.database import init_db, close_db, get_pool
+from app.migrate import apply_pending
 from app.dependencies import bloquear_agente_fora_da_lista
 from app.auth.router import router as auth_router
 from app.routers.companies import router as companies_router
@@ -45,6 +46,11 @@ from app.routers.tour import router as tour_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # Migração que falha derruba a subida: melhor o deploy quebrar que o sistema rodar
+    # com o banco pela metade.
+    async with get_pool().acquire() as conn:
+        for name in await apply_pending(conn):
+            print(f"Migração aplicada: {name}", flush=True)
     yield
     await close_db()
 

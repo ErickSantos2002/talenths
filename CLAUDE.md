@@ -40,7 +40,7 @@ O objetivo central é: cada colaborador consegue ver seu próprio desenvolviment
 **Banco de Dados**
 - **PostgreSQL** hospedado na VPS (Easypanel, `62.72.11.28:9632`)
 - RLS (Row Level Security) para isolamento por empresa
-- Migrações em `backend/migrations/` — sempre criar nova, nunca editar existentes
+- Migrações em `backend/migrations/` — sempre criar nova, nunca editar existentes; o backend as aplica sozinho ao subir
 
 ---
 
@@ -246,7 +246,7 @@ O tour de boas-vindas e a página `/ajuda` ficam em `frontend/src/help/`.
 - **Tour por tela** fica em `src/help/tours/screenTours.ts` e é ligado ao guia da tela pelo campo `tour:` do guia (é ele que faz aparecer **Mostrar nesta tela** no "?"). A tela do tour muda no mesmo commit que ele.
 - **Passo novo em tour já publicado** leva `since: <nova versão>` e o tour sobe `version`; quem já concluiu vê o passo pelo **O que mudou** (ponto no "?"). Remover passo, ou subir `version` sem nenhum passo com `since`, não aparece para quem concluiu.
 - **Bug conhecido que leva o leitor a errar ganha um "Atenção:" curto no guia** — onde seguir o guia perde dado, gasta tentativa ou leva a uma decisão errada de RH, o guia avisa em uma frase, em linguagem simples, ligada ao comportamento. O aviso sai **no mesmo commit que corrige o bug**. **Nunca vale para bug de segurança ou de permissão** — o texto dos guias vai num chunk estático público, então descrever a falha a divulga. Quem corrige um bug roda `grep -rn "Atenção:" frontend/src/help/guides` e remove o aviso correspondente **no mesmo commit**.
-- **Deploy:** migrações pendentes primeiro (`backend/scripts/aplicar_0NN.py`, rodadas pelo Erick; a 030 é do tour, a 031 da ordem dos vídeos, a 032 do desligamento de colaboradores , a 033 da conclusão de vídeo registrada pelo RH, a 034 das trilhas da plataforma de cursos e a 035 do `via` na auditoria, para o Guardi) → backend → frontend.
+- **Deploy:** backend → frontend. **Migração é automática** desde a 035: o backend aplica ao subir as de `backend/migrations/` que faltam em `public.schema_migrations` (`app/migrate.py`, uma transação por arquivo; se uma falhar, o backend não sobe). Da 001 à 034 foram aplicadas à mão (`backend/scripts/aplicar_0NN.py`, histórico) e entram como já aplicadas. Migração nova: só o arquivo numerado, sem script `aplicar_`.
 - **Contratos em `src/help/**/*.test.ts`** — rotas, âncoras e textos dos tours são verificados por testes; rode `bun run test` antes de commitar.
 - **Capturas dos guias** ficam em `frontend/public/capturas/<nome>.webp` (**nunca** em `public/ajuda/` — o nginx redirecionaria `/ajuda` → `/ajuda/`) e são listadas em `frontend/scripts/captures.config.ts`. Só dado fictício, de um banco só delas. Para refazer:
   1. `bash backend/scripts/captures-db.sh` — recria o `talenths_capturas` no `pg-teste` (migrações + o DDL que só existe em produção: testes configuráveis e `profiles.job_title`);
