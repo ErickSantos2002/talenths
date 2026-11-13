@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.18.0",
+    version: "v1.19.0",
     date: "13/11/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "Na tela Capacidade do Guardi, você vê exatamente o que ele consegue consultar e fazer por você no TalentHS, de acordo com o seu acesso aqui.",
+      },
+    ],
+  },
+  {
+    version: "v1.18.0",
+    date: "13/11/2026",
     entries: [
       {
         type: "novidade",

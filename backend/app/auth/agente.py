@@ -17,7 +17,7 @@ EMISSOR = "hsos"
 # prefixo). Fora de propósito, de fora daqui: download de arquivo, prova/teste, convites,
 # /auth/* (menos /auth/me), logs, administração de vídeo, bingo e tour.
 ROTAS_DO_AGENTE = frozenset({
-    "/auth/me",
+    "/auth/me", "/agente/capacidades",
     "/profiles/me", "/profiles", "/profiles/{user_id}",
     "/collaborators", "/departments",
     "/companies/presentation", "/companies/internal-rules", "/culture",
@@ -85,6 +85,52 @@ ESCRITAS_DO_AGENTE = frozenset({
     ("POST", "/learning/employee/{target_user_id}"),
     ("POST", "/onboarding/assign"),
 })
+
+
+# Das rotas acima, as que só o RH (manager ou master_admin) usa; o resto vale para todo
+# login. É o que GET /agente/capacidades responde, e um teste
+# (tests/db/test_agente_capacidades_api.py) confere esta tabela contra os 403 das rotas.
+SO_RH = frozenset({
+    ("GET", "/collaborators"),
+    ("GET", "/absences/team"),
+    ("GET", "/timeclock/team"), ("GET", "/timeclock/requests"),
+    ("GET", "/pdi/team"),
+    ("GET", "/evaluations/scores"), ("GET", "/evaluations/team-status"), ("GET", "/evaluations/9box"),
+    ("GET", "/feedbacks"), ("GET", "/feedbacks/{feedback_id}/responses"),
+    ("GET", "/learning/team"), ("GET", "/learning/team-tracks"),
+    ("GET", "/onboarding/team"), ("GET", "/onboarding/templates"),
+    ("GET", "/benefits/team"), ("GET", "/benefits/employee/{target_user_id}"), ("GET", "/benefits/summary"),
+    ("GET", "/career/team"),
+    ("GET", "/salary/references"), ("GET", "/salary/table"), ("GET", "/salary/positioning"),
+    ("GET", "/surveys/{survey_id}/results"),
+    ("GET", "/reports/collaborators"), ("GET", "/reports/absences"), ("GET", "/reports/benefits"),
+    ("GET", "/reports/pdi"), ("GET", "/reports/learning"),
+    ("PUT", "/absences/{request_id}/approve"), ("PUT", "/absences/{request_id}/reject"),
+    ("POST", "/timeclock/adjustments/{req_id}/approve"), ("POST", "/timeclock/adjustments/{req_id}/reject"),
+    ("POST", "/timeclock/punches/{punch_id}/confirm"), ("POST", "/timeclock/punches/{punch_id}/reject"),
+    ("POST", "/communications/announcements"), ("PUT", "/communications/announcements/{announcement_id}"),
+    ("POST", "/calendar/events"), ("PUT", "/calendar/events/{event_id}"),
+    ("POST", "/feedbacks"),
+    ("POST", "/pdi/plans"), ("PUT", "/pdi/plans/{plan_id}"), ("POST", "/pdi/plans/{plan_id}/actions"),
+    ("PUT", "/goals/{goal_id}/actuals/{month}"), ("POST", "/goals/{goal_id}/comments"),
+    ("POST", "/learning/employee/{target_user_id}"),
+    ("POST", "/onboarding/assign"),
+})
+
+PAPEIS_RH = ("manager", "master_admin")
+ROTULO_DO_PAPEL = {"master_admin": "Administrador", "manager": "RH", "user": "Colaborador"}
+
+
+def todas_as_rotas_do_agente() -> list[tuple[str, str]]:
+    return sorted({("GET", r) for r in ROTAS_DO_AGENTE} | set(ESCRITAS_DO_AGENTE))
+
+
+def capacidades(papeis: set[str]) -> dict:
+    """{papel, rotas} de GET /agente/capacidades para quem tem estes papéis no TalentHS."""
+    rh = bool(papeis & set(PAPEIS_RH))
+    papel = next((p for p in ("master_admin", "manager") if p in papeis), "user")
+    rotas = [list(par) for par in todas_as_rotas_do_agente() if rh or par not in SO_RH]
+    return {"papel": ROTULO_DO_PAPEL[papel], "rotas": rotas}
 
 
 class TokenDeAgenteInvalido(Exception):
