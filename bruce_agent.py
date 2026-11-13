@@ -6,6 +6,7 @@ Agente de IA com acesso completo ao TalentHS (master_admin)
 Pré-requisitos:
   pip install anthropic httpx
   export ANTHROPIC_API_KEY=sk-ant-...
+  export BRUCE_PASSWORD=...
 
 Uso:
   python bruce_agent.py
@@ -25,8 +26,8 @@ from anthropic import Anthropic
 # ─────────────────────────────────────────────────────────────────────────────
 
 BASE_URL = "https://talenthsapi.healthsafetytech.com"
-BRUCE_EMAIL = "bruce@healthsafetytech.com"
-BRUCE_PASSWORD = "bruce120154@"
+BRUCE_EMAIL = os.environ.get("BRUCE_EMAIL", "bruce@healthsafetytech.com")
+BRUCE_PASSWORD = os.environ.get("BRUCE_PASSWORD", "")
 CLAUDE_MODEL = "claude-opus-4-6"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1424,6 +1425,11 @@ def main():
     print("║   Bruce — Assistente de RH TalentHS      ║")
     print("║   HealthSafety Tech  |  master_admin      ║")
     print("╚══════════════════════════════════════════╝\n")
+
+    if not BRUCE_PASSWORD:
+        print("❌ BRUCE_PASSWORD não definida. Execute:")
+        print("   export BRUCE_PASSWORD=...")
+        sys.exit(1)
 
     print("Autenticando no TalentHS... ", end="", flush=True)
     try:
