@@ -185,6 +185,25 @@ async def respond_to_feedback(
     if body.rating < 1 or body.rating > 5:
         raise HTTPException(status_code=400, detail="rating deve ser entre 1 e 5")
 
+    # Só responde quem o pedido alcança: mesma regra da lista de /feedbacks/my.
+    addressed = await conn.fetchval(
+        """
+        SELECT 1
+        FROM public.feedback_requests fr
+        JOIN public.profiles me ON me.user_id = $2
+        WHERE fr.id = $1
+          AND fr.company_id = me.company_id
+          AND (
+            fr.target_type = 'all'
+            OR (fr.target_type = 'department' AND fr.target_department_id = me.department_id)
+            OR (fr.target_type = 'individual' AND fr.target_user_id = me.user_id)
+          )
+        """,
+        feedback_id, user_id,
+    )
+    if not addressed:
+        raise HTTPException(status_code=404, detail="Pedido de feedback não encontrado")
+
     row = await conn.fetchrow(
         """
         INSERT INTO public.feedback_responses (feedback_request_id, user_id, rating, comment)

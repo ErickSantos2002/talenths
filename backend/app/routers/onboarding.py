@@ -3,7 +3,7 @@ from datetime import datetime, timezone, date as date_type, timedelta
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
-from app.roster import active_unless, ensure_active_targets, iso_or_none
+from app.roster import active_unless, ensure_active_targets, ensure_company_targets, iso_or_none
 
 router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 
@@ -273,6 +273,7 @@ async def assign_checklist(
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     target_user_id = body["user_id"]
+    await ensure_company_targets(conn, [target_user_id], company_id)
     await ensure_active_targets(conn, [target_user_id])
     template_id = body.get("template_id")
     started_at_raw = body.get("started_at")
@@ -289,15 +290,16 @@ async def assign_checklist(
     template_tasks = []
     if template_id:
         tmpl = await conn.fetchrow(
-            "SELECT * FROM onboarding_templates WHERE id = $1 AND company_id = $2",
-            template_id, company_id,
+            "SELECT * FROM onboarding_templates WHERE id::text = $1 AND company_id = $2",
+            str(template_id), company_id,
         )
-        if tmpl:
-            template_name = tmpl["name"]
-            template_tasks = await conn.fetch(
-                "SELECT * FROM onboarding_template_tasks WHERE template_id = $1 ORDER BY position",
-                template_id,
-            )
+        if not tmpl:
+            raise HTTPException(404, "Modelo de onboarding não encontrado")
+        template_name = tmpl["name"]
+        template_tasks = await conn.fetch(
+            "SELECT * FROM onboarding_template_tasks WHERE template_id = $1 ORDER BY position",
+            template_id,
+        )
 
     c = await conn.fetchrow(
         """INSERT INTO onboarding_checklists (company_id, user_id, template_id, template_name, started_at, created_by)

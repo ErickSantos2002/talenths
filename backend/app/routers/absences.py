@@ -243,24 +243,36 @@ async def create_request(
     return _ser_request(full)
 
 
+async def _review(request_id: str, new_status: str, note, user_id: str, conn: asyncpg.Connection) -> dict:
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    current = await conn.fetchval(
+        "SELECT status FROM absence_requests WHERE id = $1 AND company_id = $2",
+        request_id, company_id,
+    )
+    if current is None:
+        raise HTTPException(404, "Solicitação não encontrada")
+    if current != "pending":
+        raise HTTPException(409, "Solicitação já não está pendente")
+    row = await conn.fetchrow(
+        """UPDATE absence_requests
+           SET status = $1, reviewed_by = $2, reviewed_at = $3, review_note = $4
+           WHERE id = $5 AND status = 'pending' RETURNING id""",
+        new_status, user_id, datetime.now(timezone.utc), note, request_id,
+    )
+    if not row:
+        raise HTTPException(409, "Solicitação já não está pendente")
+    full = await conn.fetchrow(REQUEST_JOIN + " WHERE ar.id = $1", request_id)
+    return _ser_request(full)
+
+
 @router.put("/{request_id}/approve")
 async def approve_request(
     request_id: str, body: dict,
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
-    await _require_manager(user_id, conn)
-    now = datetime.now(timezone.utc)
-    row = await conn.fetchrow(
-        """UPDATE absence_requests
-           SET status = 'approved', reviewed_by = $1, reviewed_at = $2, review_note = $3
-           WHERE id = $4 RETURNING *""",
-        user_id, now, body.get("note"), request_id,
-    )
-    if not row:
-        raise HTTPException(404, "Solicitação não encontrada")
-    full = await conn.fetchrow(REQUEST_JOIN + " WHERE ar.id = $1", request_id)
-    return _ser_request(full)
+    return await _review(request_id, "approved", body.get("note"), user_id, conn)
 
 
 @router.put("/{request_id}/reject")
@@ -269,18 +281,7 @@ async def reject_request(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
-    await _require_manager(user_id, conn)
-    now = datetime.now(timezone.utc)
-    row = await conn.fetchrow(
-        """UPDATE absence_requests
-           SET status = 'rejected', reviewed_by = $1, reviewed_at = $2, review_note = $3
-           WHERE id = $4 RETURNING *""",
-        user_id, now, body.get("note"), request_id,
-    )
-    if not row:
-        raise HTTPException(404, "Solicitação não encontrada")
-    full = await conn.fetchrow(REQUEST_JOIN + " WHERE ar.id = $1", request_id)
-    return _ser_request(full)
+    return await _review(request_id, "rejected", body.get("note"), user_id, conn)
 
 
 @router.delete("/{request_id}", status_code=204)

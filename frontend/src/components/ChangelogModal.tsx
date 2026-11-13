@@ -16,9 +16,31 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.17.0",
+    version: "v1.18.0",
     date: "13/11/2026",
     current: true,
+    entries: [
+      {
+        type: "novidade",
+        text: "O Guardi agora também faz pedidos por você — solicitar ausência, ajustar o ponto, responder feedback, se inscrever em workshop — e, para o RH, aprovar pedidos, publicar comunicados, montar PDI e lançar resultado de meta. Ele sempre mostra um cartão e só faz depois que você confirma.",
+      },
+      {
+        type: "corrigido",
+        text: "Aprovar ou recusar uma ausência que já tinha sido decidida agora avisa, em vez de mudar a decisão anterior.",
+      },
+      {
+        type: "corrigido",
+        text: "Criar um PDI já com prazos nas ações funciona de primeira, e atribuir um onboarding com modelo que não existe mais avisa, em vez de criar um checklist vazio.",
+      },
+      {
+        type: "melhoria",
+        text: "O registro de atividades descreve com mais precisão o que foi feito, como inscrição em workshop, comentário e resultado de meta.",
+      },
+    ],
+  },
+  {
+    version: "v1.17.0",
+    date: "13/11/2026",
     entries: [
       {
         type: "novidade",

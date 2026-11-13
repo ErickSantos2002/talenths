@@ -3,7 +3,9 @@ from datetime import datetime, timezone
 import asyncpg
 
 from app.dependencies import get_db, get_current_user_id
-from app.roster import active_unless, ensure_active_targets, iso_or_none
+from datetime import date as date_type
+
+from app.roster import active_unless, ensure_active_targets, ensure_company_targets, iso_or_none
 
 router = APIRouter(prefix="/pdi", tags=["pdi"])
 
@@ -24,6 +26,15 @@ async def _get_company_id(user_id: str, conn: asyncpg.Connection) -> str:
     if not row or not row["company_id"]:
         raise HTTPException(status_code=404, detail="Empresa não encontrada")
     return str(row["company_id"])
+
+
+def _parse_date(value):
+    if not value:
+        return None
+    try:
+        return date_type.fromisoformat(value)
+    except (TypeError, ValueError):
+        raise HTTPException(422, "Data inválida (use AAAA-MM-DD)")
 
 
 def _serialize_plan(plan, actions):
@@ -152,6 +163,7 @@ async def create_plan(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await ensure_company_targets(conn, [body["user_id"]], company_id)
     await ensure_active_targets(conn, [body["user_id"]])
 
     plan = await conn.fetchrow(
@@ -168,7 +180,7 @@ async def create_plan(
             """INSERT INTO pdi_actions (plan_id, title, description, how, due_date, position)
                VALUES ($1, $2, $3, $4, $5, $6) RETURNING *""",
             str(plan["id"]), action["title"], action.get("description"),
-            action.get("how"), action.get("due_date"), i,
+            action.get("how"), _parse_date(action.get("due_date")), i,
         )
         actions.append(a)
 
@@ -231,11 +243,13 @@ async def add_action(
     conn: asyncpg.Connection = Depends(get_db),
 ):
     await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    if not await conn.fetchval(
+        "SELECT 1 FROM pdi_plans WHERE id = $1 AND company_id = $2", plan_id, company_id
+    ):
+        raise HTTPException(404, "Plano não encontrado")
     count = await conn.fetchval("SELECT COUNT(*) FROM pdi_actions WHERE plan_id = $1", plan_id)
-    due_date = None
-    if body.get("due_date"):
-        from datetime import date as date_type
-        due_date = date_type.fromisoformat(body["due_date"])
+    due_date = _parse_date(body.get("due_date"))
 
     row = await conn.fetchrow(
         """INSERT INTO pdi_actions (plan_id, title, description, how, due_date, position)
@@ -274,10 +288,7 @@ async def update_action(
     now = datetime.now(timezone.utc)
     completed_at = now if body.get("status") == "done" else None
 
-    due_date = None
-    if body.get("due_date"):
-        from datetime import date as date_type
-        due_date = date_type.fromisoformat(body["due_date"])
+    due_date = _parse_date(body.get("due_date"))
 
     row = await conn.fetchrow(
         """UPDATE pdi_actions

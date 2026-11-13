@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from app.auth.agente import (
+    ESCRITAS_DO_AGENTE,
     ROTAS_DO_AGENTE,
     TokenDeAgenteInvalido,
     eh_token_de_agente,
@@ -65,9 +66,13 @@ def test_login_normal_nao_e_agente():
     assert eh_token_de_agente(emitir())
 
 
-def test_so_get_e_so_rota_da_lista():
+def test_so_rota_da_lista_e_com_o_metodo_da_lista():
     assert rota_liberada_ao_agente("GET", "/absences/my")
     assert not rota_liberada_ao_agente("POST", "/absences/my")
+    assert rota_liberada_ao_agente("POST", "/absences/request")
+    assert not rota_liberada_ao_agente("GET", "/absences/request")
+    assert rota_liberada_ao_agente("PUT", "/absences/{request_id}/approve")
+    assert not rota_liberada_ao_agente("POST", "/absences/{request_id}/approve")
     assert not rota_liberada_ao_agente("GET", "/absences/my/extra")
     assert not rota_liberada_ao_agente("GET", None)
     for proibida in (
@@ -84,3 +89,34 @@ def test_toda_rota_da_lista_existe_como_get_no_app(monkeypatch):
 
     gets = {p for p, ops in app.openapi()["paths"].items() if "get" in ops}
     assert ROTAS_DO_AGENTE - gets == set()
+
+
+def test_fora_de_proposito_nao_e_escrita_do_agente():
+    for method, path in (
+        ("POST", "/timeclock/punch"),
+        ("POST", "/timeclock/manual"),
+        ("PUT", "/timeclock/{punch_id}"),
+        ("POST", "/collaborators"),
+        ("PATCH", "/collaborators/{profile_id}/role"),
+        ("PATCH", "/collaborators/{profile_id}/password"),
+        ("POST", "/collaborators/{profile_id}/deactivate"),
+        ("PATCH", "/salary/employee/{profile_id}"),
+        ("POST", "/evaluations/submit"),
+        ("PUT", "/evaluations/cycles/{cycle_id}/calibrate"),
+        ("DELETE", "/pdi/plans/{plan_id}"),
+        ("DELETE", "/goals/comments/{comment_id}"),
+        ("POST", "/absences/types"),
+        ("POST", "/onboarding/templates"),
+        ("POST", "/documents/upload"),
+        ("PATCH", "/profiles/me"),
+    ):
+        assert not rota_liberada_ao_agente(method, path), (method, path)
+
+
+def test_toda_escrita_da_lista_existe_no_app_com_esse_metodo():
+    from app.main import app
+
+    paths = app.openapi()["paths"]
+    missing = {(m, p) for m, p in ESCRITAS_DO_AGENTE if m.lower() not in paths.get(p, {})}
+    assert missing == set()
+    assert len(ESCRITAS_DO_AGENTE) == 27

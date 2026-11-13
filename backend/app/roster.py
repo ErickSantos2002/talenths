@@ -1,5 +1,6 @@
 """Equipe ativa: quem foi desligado (profiles.deactivated_at preenchido) não conta como
 equipe atual nem pode receber nada novo, mas o histórico dele continua consultável."""
+import uuid
 from typing import Iterable
 
 import asyncpg
@@ -22,6 +23,24 @@ TERMINATION_REASON_LABELS = {
     "mutual_agreement": "Acordo entre as partes",
     "other": "Outro",
 }
+
+
+async def ensure_company_targets(conn: asyncpg.Connection, user_ids: Iterable[str], company_id: str) -> None:
+    """Alvo de uma escrita do RH tem de ser da empresa dele; de fora, 404 como se não existisse."""
+    ids = {str(u) for u in user_ids if u}
+    if not ids:
+        return
+    try:
+        for u in ids:
+            uuid.UUID(u)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Colaborador não encontrado")
+    found = await conn.fetchval(
+        "SELECT count(*) FROM public.profiles WHERE user_id = ANY($1::uuid[]) AND company_id = $2",
+        list(ids), company_id,
+    )
+    if found != len(ids):
+        raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
 
 def iso_or_none(value):

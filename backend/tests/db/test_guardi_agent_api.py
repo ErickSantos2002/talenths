@@ -31,7 +31,10 @@ async def agente(db, monkeypatch):
     app.dependency_overrides[get_db] = _db
     app.dependency_overrides[get_db_public] = _db
     app.dependency_overrides[get_auth_conn_opener] = lambda: _opener
-    client = httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
+    # 500 de handler volta como resposta (e não exceção) para a varredura das escritas.
+    client = httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app, raise_app_exceptions=False), base_url="http://test"
+    )
 
     async def get(path, token, method="GET", **kw):
         return await client.request(method, path, headers={"Authorization": f"Bearer {token}"}, **kw)
@@ -124,7 +127,9 @@ async def test_fora_da_lista_ou_escrita_da_403_mesmo_para_master_admin(db, agent
         assert (await agente(path, token)).status_code == 403, path
 
     assert (await agente("/profiles/me", token, method="PATCH", json={"name": "x"})).status_code == 403
-    assert (await agente("/absences/request", token, method="POST", json={})).status_code == 403
+    assert (await agente("/timeclock/punch", token, method="POST", json={})).status_code == 403
+    assert (await agente(f"/pdi/plans/{some_id}", token, method="DELETE")).status_code == 403
+    assert (await agente("/absences/request", token, method="GET")).status_code in (403, 405)
     # Rota pública não vira porta de entrada: o bloqueio é global, não só no login.
     assert (await agente("/auth/login", token, method="POST", json={})).status_code == 403
 
@@ -147,3 +152,52 @@ async def test_login_normal_get_continua_sem_auditoria(db, client_as, audit_call
 
     assert (await client_as(user).get("/absences/my")).status_code == 200
     assert audit_calls == []
+
+
+GATE_DETAIL = "Fora do que o assistente pode consultar"
+
+
+async def test_toda_escrita_da_lista_passa_pela_porta_do_agente(db, agente):
+    from app.auth.agente import ESCRITAS_DO_AGENTE
+
+    company = await make_company(db)
+    admin = await make_user(db, company, role="master_admin")
+    token = emitir(sub=await email_of(db, admin))
+
+    for method, template in sorted(ESCRITAS_DO_AGENTE):
+        path = template.replace("{month}", "1")
+        while "{" in path:
+            start = path.index("{")
+            path = path[:start] + str(uuid.uuid4()) + path[path.index("}") + 1:]
+        r = await agente(path, token, method=method, json={})
+        assert not (r.status_code == 403 and r.json().get("detail") == GATE_DETAIL), (method, template)
+
+
+async def test_escrita_respeita_o_papel_do_dono(db, agente):
+    from tests.db.test_rh_writes_scope_api import make_absence
+
+    company = await make_company(db)
+    user = await make_user(db, company)
+    hr = await make_user(db, company, role="manager")
+    req = await make_absence(db, company, user)
+
+    r_user = await agente(f"/absences/{req}/approve", emitir(sub=await email_of(db, user)), method="PUT", json={})
+    assert r_user.status_code == 403 and r_user.json()["detail"] != GATE_DETAIL
+
+    r_hr = await agente(f"/absences/{req}/approve", emitir(sub=await email_of(db, hr)), method="PUT", json={})
+    assert r_hr.status_code == 200
+    assert str(await db.fetchval("SELECT reviewed_by FROM public.absence_requests WHERE id = $1", req)) == hr
+
+
+async def test_escrita_do_agente_na_auditoria_com_rotulo_e_via(db, agente, audit_calls):
+    from tests.db.test_rh_writes_scope_api import make_absence
+
+    company = await make_company(db)
+    user = await make_user(db, company)
+    hr = await make_user(db, company, role="manager")
+    req = await make_absence(db, company, user)
+
+    await agente(f"/absences/{req}/reject", emitir(sub=await email_of(db, hr)), method="PUT", json={})
+
+    (user_id, method, _path, action, status_code, _ip, via), = audit_calls
+    assert (user_id, method, action, status_code, via) == (hr, "PUT", "Ausência recusada", 200, "erick-bot")

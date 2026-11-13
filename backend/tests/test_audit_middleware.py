@@ -44,3 +44,17 @@ def test_collaborator_status_labels():
 def test_video_completion_labels():
     assert _resolve_action("POST", f"/videos/{VID}/viewers/{UID}/complete") == "Conclusão de vídeo registrada"
     assert _resolve_action("POST", f"/videos/{VID}/viewers/{UID}/uncomplete") == "Registro de conclusão desfeito"
+
+
+def test_rotulos_ancorados_nao_confundem_rotas_parecidas():
+    assert _resolve_action("POST", f"/workshops/{VID}/register") == "Inscrição em workshop"
+    assert _resolve_action("DELETE", f"/workshops/{VID}/register") == "Cancelamento de inscrição em workshop"
+    assert _resolve_action("POST", "/workshops") == "Workshop criado"
+    assert _resolve_action("POST", f"/pdi/plans/{VID}/actions") == "Ação de PDI criada"
+    assert _resolve_action("POST", "/pdi/plans") == "Plano de PDI criado"
+    assert _resolve_action("PUT", f"/goals/{VID}/actuals/3") == "Realizado de meta lançado"
+    assert _resolve_action("POST", f"/goals/{VID}/comments") == "Comentário em meta"
+    assert _resolve_action("PUT", f"/goals/{VID}") == "Meta atualizada"
+    assert _resolve_action("POST", f"/feedbacks/{VID}/respond") == "Feedback respondido"
+    assert _resolve_action("POST", f"/timeclock/adjustments/{VID}/approve") == "Ajuste de ponto aprovado"
+    assert _resolve_action("PUT", f"/onboarding/checklist-tasks/{VID}/complete") == "Tarefa de onboarding marcada ou desmarcada"

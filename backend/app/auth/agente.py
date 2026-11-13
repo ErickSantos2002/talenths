@@ -13,7 +13,7 @@ VIDA_MAXIMA_SEGUNDOS = 600
 AUDIENCIA = "talenths"
 EMISSOR = "hsos"
 
-# Só leitura e só o que o catálogo do Guardi usa, casado pelo TEMPLATE da rota (não por
+# Leitura: só o que o catálogo do Guardi usa, casado pelo TEMPLATE da rota (não por
 # prefixo). Fora de propósito, de fora daqui: download de arquivo, prova/teste, convites,
 # /auth/* (menos /auth/me), logs, administração de vídeo, bingo e tour.
 ROTAS_DO_AGENTE = frozenset({
@@ -34,7 +34,8 @@ ROTAS_DO_AGENTE = frozenset({
     "/learning/catalog", "/learning/my", "/learning/my-tracks", "/learning/team",
     "/learning/team-tracks",
     "/workshops", "/videos/mine",
-    "/onboarding/my", "/onboarding/team",
+    "/calendar/events",
+    "/onboarding/my", "/onboarding/team", "/onboarding/templates",
     "/benefits/catalog", "/benefits/my", "/benefits/team",
     "/benefits/employee/{target_user_id}", "/benefits/summary",
     "/career/tracks", "/career/my", "/career/team",
@@ -44,6 +45,45 @@ ROTAS_DO_AGENTE = frozenset({
     "/tests/available", "/tests/my-attempts",
     "/reports/collaborators", "/reports/absences", "/reports/benefits", "/reports/pdi",
     "/reports/learning",
+})
+
+
+# Escritas que o Guardi faz depois de o dono confirmar o cartão no HS.OS. Quem pode cada
+# uma continua sendo o papel do dono aqui. Fora, de propósito: bater ponto
+# (POST /timeclock/punch, registro legal), cadastro/desligamento/senha/papel, salário,
+# enviar ou calibrar avaliação, exclusões, configurações e anexos.
+ESCRITAS_DO_AGENTE = frozenset({
+    # colaborador
+    ("POST", "/absences/request"),
+    ("DELETE", "/absences/{request_id}"),
+    ("POST", "/timeclock/{punch_id}/adjust"),
+    ("POST", "/timeclock/manual-self"),
+    ("POST", "/feedbacks/{feedback_id}/respond"),
+    ("POST", "/workshops/{workshop_id}/register"),
+    ("DELETE", "/workshops/{workshop_id}/register"),
+    ("PUT", "/onboarding/checklist-tasks/{task_id}/complete"),
+    # RH — aprovações
+    ("PUT", "/absences/{request_id}/approve"),
+    ("PUT", "/absences/{request_id}/reject"),
+    ("POST", "/timeclock/adjustments/{req_id}/approve"),
+    ("POST", "/timeclock/adjustments/{req_id}/reject"),
+    ("POST", "/timeclock/punches/{punch_id}/confirm"),
+    ("POST", "/timeclock/punches/{punch_id}/reject"),
+    # RH — comunicação
+    ("POST", "/communications/announcements"),
+    ("PUT", "/communications/announcements/{announcement_id}"),
+    ("POST", "/calendar/events"),
+    ("PUT", "/calendar/events/{event_id}"),
+    ("POST", "/feedbacks"),
+    # RH — desenvolvimento (a ação de PDI também é do colaborador, no próprio plano)
+    ("POST", "/pdi/plans"),
+    ("PUT", "/pdi/plans/{plan_id}"),
+    ("POST", "/pdi/plans/{plan_id}/actions"),
+    ("PUT", "/pdi/actions/{action_id}"),
+    ("PUT", "/goals/{goal_id}/actuals/{month}"),
+    ("POST", "/goals/{goal_id}/comments"),
+    ("POST", "/learning/employee/{target_user_id}"),
+    ("POST", "/onboarding/assign"),
 })
 
 
@@ -88,4 +128,6 @@ def validar_token_de_agente(token: str, chave_pem: str) -> tuple[str, str]:
 
 
 def rota_liberada_ao_agente(method: str, route_template: str | None) -> bool:
-    return method == "GET" and route_template in ROTAS_DO_AGENTE
+    if method == "GET":
+        return route_template in ROTAS_DO_AGENTE
+    return (method, route_template) in ESCRITAS_DO_AGENTE
