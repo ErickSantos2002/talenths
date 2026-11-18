@@ -151,6 +151,8 @@ export const collaborators = {
     post<Record<string, unknown>>("/collaborators", data),
   update: (profileId: string, data: Record<string, unknown>) =>
     patch<Record<string, unknown>>(`/collaborators/${profileId}`, data),
+  setManager: (profileId: string, managerUserId: string | null) =>
+    put<{ ok: boolean }>(`/collaborators/${profileId}/manager`, { manager_user_id: managerUserId }),
   updateRole: (roleId: string, role: string) =>
     patch<Record<string, unknown>>(`/collaborators/${roleId}/role`, { role }),
   resetPassword: (profileId: string, password: string) =>
@@ -188,13 +190,15 @@ export const culture = {
 
 // ── Evaluations ───────────────────────────────────────────────────────────────
 
-import type { EvalCycle, TeamMemberStatus, ScoreItem, NineBoxEntry } from "@/types/evaluations";
+import type { EvalCycle, TeamMemberStatus, ScoreItem, NineBoxEntry, MyTeamMember } from "@/types/evaluations";
+
+type EvalCycleInput = Partial<Omit<EvalCycle, "id" | "company_id" | "created_at" | "manual_status">>;
 
 export const evaluations = {
   listCycles: () => get<EvalCycle[]>("/evaluations/cycles"),
-  createCycle: (data: Partial<EvalCycle> & { name: string }) => post<EvalCycle>("/evaluations/cycles", data),
-  updateCycle: (id: string, data: Partial<EvalCycle>) => put<EvalCycle>(`/evaluations/cycles/${id}`, data),
-  submitEvaluation: (data: { eval_cycle_id: string; evaluated_user_id: string; eval_type: string; scores: ScoreItem[] }) =>
+  createCycle: (data: EvalCycleInput & { name: string }) => post<EvalCycle>("/evaluations/cycles", data),
+  updateCycle: (id: string, data: EvalCycleInput) => put<EvalCycle>(`/evaluations/cycles/${id}`, data),
+  submitEvaluation: (data: { eval_cycle_id: string; evaluated_user_id: string; eval_type: "self" | "manager"; scores: ScoreItem[] }) =>
     post<{ ok: boolean; evaluation_id: string }>("/evaluations/submit", data),
   myEvaluation: (cycleId: string) =>
     get<{ submitted: boolean; submitted_at: string | null; scores: ScoreItem[] }>(`/evaluations/my?cycle_id=${cycleId}`),
@@ -202,7 +206,9 @@ export const evaluations = {
     get<TeamMemberStatus[]>(withInactive(`/evaluations/team-status?cycle_id=${cycleId}`, includeInactive)),
   scores: (cycleId: string, evaluatedUserId: string) =>
     get<{ eval_type: string; submitted_at: string | null; scores: ScoreItem[] }[]>(`/evaluations/scores?cycle_id=${cycleId}&evaluated_user_id=${evaluatedUserId}`),
-  consolidate: (cycleId: string) => post<{ ok: boolean; updated: number }>(`/evaluations/cycles/${cycleId}/consolidate`),
+  myTeam: (cycleId: string) => get<MyTeamMember[]>(`/evaluations/my-team?cycle_id=${cycleId}`),
+  consolidate: (cycleId: string) =>
+    post<{ ok: boolean; updated: number; pending_manager: number }>(`/evaluations/cycles/${cycleId}/consolidate`),
   calibrate: (cycleId: string, data: { user_id: string; nine_box_x: number; nine_box_y: number; calibration_note?: string }) =>
     put<{ ok: boolean; quadrant: string }>(`/evaluations/cycles/${cycleId}/calibrate`, data),
   nineBox: (cycleId: string, includeInactive?: boolean) =>

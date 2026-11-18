@@ -8,7 +8,7 @@ import type { ScreenTour } from "./types";
 export const SCREEN_TOURS: ScreenTour[] = [
   {
     id: "tela-minha-avaliacao",
-    version: 1,
+    version: 2,
     screen: "/minha-avaliacao",
     roles: ["master_admin", "manager", "user"],
     steps: [
@@ -20,7 +20,7 @@ export const SCREEN_TOURS: ScreenTour[] = [
       {
         element: "my-evaluation-cycle",
         title: "O ciclo",
-        text: "Clique no seletor para trocar de ciclo. A etiqueta **Avaliação** marca o ciclo que está aberto.",
+        text: "Clique no seletor para trocar de ciclo. A etiqueta **Avaliação** marca o ciclo que está aberto para a autoavaliação.",
       },
       {
         element: "my-evaluation-sent",
@@ -31,6 +31,12 @@ export const SCREEN_TOURS: ScreenTour[] = [
         element: "my-evaluation-form",
         title: "Os comportamentos",
         text: "Clique nas estrelas de cada comportamento e, se quiser, escreva um comentário. Quando todos tiverem nota, clique em **Enviar Avaliação** no fim da tela.",
+      },
+      {
+        element: "my-evaluation-team",
+        title: "Avaliar minha equipe",
+        text: "Você é gestor responsável de alguém. Nesta aba você dá a nota de gestor de cada pessoa, que vale 90% da nota final dela.",
+        since: 2,
       },
     ],
   },
@@ -121,7 +127,7 @@ export const SCREEN_TOURS: ScreenTour[] = [
   },
   {
     id: "tela-admin-avaliacao",
-    version: 1,
+    version: 2,
     screen: "/admin/avaliacao",
     roles: ["master_admin", "manager"],
     steps: [
@@ -138,7 +144,13 @@ export const SCREEN_TOURS: ScreenTour[] = [
       {
         element: "evaluation-controls",
         title: "Etapa e notas",
-        text: "Em **Etapa atual**, mude a etapa do ciclo. Clique em **Calcular Notas** para gerar a nota final de cada pessoa e a posição dela no 9Box.",
+        text: "Em **Etapa atual**, deixe **Pelas datas** para o ciclo avançar sozinho ou escolha uma etapa para travá-la. Clique em **Calcular Notas** para gerar a nota final de cada pessoa e a posição dela no 9Box.",
+      },
+      {
+        element: "evaluation-edit-cycle",
+        title: "Editar o ciclo",
+        text: "Clique em **Editar ciclo** para mudar o nome, as datas das etapas ou o ciclo de metas.",
+        since: 2,
       },
       {
         element: "evaluation-summary",
@@ -148,7 +160,7 @@ export const SCREEN_TOURS: ScreenTour[] = [
       {
         element: "evaluation-table",
         title: "Os colaboradores",
-        text: "Nas colunas **Auto** e **Gestor**, o visto verde é avaliação enviada e o relógio, pendente. Clique em **Avaliar** na linha da pessoa para fazer a avaliação de gestor.",
+        text: "Ao lado do nome está o gestor que dá a nota da pessoa; nas colunas **Auto** e **Gestor**, o visto verde é avaliação enviada e o relógio, pendente. O botão **Avaliar** só aparece para quem é o gestor responsável.",
       },
     ],
   },

@@ -44,6 +44,6 @@ A coroa marca os quadrantes elegíveis para a trilha de carreira: **Futuro Talen
 
 **A tela mostra "Nenhuma nota consolidada encontrada".** As notas do ciclo ainda não foram calculadas. Abra **Avaliação** e clique em **Calcular Notas**.
 
-**Uma pessoa avaliada não aparece no quadro.** Para entrar no 9Box, a pessoa precisa de nota e de progresso de metas no time dela. Confira se o ciclo de avaliação está vinculado a um ciclo de metas e se o time tem realizado lançado. Veja [Avaliação de Desempenho](/ajuda/administracao/avaliacao).
+**Uma pessoa avaliada não aparece no quadro.** Para entrar no 9Box, a pessoa precisa de nota, que só sai com a avaliação do gestor responsável, e de progresso de metas no time dela. Confira se o ciclo de avaliação está vinculado a um ciclo de metas e se o time tem realizado lançado. Veja [Avaliação de Desempenho](/ajuda/administracao/avaliacao).
 
 **Posso mudar alguém de quadrante por esta tela?** Não. A posição vem do cálculo das notas, feito na tela **Avaliação**.

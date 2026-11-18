@@ -1,5 +1,4 @@
 """Salário, CPF, telefone e nascimento de colega só para o RH (e o próprio)."""
-import uuid
 
 from tests.db.conftest import make_company, make_user
 
@@ -65,7 +64,10 @@ async def test_notas_da_avaliacao_so_para_o_rh(db, client_as):
     user = await make_user(db, company)
     colleague = await make_user(db, company)
     hr = await make_user(db, company, role="manager")
-    qs = f"cycle_id={uuid.uuid4()}&evaluated_user_id={colleague}"
+    cycle = await db.fetchval(
+        "INSERT INTO public.evaluation_cycles (company_id, name) VALUES ($1, 'Ciclo') RETURNING id", company
+    )
+    qs = f"cycle_id={cycle}&evaluated_user_id={colleague}"
 
     assert (await client_as(user).get(f"/evaluations/scores?{qs}")).status_code == 403
     assert (await client_as(hr).get(f"/evaluations/scores?{qs}")).status_code == 200

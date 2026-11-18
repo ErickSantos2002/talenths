@@ -1,18 +1,52 @@
 export interface Behavior {
   key: string;
   label: string;
+  description: string;
   pillar: "cultura" | "entregas" | "desenvolvimento";
 }
 
+// Mesmo texto de backend/app/evaluation_rules.py (material da consultoria de RH).
 export const BEHAVIORS: Behavior[] = [
-  { key: "cultura_visivel", label: "Alinhamento Cultural Visível",         pillar: "cultura" },
-  { key: "cultura_genuino", label: "Alinhamento Cultural Genuíno",          pillar: "cultura" },
-  { key: "entregas",        label: "Entregas (qualidade, prazo e impacto)", pillar: "entregas" },
-  { key: "organizacao",     label: "Organização e priorização",             pillar: "entregas" },
-  { key: "colaboracao",     label: "Colaboração",                           pillar: "entregas" },
-  { key: "feedback",        label: "Abertura a feedback",                   pillar: "desenvolvimento" },
-  { key: "autonomia",       label: "Autonomia e aprendizado",               pillar: "desenvolvimento" },
-  { key: "protagonismo",    label: "Protagonismo",                          pillar: "desenvolvimento" },
+  {
+    key: "cultura_visivel", pillar: "cultura",
+    label: "Alinhamento Cultural Visível (comportamento em público)",
+    description: "Demonstra, no dia a dia e na frente das pessoas, comportamentos alinhados à Cultura H&S, atuando com foco na proteção da vida, no cuidado com o cliente, na colaboração com o time, na responsabilidade com as entregas e no respeito à ética, à segurança e às normas da empresa.",
+  },
+  {
+    key: "cultura_genuino", pillar: "cultura",
+    label: "Alinhamento Cultural Genuíno (postura consistente)",
+    description: "Mantém uma postura coerente com a Cultura H&S mesmo fora do ambiente formal, demonstrando integridade, respeito, responsabilidade e compromisso real com a segurança, com as pessoas e com a empresa, sem atitudes ou discursos que enfraqueçam o time, a confiança ou a cultura.",
+  },
+  {
+    key: "entregas", pillar: "entregas",
+    label: "Entregas (qualidade, prazo e impacto)",
+    description: "Entrega o que foi combinado, com qualidade, dentro do prazo e gerando impacto positivo para a área e para o negócio.",
+  },
+  {
+    key: "organizacao", pillar: "entregas",
+    label: "Organização e priorização",
+    description: "Organiza suas atividades, define prioridades corretamente e gerencia bem o tempo e as demandas do dia a dia.",
+  },
+  {
+    key: "colaboracao", pillar: "entregas",
+    label: "Colaboração entre as pessoas do time e outras áreas",
+    description: "Colabora ativamente com o time e com outras áreas, compartilhando informações e contribuindo para objetivos comuns.",
+  },
+  {
+    key: "feedback", pillar: "desenvolvimento",
+    label: "Abertura a feedback",
+    description: "Recebe feedbacks com maturidade, escuta com atenção e demonstra disposição para ajustar comportamentos e melhorar.",
+  },
+  {
+    key: "autonomia", pillar: "desenvolvimento",
+    label: "Autonomia e aprendizado",
+    description: "Atua com autonomia nas suas responsabilidades e busca aprender continuamente para evoluir no desempenho.",
+  },
+  {
+    key: "protagonismo", pillar: "desenvolvimento",
+    label: "Protagonismo com o próprio desenvolvimento",
+    description: "Assume responsabilidade pelo próprio desenvolvimento, busca oportunidades de crescimento e aplica aprendizados no dia a dia.",
+  },
 ];
 
 export const PILLAR_INFO = {
@@ -42,11 +76,24 @@ export interface EvalCycle {
   feedback_end: string | null;
   pdi_start: string | null;
   pdi_end: string | null;
-  status: "draft" | "evaluation" | "calibration" | "feedback" | "pdi" | "closed";
+  /** Etapa em que o ciclo está hoje (pelas datas, se `stage_by_dates`). */
+  status: EvalStatus;
+  /** Etapa escolhida à mão; vale quando `stage_by_dates` é falso. */
+  manual_status: EvalStatus;
+  stage_by_dates: boolean;
   created_at: string;
 }
 
-export const EVAL_STATUS_LABELS: Record<EvalCycle["status"], string> = {
+export type EvalStatus = "draft" | "evaluation" | "calibration" | "feedback" | "pdi" | "closed";
+
+export const EVAL_STAGES = [
+  { status: "evaluation", label: "Avaliação", start: "eval_start", end: "eval_end" },
+  { status: "calibration", label: "Calibragem", start: "calibration_start", end: "calibration_end" },
+  { status: "feedback", label: "Feedback", start: "feedback_start", end: "feedback_end" },
+  { status: "pdi", label: "PDI", start: "pdi_start", end: "pdi_end" },
+] as const;
+
+export const EVAL_STATUS_LABELS: Record<EvalStatus, string> = {
   draft: "Rascunho",
   evaluation: "Avaliação",
   calibration: "Calibragem",
@@ -61,10 +108,26 @@ export interface TeamMemberStatus {
   name: string;
   email: string;
   department: string | null;
+  manager_user_id: string | null;
+  manager_name: string | null;
+  manager_deactivated: boolean;
   self_submitted: boolean;
   manager_submitted: boolean;
   score_final: number | null;
+  score_manager: number | null;
+  score_self: number | null;
   nine_box_quadrant: string | null;
+}
+
+export interface MyTeamMember {
+  user_id: string;
+  name: string;
+  email: string;
+  department: string | null;
+  self_submitted: boolean;
+  manager_submitted: boolean;
+  submitted_at: string | null;
+  scores: ScoreItem[];
 }
 
 export interface ScoreItem {

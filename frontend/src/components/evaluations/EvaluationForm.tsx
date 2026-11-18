@@ -12,7 +12,7 @@ import { CheckCircle2 } from "lucide-react";
 interface Props {
   cycleId: string;
   evaluatedUserId: string;
-  evalType: "self" | "manager" | "chief";
+  evalType: "self" | "manager";
   evaluatedName?: string;
   existingScores?: ScoreItem[];
   onSuccess?: () => void;
@@ -50,6 +50,7 @@ export function EvaluationForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-evaluation", cycleId] });
       queryClient.invalidateQueries({ queryKey: ["team-status", cycleId] });
+      queryClient.invalidateQueries({ queryKey: ["my-team-evaluations", cycleId] });
       toast({ title: "Avaliação enviada com sucesso!" });
       onSuccess?.();
     },
@@ -94,7 +95,10 @@ export function EvaluationForm({
             <div className="space-y-5 pl-2">
               {pillarBehaviors.map((behavior) => (
                 <div key={behavior.key} className="space-y-2">
-                  <p className="text-sm font-medium">{behavior.label}</p>
+                  <div>
+                    <p className="text-sm font-medium">{behavior.label}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{behavior.description}</p>
+                  </div>
                   <StarRating
                     value={scores[behavior.key] ?? 0}
                     onChange={(v) => setScores(prev => ({ ...prev, [behavior.key]: v }))}

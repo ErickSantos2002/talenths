@@ -21,6 +21,8 @@ export function StarRating({ value, onChange, disabled, size = "md" }: StarRatin
             type="button"
             disabled={disabled}
             onClick={() => onChange?.(star)}
+            aria-label={`${star} de 5: ${SCORE_LABELS[star]}`}
+            aria-pressed={star === value}
             className={cn(
               starSize,
               "transition-colors",
@@ -29,7 +31,7 @@ export function StarRating({ value, onChange, disabled, size = "md" }: StarRatin
               disabled && "cursor-default"
             )}
           >
-            <Star className="h-full w-full fill-current" />
+            <Star className="h-full w-full fill-current" aria-hidden />
           </button>
         ))}
       </div>

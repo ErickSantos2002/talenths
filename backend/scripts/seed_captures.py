@@ -212,6 +212,10 @@ class Seeder:
         self.collaborators = [k for k in self.users if k not in ("gestor", "admin")]
         for key in self.collaborators:
             await self.ins("user_managers", user_id=self.users[key], manager_id=self.users["gestor"])
+            await self.conn.execute(
+                "UPDATE public.profiles SET manager_user_id = $2 WHERE user_id = $1",
+                self.users[key], self.users["gestor"],
+            )
         for key, uid in self.users.items():
             if key == TOUR_NOT_STARTED:
                 continue
@@ -312,14 +316,14 @@ class Seeder:
             name=f"Avaliação 1º semestre {y}", eval_start=date(y, 6, 1), eval_end=date(y, 6, 20),
             calibration_start=date(y, 6, 21), calibration_end=date(y, 6, 30), feedback_start=date(y, 7, 1),
             feedback_end=date(y, 7, 15), pdi_start=date(y, 7, 16), pdi_end=date(y, 7, 31), status="closed",
-            created_by=self.users["gestor"],
+            stage_by_dates=False, created_by=self.users["gestor"],
         )
         self.eval_cycle = await self.ins(
             "evaluation_cycles", company_id=self.company_id, management_cycle_id=self.mgmt_cycle,
             name=f"Avaliação 2º semestre {y}", eval_start=self.days(-10), eval_end=self.days(15),
             calibration_start=self.days(16), calibration_end=self.days(25), feedback_start=self.days(26),
-            feedback_end=self.days(40), pdi_start=self.days(41), pdi_end=self.days(55), status="evaluation",
-            created_by=self.users["gestor"],
+            feedback_end=self.days(40), pdi_start=self.days(41), pdi_end=self.days(55), status="draft",
+            stage_by_dates=True, created_by=self.users["gestor"],
         )
         keys = ["cultura_visivel", "cultura_genuino", "entregas", "organizacao",
                 "colaboracao", "feedback", "autonomia", "protagonismo"]
@@ -351,11 +355,15 @@ class Seeder:
                     for k in keys:
                         score = max(1, min(5, base + rng.choice((-1, 0, 0, 1))))
                         await self.ins("evaluation_scores", evaluation_id=eid, behavior_key=k, score=score)
-                final = {1: 2.6, 2: 3.8, 3: 4.7}[yb] + rng.uniform(-0.2, 0.2)
+                manager = {1: 2.6, 2: 3.8, 3: 4.7}[yb] + rng.uniform(-0.2, 0.2)
+                self_ = min(5.0, manager + 0.3) if "self" in kinds else None
+                # Gestor 90% + autoavaliação 10%, como o "Calcular Notas" faz.
+                final = manager * 0.9 + self_ * 0.1 if self_ is not None else manager
                 await self.ins(
                     "consolidated_scores", eval_cycle_id=cycle, user_id=self.users[key], company_id=self.company_id,
                     score_cultura=round(final + 0.1, 2), score_entregas=round(final - 0.1, 2),
                     score_desenvolvimento=round(final, 2), score_final=round(final, 2),
+                    score_manager=round(manager, 2), score_self=round(self_, 2) if self_ is not None else None,
                     nine_box_x=x, nine_box_y=yb, nine_box_quadrant=quadrants[(yb, x)],
                 )
 

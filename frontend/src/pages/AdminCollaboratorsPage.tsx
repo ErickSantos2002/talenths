@@ -47,6 +47,7 @@ interface Collaborator {
   department_id: string | null;
   departmentName: string | null;
   job_title: string | null;
+  manager_user_id: string | null;
   timeclock_enabled: boolean;
   daily_work_hours: number;
   role: AppRole;
@@ -120,6 +121,7 @@ export default function AdminCollaboratorsPage() {
   const [editDeptId, setEditDeptId] = useState<string>("");
   const [editRole, setEditRole] = useState<AppRole>("user");
   const [editJobTitle, setEditJobTitle] = useState("");
+  const [editManagerId, setEditManagerId] = useState("");
   const [editTimeclockEnabled, setEditTimeclockEnabled] = useState(false);
   const [editDailyHours, setEditDailyHours] = useState("8.5");
   const [saving, setSaving] = useState(false);
@@ -234,6 +236,7 @@ export default function AdminCollaboratorsPage() {
           department_id: p.department_id,
           departmentName: p.department_id ? deptMap.get(p.department_id) ?? null : null,
           job_title: p.job_title ?? null,
+          manager_user_id: p.manager_user_id ?? null,
           timeclock_enabled: p.timeclock_enabled ?? false,
           daily_work_hours: p.daily_work_hours != null ? Number(p.daily_work_hours) : 8.5,
           role: primaryRole,
@@ -287,6 +290,7 @@ export default function AdminCollaboratorsPage() {
     setEditDeptId(collab.department_id ?? "");
     setEditRole(collab.role);
     setEditJobTitle(collab.job_title ?? "");
+    setEditManagerId(collab.manager_user_id ?? "");
     setEditTimeclockEnabled(collab.timeclock_enabled);
     setEditDailyHours(String(collab.daily_work_hours ?? 8.5));
     setEditOpen(true);
@@ -316,6 +320,10 @@ export default function AdminCollaboratorsPage() {
         timeclock_enabled: editTimeclockEnabled,
         daily_work_hours: parseFloat(editDailyHours) || 8.5,
       });
+
+      if ((editManagerId || null) !== editTarget.manager_user_id) {
+        await collaboratorsApi.setManager(editTarget.id, editManagerId || null);
+      }
 
       if (isMasterAdmin && editRole !== editTarget.role && editTarget.roleId) {
         await collaboratorsApi.updateRole(editTarget.roleId, editRole);
@@ -856,6 +864,23 @@ export default function AdminCollaboratorsPage() {
             <div className="space-y-2">
               <Label>Cargo</Label>
               <Input value={editJobTitle} onChange={(e) => setEditJobTitle(e.target.value)} placeholder="Ex: Analista de RH Pleno" />
+            </div>
+            <div className="space-y-2">
+              <Label>Gestor responsável</Label>
+              <Combobox
+                options={[
+                  { value: "none", label: "Sem gestor" },
+                  ...activeCollaborators
+                    .filter((c) => c.user_id !== editTarget?.user_id)
+                    .map((c) => ({ value: c.user_id, label: c.name })),
+                ]}
+                value={editManagerId || "none"}
+                onChange={(v) => setEditManagerId(!v || v === "none" ? "" : v)}
+                placeholder="Selecione o gestor"
+                searchPlaceholder="Buscar pessoa..."
+                emptyText="Ninguém encontrado."
+              />
+              <p className="text-xs text-muted-foreground">Quem dá a nota de gestor desta pessoa na Avaliação de Desempenho.</p>
             </div>
             <div className="rounded-lg border p-3 space-y-3">
               <div className="flex items-center justify-between gap-3">

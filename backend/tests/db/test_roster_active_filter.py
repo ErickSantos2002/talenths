@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 
 from app import video_storage
+from app.evaluation_rules import BEHAVIOR_KEYS
 from tests.db.conftest import make_company, make_user
 from tests.db.test_videos_admin_api import _create, _rules
 from tests.db.test_videos_upload_api import SMALL
@@ -145,12 +146,13 @@ async def test_consolidate_skips_deactivated(db, client_as):
     for uid in (active, gone):
         ev = await db.fetchval(
             """INSERT INTO public.evaluations (eval_cycle_id, company_id, evaluated_user_id, evaluator_user_id, eval_type, submitted_at)
-               VALUES ($1, $2, $3, $3, 'self', now()) RETURNING id""",
-            cycle, company, uid,
+               VALUES ($1, $2, $3, $4, 'manager', now()) RETURNING id""",
+            cycle, company, uid, manager,
         )
-        await db.execute(
-            "INSERT INTO public.evaluation_scores (evaluation_id, behavior_key, score) VALUES ($1, 'proatividade', 4)", ev
-        )
+        for key in BEHAVIOR_KEYS:
+            await db.execute(
+                "INSERT INTO public.evaluation_scores (evaluation_id, behavior_key, score) VALUES ($1, $2, 4)", ev, key
+            )
 
     r = await client_as(manager).post(f"/evaluations/cycles/{cycle}/consolidate")
 

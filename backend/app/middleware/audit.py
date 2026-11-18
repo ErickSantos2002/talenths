@@ -63,6 +63,7 @@ _ACTION_MAP: list[tuple[re.Pattern, str]] = [(re.compile(p), label) for p, label
     (rf"DELETE /pdi/actions/{_ID}", "Ação de PDI removida"),
 
     (r"POST /evaluations/submit", "Avaliação enviada"),
+    (rf"PUT /collaborators/{_ID}/manager", "Gestor responsável definido"),
     (r"POST /evaluations/cycles", "Ciclo de avaliação criado"),
     (rf"PUT /evaluations/cycles/{_ID}", "Ciclo de avaliação atualizado"),
     (rf"PUT /evaluations/cycles/{_ID}/calibrate", "Avaliação calibrada"),

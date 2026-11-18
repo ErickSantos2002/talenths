@@ -40,7 +40,8 @@ A **Gestão de Colaboradores** é o cadastro das pessoas e dos departamentos da 
 
 1. Na linha da pessoa, clique no lápis.
 2. Altere o que precisar e clique em **Salvar**. Apagar o conteúdo de **CPF**, **Telefone**, **Cargo** ou das datas, ou trocar o **Departamento** por **Sem departamento**, não tem efeito: o dado antigo continua.
-3. Para que a pessoa registre o ponto pelo sistema, ligue **Bater ponto pelo sistema** e informe a **Jornada diária (horas)**.
+3. Em **Gestor responsável**, escolha quem dá a nota de gestor da pessoa na [Avaliação de Desempenho](/ajuda/administracao/avaliacao). Para tirar, escolha **Sem gestor**.
+4. Para que a pessoa registre o ponto pelo sistema, ligue **Bater ponto pelo sistema** e informe a **Jornada diária (horas)**.
 
 **Para desligar uma pessoa que saiu da empresa:**
 

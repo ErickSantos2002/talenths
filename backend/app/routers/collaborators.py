@@ -50,6 +50,10 @@ class RoleUpdate(BaseModel):
     role: str
 
 
+class ManagerUpdate(BaseModel):
+    manager_user_id: Optional[str] = None
+
+
 class DeactivateBody(BaseModel):
     termination_date: date
     reason: str
@@ -250,6 +254,43 @@ async def update_collaborator(
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Colaborador não encontrado")
     return dict(row)
+
+
+@router.put("/{profile_id}/manager")
+async def set_collaborator_manager(
+    profile_id: str,
+    body: ManagerUpdate,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    """Gestor responsável: quem dá a nota de gestor na Avaliação de Desempenho. null tira."""
+    await require_manager(user_id, conn)
+    try:
+        uuid.UUID(profile_id)
+        if body.manager_user_id:
+            uuid.UUID(body.manager_user_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Colaborador não encontrado")
+    company_id = await conn.fetchval("SELECT company_id FROM public.profiles WHERE user_id = $1", user_id)
+    target = await conn.fetchrow(
+        "SELECT user_id::text FROM public.profiles WHERE id = $1 AND company_id = $2", profile_id, company_id,
+    )
+    if not target:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Colaborador não encontrado")
+    if body.manager_user_id:
+        if body.manager_user_id == target["user_id"]:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A pessoa não pode ser gestora de si mesma")
+        manager_ok = await conn.fetchval(
+            """SELECT EXISTS (SELECT 1 FROM public.profiles
+                              WHERE user_id = $1 AND company_id = $2 AND deactivated_at IS NULL)""",
+            body.manager_user_id, company_id,
+        )
+        if not manager_ok:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Gestor não encontrado")
+    await conn.execute(
+        "UPDATE public.profiles SET manager_user_id = $2 WHERE id = $1", profile_id, body.manager_user_id,
+    )
+    return {"ok": True, "manager_user_id": body.manager_user_id}
 
 
 @router.patch("/{role_id}/role")

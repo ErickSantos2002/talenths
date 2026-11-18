@@ -16,9 +16,21 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.20.0",
+    date: "18/11/2026",
+    current: true,
+    entries: [
+      { type: "novidade", text: "Cada colaborador agora tem um gestor responsável, definido pelo RH no cadastro. Só ele dá a nota de gestor daquela pessoa." },
+      { type: "novidade", text: "Gestores avaliam a própria equipe em Minha Avaliação, na nova aba Avaliar minha equipe." },
+      { type: "novidade", text: "As etapas do ciclo de avaliação avançam sozinhas pelas datas: a autoavaliação abre no primeiro dia da etapa de Avaliação. O ciclo também pode ser editado depois de criado." },
+      { type: "melhoria", text: "A nota final é a média ponderada da nota do gestor (90%) e da autoavaliação (10%), e a tela do RH mostra as duas notas usadas." },
+      { type: "melhoria", text: "Cada comportamento da avaliação traz a descrição do que se espera, com o texto oficial da empresa." },
+      { type: "corrigido", text: "Recalcular as notas não desfaz mais a posição ajustada à mão no 9Box." },
+    ],
+  },
+  {
     version: "v1.19.0",
     date: "13/11/2026",
-    current: true,
     entries: [
       {
         type: "novidade",

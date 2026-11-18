@@ -1,30 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from pydantic import BaseModel
-from typing import Optional, List
+import uuid
 from datetime import date, datetime
-import asyncpg
+from typing import List, Literal, Optional
+from zoneinfo import ZoneInfo
 
-from app.dependencies import get_db, get_current_user_id
+import asyncpg
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel, Field
+
+from app.dependencies import get_current_user_id, get_db
+from app.evaluation_rules import (
+    BEHAVIOR_KEYS, BEHAVIORS, NINE_BOX_QUADRANTS, PILLAR_WEIGHTS, SCORE_LABELS, STATUSES,
+    compose_scores, effective_status, nine_box, validate_stage_dates,
+)
 from app.roster import active_unless, iso_or_none
 
 router = APIRouter(prefix="/evaluations", tags=["evaluations"])
 
-# ── Domain constants ──────────────────────────────────────────────────────────
+BRT = ZoneInfo("America/Sao_Paulo")
+DATE_FIELDS = ("eval_start", "eval_end", "calibration_start", "calibration_end",
+               "feedback_start", "feedback_end", "pdi_start", "pdi_end")
 
-BEHAVIORS = [
-    {"key": "cultura_visivel",  "label": "Alinhamento Cultural Visível",         "pillar": "cultura"},
-    {"key": "cultura_genuino",  "label": "Alinhamento Cultural Genuíno",          "pillar": "cultura"},
-    {"key": "entregas",         "label": "Entregas (qualidade, prazo e impacto)", "pillar": "entregas"},
-    {"key": "organizacao",      "label": "Organização e priorização",             "pillar": "entregas"},
-    {"key": "colaboracao",      "label": "Colaboração",                           "pillar": "entregas"},
-    {"key": "feedback",         "label": "Abertura a feedback",                   "pillar": "desenvolvimento"},
-    {"key": "autonomia",        "label": "Autonomia e aprendizado",               "pillar": "desenvolvimento"},
-    {"key": "protagonismo",     "label": "Protagonismo",                          "pillar": "desenvolvimento"},
-]
-PILLAR_WEIGHTS = {"cultura": 0.40, "entregas": 0.30, "desenvolvimento": 0.30}
-BEHAVIOR_KEYS = {b["key"] for b in BEHAVIORS}
 
-SCORE_LABELS = {1: "Precisa Melhorar", 2: "Tá no Caminho", 3: "Atende às Expectativas", 4: "Tá Mandando Bem", 5: "É Referência"}
+def _today() -> date:
+    return datetime.now(BRT).date()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -45,46 +43,34 @@ async def _get_company_id(user_id: str, conn: asyncpg.Connection) -> str:
     return str(row["company_id"])
 
 
-def _compute_pillar_scores(scores_map: dict) -> dict:
-    """Given {behavior_key: score}, compute pillar scores and final score."""
-    pillar_scores = {}
-    for pillar in ["cultura", "entregas", "desenvolvimento"]:
-        keys = [b["key"] for b in BEHAVIORS if b["pillar"] == pillar]
-        vals = [scores_map[k] for k in keys if k in scores_map and scores_map[k] is not None]
-        pillar_scores[pillar] = round(sum(vals) / len(vals), 4) if vals else None
-
-    final = None
-    if all(v is not None for v in pillar_scores.values()):
-        final = round(sum(pillar_scores[p] * PILLAR_WEIGHTS[p] for p in pillar_scores), 4)
-
-    return {
-        "score_cultura": pillar_scores.get("cultura"),
-        "score_entregas": pillar_scores.get("entregas"),
-        "score_desenvolvimento": pillar_scores.get("desenvolvimento"),
-        "score_final": final,
-    }
+def _uuid_or_404(value: str, what: str) -> None:
+    try:
+        uuid.UUID(str(value))
+    except ValueError:
+        raise HTTPException(status_code=404, detail=f"{what} não encontrado")
 
 
-def _compute_9box(score_final: Optional[float], goals_pct: Optional[float]) -> tuple:
-    """Return (x, y, quadrant_name). x=metas_band, y=avaliacao_band (1-3)."""
-    if score_final is None or goals_pct is None:
-        return None, None, None
+async def _get_cycle(cycle_id: str, company_id: str, conn: asyncpg.Connection):
+    _uuid_or_404(cycle_id, "Ciclo")
+    row = await conn.fetchrow(
+        "SELECT * FROM public.evaluation_cycles WHERE id = $1 AND company_id = $2", cycle_id, company_id,
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Ciclo não encontrado")
+    return row
 
-    y = 1 if score_final < 3.0 else (2 if score_final <= 4.5 else 3)
-    x = 1 if goals_pct < 91 else (2 if goals_pct <= 105 else 3)
 
-    quadrants = {
-        (1, 1): "Insuficiente",
-        (1, 2): "Contribuidor",
-        (1, 3): "Alcança Resultados",
-        (2, 1): "Competência Consistente",
-        (2, 2): "Essenciais",
-        (2, 3): "Futuro Talento",
-        (3, 1): "Alta Competência",
-        (3, 2): "Forte Talento",
-        (3, 3): "Super Talento",
-    }
-    return x, y, quadrants.get((y, x))
+def _check_cycle(cycle: dict) -> None:
+    if cycle.get("status") not in STATUSES:
+        raise HTTPException(status_code=422, detail="Etapa inválida")
+    error = validate_stage_dates(cycle)
+    if error:
+        raise HTTPException(status_code=422, detail=error)
+    if cycle.get("stage_by_dates") and not cycle.get("eval_start"):
+        raise HTTPException(
+            status_code=422,
+            detail="Para a etapa seguir as datas, preencha o início e o fim de Avaliação.",
+        )
 
 
 def _serialize_cycle(row) -> dict:
@@ -93,19 +79,26 @@ def _serialize_cycle(row) -> dict:
     d["company_id"] = str(d["company_id"])
     if d.get("management_cycle_id"):
         d["management_cycle_id"] = str(d["management_cycle_id"])
+    if d.get("created_by"):
+        d["created_by"] = str(d["created_by"])
+    d["manual_status"] = d["status"]
+    d["status"] = effective_status(d, _today())
     if d.get("created_at"):
         d["created_at"] = d["created_at"].isoformat()
-    for field in ("eval_start", "eval_end", "calibration_start", "calibration_end",
-                  "feedback_start", "feedback_end", "pdi_start", "pdi_end"):
+    for field in DATE_FIELDS:
         if d.get(field):
             d[field] = d[field].isoformat()
     return d
 
 
+def _float(v) -> Optional[float]:
+    return float(v) if v is not None else None
+
+
 # ── Pydantic Models ───────────────────────────────────────────────────────────
 
 class EvalCycleCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     management_cycle_id: Optional[str] = None
     eval_start: Optional[date] = None
     eval_end: Optional[date] = None
@@ -115,11 +108,13 @@ class EvalCycleCreate(BaseModel):
     feedback_end: Optional[date] = None
     pdi_start: Optional[date] = None
     pdi_end: Optional[date] = None
+    stage_by_dates: bool = True
     status: str = "draft"
 
 
 class EvalCycleUpdate(BaseModel):
-    name: Optional[str] = None
+    # Campo enviado como null limpa o valor; campo ausente fica como está.
+    name: Optional[str] = Field(default=None, min_length=1)
     management_cycle_id: Optional[str] = None
     eval_start: Optional[date] = None
     eval_end: Optional[date] = None
@@ -129,26 +124,27 @@ class EvalCycleUpdate(BaseModel):
     feedback_end: Optional[date] = None
     pdi_start: Optional[date] = None
     pdi_end: Optional[date] = None
+    stage_by_dates: Optional[bool] = None
     status: Optional[str] = None
 
 
 class ScoreItem(BaseModel):
     behavior_key: str
-    score: int
-    comment: Optional[str] = None
+    score: int = Field(ge=1, le=5)
+    comment: Optional[str] = Field(default=None, max_length=2000)
 
 
 class EvalSubmit(BaseModel):
     eval_cycle_id: str
     evaluated_user_id: str
-    eval_type: str  # 'self' | 'manager' | 'chief' | 'team'
+    eval_type: Literal["self", "manager"]
     scores: List[ScoreItem]
 
 
 class CalibrateBody(BaseModel):
     user_id: str
-    nine_box_x: int
-    nine_box_y: int
+    nine_box_x: int = Field(ge=1, le=3)
+    nine_box_y: int = Field(ge=1, le=3)
     calibration_note: Optional[str] = None
 
 
@@ -182,20 +178,22 @@ async def create_cycle(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    data = body.model_dump()
+    _check_cycle(data)
 
     row = await conn.fetchrow(
         """INSERT INTO public.evaluation_cycles
            (company_id, management_cycle_id, name, eval_start, eval_end,
             calibration_start, calibration_end, feedback_start, feedback_end,
-            pdi_start, pdi_end, status, created_by)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+            pdi_start, pdi_end, status, stage_by_dates, created_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
            RETURNING *""",
-        company_id, body.management_cycle_id, body.name,
+        company_id, body.management_cycle_id, body.name.strip(),
         body.eval_start, body.eval_end,
         body.calibration_start, body.calibration_end,
         body.feedback_start, body.feedback_end,
         body.pdi_start, body.pdi_end,
-        body.status, user_id,
+        body.status, body.stage_by_dates, user_id,
     )
     return _serialize_cycle(row)
 
@@ -209,18 +207,23 @@ async def update_cycle(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    current = dict(await _get_cycle(cycle_id, company_id, conn))
 
-    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    fields = body.model_dump(exclude_unset=True)
+    for required in ("name", "status", "stage_by_dates"):
+        if required in fields and fields[required] is None:
+            fields.pop(required)
     if not fields:
         raise HTTPException(status_code=400, detail="Nenhum campo para atualizar")
+    if "name" in fields:
+        fields["name"] = fields["name"].strip()
+    _check_cycle({**current, **fields})
 
     set_clause = ", ".join(f"{k} = ${i + 3}" for i, k in enumerate(fields))
     row = await conn.fetchrow(
         f"UPDATE public.evaluation_cycles SET {set_clause} WHERE id = $1 AND company_id = $2 RETURNING *",
         cycle_id, company_id, *list(fields.values()),
     )
-    if not row:
-        raise HTTPException(status_code=404, detail="Ciclo não encontrado")
     return _serialize_cycle(row)
 
 
@@ -233,50 +236,70 @@ async def submit_evaluation(
     conn: asyncpg.Connection = Depends(get_db),
 ):
     company_id = await _get_company_id(user_id, conn)
+    cycle = await _get_cycle(body.eval_cycle_id, company_id, conn)
+    stage = effective_status(dict(cycle), _today())
 
-    # Validate cycle
-    cycle = await conn.fetchrow(
-        "SELECT id FROM public.evaluation_cycles WHERE id = $1 AND company_id = $2",
-        body.eval_cycle_id, company_id,
+    _uuid_or_404(body.evaluated_user_id, "Colaborador")
+    evaluated = await conn.fetchrow(
+        """SELECT user_id::text, name, manager_user_id::text FROM public.profiles
+           WHERE user_id = $1 AND company_id = $2 AND deactivated_at IS NULL""",
+        body.evaluated_user_id, company_id,
     )
-    if not cycle:
-        raise HTTPException(status_code=404, detail="Ciclo não encontrado")
+    if not evaluated:
+        raise HTTPException(status_code=404, detail="Colaborador não encontrado")
 
-    # Self-eval: evaluated == evaluator
-    if body.eval_type == "self" and body.evaluated_user_id != user_id:
-        raise HTTPException(status_code=403, detail="Autoavaliação deve ser do próprio usuário")
+    if body.eval_type == "self":
+        if body.evaluated_user_id != user_id:
+            raise HTTPException(status_code=403, detail="Autoavaliação deve ser do próprio usuário")
+        if stage != "evaluation":
+            raise HTTPException(status_code=409, detail="A autoavaliação deste ciclo não está aberta.")
+    else:
+        if body.evaluated_user_id == user_id:
+            raise HTTPException(status_code=400, detail="Não é possível avaliar a si mesmo como gestor")
+        if evaluated["manager_user_id"] != user_id:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Só o gestor responsável por {evaluated['name']} pode dar a nota de gestor.",
+            )
+        if stage not in ("evaluation", "calibration"):
+            raise HTTPException(
+                status_code=409,
+                detail="A avaliação do gestor só pode ser enviada nas etapas de Avaliação e Calibragem.",
+            )
 
-    # Manager can evaluate others
-    if body.eval_type in ("manager", "chief") and body.evaluated_user_id == user_id:
-        raise HTTPException(status_code=400, detail="Não é possível avaliar a si mesmo como gestor")
+    keys = [s.behavior_key for s in body.scores]
+    if len(keys) != len(set(keys)) or set(keys) != BEHAVIOR_KEYS:
+        raise HTTPException(status_code=422, detail="Dê uma nota de 1 a 5 para todos os comportamentos.")
 
-    # Validate behavior keys
-    invalid = [s.behavior_key for s in body.scores if s.behavior_key not in BEHAVIOR_KEYS]
-    if invalid:
-        raise HTTPException(status_code=400, detail=f"Comportamentos inválidos: {invalid}")
-
-    # Upsert evaluation
-    eval_row = await conn.fetchrow(
-        """INSERT INTO public.evaluations
-           (eval_cycle_id, company_id, evaluated_user_id, evaluator_user_id, eval_type, submitted_at)
-           VALUES ($1, $2, $3, $4, $5, now())
-           ON CONFLICT (eval_cycle_id, evaluated_user_id, evaluator_user_id, eval_type)
-           DO UPDATE SET submitted_at = now()
-           RETURNING id""",
-        body.eval_cycle_id, company_id, body.evaluated_user_id, user_id, body.eval_type,
-    )
-    eval_id = str(eval_row["id"])
-
-    # Upsert scores
-    for item in body.scores:
-        await conn.execute(
-            """INSERT INTO public.evaluation_scores (evaluation_id, behavior_key, score, comment)
-               VALUES ($1, $2, $3, $4)
-               ON CONFLICT (evaluation_id, behavior_key) DO UPDATE SET score = EXCLUDED.score, comment = EXCLUDED.comment""",
-            eval_id, item.behavior_key, item.score, item.comment,
+    async with conn.transaction():
+        eval_row = await conn.fetchrow(
+            """INSERT INTO public.evaluations
+               (eval_cycle_id, company_id, evaluated_user_id, evaluator_user_id, eval_type, submitted_at)
+               VALUES ($1, $2, $3, $4, $5, now())
+               ON CONFLICT (eval_cycle_id, evaluated_user_id, evaluator_user_id, eval_type)
+               DO UPDATE SET submitted_at = now()
+               RETURNING id""",
+            body.eval_cycle_id, company_id, body.evaluated_user_id, user_id, body.eval_type,
         )
+        eval_id = eval_row["id"]
+        for item in body.scores:
+            await conn.execute(
+                """INSERT INTO public.evaluation_scores (evaluation_id, behavior_key, score, comment)
+                   VALUES ($1, $2, $3, $4)
+                   ON CONFLICT (evaluation_id, behavior_key)
+                   DO UPDATE SET score = EXCLUDED.score, comment = EXCLUDED.comment""",
+                eval_id, item.behavior_key, item.score, (item.comment or "").strip() or None,
+            )
 
-    return {"ok": True, "evaluation_id": eval_id}
+    return {"ok": True, "evaluation_id": str(eval_id)}
+
+
+async def _scores_of(conn: asyncpg.Connection, evaluation_id) -> list:
+    rows = await conn.fetch(
+        "SELECT behavior_key, score, comment FROM public.evaluation_scores WHERE evaluation_id = $1",
+        evaluation_id,
+    )
+    return [dict(s) for s in rows]
 
 
 # ── My evaluation status ──────────────────────────────────────────────────────
@@ -289,6 +312,7 @@ async def get_my_evaluation(
 ):
     """Get the current user's self-evaluation for a cycle (if submitted)."""
     company_id = await _get_company_id(user_id, conn)
+    await _get_cycle(cycle_id, company_id, conn)
 
     eval_row = await conn.fetchrow(
         """SELECT e.id, e.submitted_at FROM public.evaluations e
@@ -298,18 +322,62 @@ async def get_my_evaluation(
     )
 
     if not eval_row:
-        return {"submitted": False, "scores": []}
-
-    scores = await conn.fetch(
-        "SELECT behavior_key, score, comment FROM public.evaluation_scores WHERE evaluation_id = $1",
-        str(eval_row["id"]),
-    )
+        return {"submitted": False, "submitted_at": None, "scores": []}
 
     return {
         "submitted": eval_row["submitted_at"] is not None,
         "submitted_at": eval_row["submitted_at"].isoformat() if eval_row["submitted_at"] else None,
-        "scores": [dict(s) for s in scores],
+        "scores": await _scores_of(conn, eval_row["id"]),
     }
+
+
+# ── Gestor responsável: quem eu avalio ───────────────────────────────────────
+
+@router.get("/my-team")
+async def get_my_team(
+    cycle_id: str = Query(...),
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    """Pessoas de quem o usuário é gestor responsável, com a nota de gestor que ele já deu."""
+    company_id = await _get_company_id(user_id, conn)
+    await _get_cycle(cycle_id, company_id, conn)
+
+    people = await conn.fetch(
+        """SELECT p.user_id, p.name, p.email, d.name AS department_name
+           FROM public.profiles p
+           LEFT JOIN public.departments d ON d.id = p.department_id
+           WHERE p.manager_user_id = $1 AND p.company_id = $2 AND p.deactivated_at IS NULL
+           ORDER BY p.name""",
+        user_id, company_id,
+    )
+    if not people:
+        return []
+
+    evals = await conn.fetch(
+        """SELECT id, evaluated_user_id, evaluator_user_id, eval_type, submitted_at
+           FROM public.evaluations
+           WHERE eval_cycle_id = $1 AND evaluated_user_id = ANY($2::uuid[])""",
+        cycle_id, [p["user_id"] for p in people],
+    )
+    self_done = {e["evaluated_user_id"] for e in evals if e["eval_type"] == "self" and e["submitted_at"]}
+    mine = {e["evaluated_user_id"]: e for e in evals
+            if e["eval_type"] == "manager" and str(e["evaluator_user_id"]) == str(user_id)}
+
+    result = []
+    for p in people:
+        given = mine.get(p["user_id"])
+        result.append({
+            "user_id": str(p["user_id"]),
+            "name": p["name"],
+            "email": p["email"],
+            "department": p["department_name"],
+            "self_submitted": p["user_id"] in self_done,
+            "manager_submitted": bool(given and given["submitted_at"]),
+            "submitted_at": iso_or_none(given["submitted_at"]) if given else None,
+            "scores": await _scores_of(conn, given["id"]) if given else [],
+        })
+    return result
 
 
 # ── Team evaluation overview (manager) ───────────────────────────────────────
@@ -324,40 +392,41 @@ async def get_team_status(
     """Overview of who has submitted what for a cycle."""
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await _get_cycle(cycle_id, company_id, conn)
 
     profiles = await conn.fetch(
-        f"""SELECT p.user_id, p.name, p.email, p.deactivated_at, d.name AS department_name
+        f"""SELECT p.user_id, p.name, p.email, p.deactivated_at, d.name AS department_name,
+                   p.manager_user_id::text, m.name AS manager_name, m.deactivated_at AS manager_deactivated_at
             FROM public.profiles p
             LEFT JOIN public.departments d ON d.id = p.department_id
+            LEFT JOIN public.profiles m ON m.user_id = p.manager_user_id
             WHERE p.company_id = $1 AND {active_unless("p", 2)}
             ORDER BY d.name, p.name""",
         company_id, include_inactive,
     )
 
     eval_rows = await conn.fetch(
-        """SELECT evaluated_user_id::text, evaluator_user_id::text, eval_type, submitted_at
+        """SELECT evaluated_user_id::text, eval_type, submitted_at
            FROM public.evaluations
            WHERE eval_cycle_id = $1 AND company_id = $2""",
         cycle_id, company_id,
     )
-
-    # Build set of submitted (evaluated_user_id, eval_type)
     submitted_map: dict = {}
     for e in eval_rows:
-        uid = str(e["evaluated_user_id"])
-        submitted_map.setdefault(uid, {})[e["eval_type"]] = e["submitted_at"] is not None
+        if e["submitted_at"] is not None:
+            submitted_map.setdefault(e["evaluated_user_id"], set()).add(e["eval_type"])
 
-    # Get consolidated scores if computed
     consolidated = await conn.fetch(
-        "SELECT user_id::text, score_final, nine_box_quadrant FROM public.consolidated_scores WHERE eval_cycle_id = $1",
+        """SELECT user_id::text, score_final, score_manager, score_self, nine_box_quadrant
+           FROM public.consolidated_scores WHERE eval_cycle_id = $1""",
         cycle_id,
     )
-    scores_map = {str(r["user_id"]): r for r in consolidated}
+    scores_map = {r["user_id"]: r for r in consolidated}
 
     result = []
     for p in profiles:
         uid = str(p["user_id"])
-        ev = submitted_map.get(uid, {})
+        done = submitted_map.get(uid, set())
         cs = scores_map.get(uid)
         result.append({
             "user_id": uid,
@@ -365,9 +434,14 @@ async def get_team_status(
             "email": p["email"],
             "department": p["department_name"],
             "deactivated_at": iso_or_none(p["deactivated_at"]),
-            "self_submitted": ev.get("self", False),
-            "manager_submitted": ev.get("manager", False),
-            "score_final": float(cs["score_final"]) if cs and cs["score_final"] else None,
+            "manager_user_id": p["manager_user_id"],
+            "manager_name": p["manager_name"],
+            "manager_deactivated": p["manager_deactivated_at"] is not None,
+            "self_submitted": "self" in done,
+            "manager_submitted": "manager" in done,
+            "score_final": _float(cs["score_final"]) if cs else None,
+            "score_manager": _float(cs["score_manager"]) if cs else None,
+            "score_self": _float(cs["score_self"]) if cs else None,
             "nine_box_quadrant": cs["nine_box_quadrant"] if cs else None,
         })
     return result
@@ -382,10 +456,11 @@ async def get_scores(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
-    # Notas de cada avaliação, por tipo de avaliador: só o RH. O avaliado vê as dele
-    # consolidadas pela /evaluations/my.
+    # Notas de cada avaliação, por tipo de avaliador: só o RH.
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await _get_cycle(cycle_id, company_id, conn)
+    _uuid_or_404(evaluated_user_id, "Colaborador")
 
     evals = await conn.fetch(
         """SELECT e.id, e.eval_type, e.evaluator_user_id::text, e.submitted_at
@@ -393,22 +468,66 @@ async def get_scores(
            WHERE e.eval_cycle_id = $1 AND e.evaluated_user_id = $2 AND e.company_id = $3""",
         cycle_id, evaluated_user_id, company_id,
     )
-
-    result = []
-    for e in evals:
-        scores = await conn.fetch(
-            "SELECT behavior_key, score, comment FROM public.evaluation_scores WHERE evaluation_id = $1",
-            str(e["id"]),
-        )
-        result.append({
-            "eval_type": e["eval_type"],
-            "submitted_at": e["submitted_at"].isoformat() if e["submitted_at"] else None,
-            "scores": [dict(s) for s in scores],
-        })
-    return result
+    return [{
+        "eval_type": e["eval_type"],
+        "submitted_at": iso_or_none(e["submitted_at"]),
+        "scores": await _scores_of(conn, e["id"]),
+    } for e in evals]
 
 
 # ── Consolidate scores ────────────────────────────────────────────────────────
+
+async def _department_goal_progress(conn: asyncpg.Connection, mgmt_cycle_id: str) -> dict:
+    """% de atingimento das metas de cada departamento no ciclo de metas, acumulado até o
+    último mês do ciclo (ou até o mês corrente, se o ciclo ainda está em andamento)."""
+    mgmt = await conn.fetchrow(
+        "SELECT start_date, end_date FROM public.management_cycles WHERE id = $1", mgmt_cycle_id,
+    )
+    if not mgmt:
+        return {}
+    today = _today()
+    last_month = mgmt["end_date"].month if today > mgmt["end_date"] else today.month
+
+    goal_rows = await conn.fetch(
+        "SELECT id, department_id, calculation_type, target_value, weight FROM public.goals WHERE cycle_id = $1",
+        mgmt_cycle_id,
+    )
+    if not goal_rows:
+        return {}
+    actual_rows = await conn.fetch(
+        "SELECT goal_id::text, month, actual_value FROM public.goal_monthly_actuals WHERE goal_id = ANY($1::uuid[])",
+        [r["id"] for r in goal_rows],
+    )
+    actuals_map: dict = {}
+    for a in actual_rows:
+        if a["actual_value"] is not None:
+            actuals_map.setdefault(a["goal_id"], {})[a["month"]] = float(a["actual_value"])
+
+    dept_goal_pcts: dict = {}
+    for r in goal_rows:
+        target = float(r["target_value"]) if r["target_value"] else 0
+        actuals = {m: v for m, v in actuals_map.get(str(r["id"]), {}).items() if m <= last_month}
+        if not actuals or not target or not r["department_id"]:
+            continue
+        calc = r["calculation_type"]
+        if calc == "average":
+            cum = sum(actuals.values()) / len(actuals)
+        elif calc == "repeat":
+            cum = actuals[max(actuals)]
+        else:
+            cum = sum(actuals.values())
+        weight = float(r["weight"]) if r["weight"] else 0
+        dept_goal_pcts.setdefault(str(r["department_id"]), []).append((cum / target * 100, weight))
+
+    progress = {}
+    for dept_id, pct_weights in dept_goal_pcts.items():
+        total_weight = sum(w for _, w in pct_weights)
+        if total_weight > 0:
+            progress[dept_id] = sum(p * w for p, w in pct_weights) / total_weight
+        else:
+            progress[dept_id] = sum(p for p, _ in pct_weights) / len(pct_weights)
+    return progress
+
 
 @router.post("/cycles/{cycle_id}/consolidate")
 async def consolidate_scores(
@@ -416,154 +535,89 @@ async def consolidate_scores(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
-    """Compute consolidated scores for all collaborators in a cycle."""
+    """Nota de cada colaborador ativo: média ponderada gestor 90% + autoavaliação 10%. A
+    posição calibrada à mão no 9Box é mantida."""
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    cycle = await _get_cycle(cycle_id, company_id, conn)
 
-    cycle = await conn.fetchrow(
-        "SELECT id, management_cycle_id FROM public.evaluation_cycles WHERE id = $1 AND company_id = $2",
-        cycle_id, company_id,
-    )
-    if not cycle:
-        raise HTTPException(status_code=404, detail="Ciclo não encontrado")
-
-    # Get all collaborators
     profiles = await conn.fetch(
-        "SELECT user_id, department_id FROM public.profiles WHERE company_id = $1 AND deactivated_at IS NULL",
+        """SELECT user_id::text, department_id::text FROM public.profiles
+           WHERE company_id = $1 AND deactivated_at IS NULL""",
         company_id,
     )
 
-    # Get all evaluations and scores for this cycle
+    # Se a pessoa trocou de gestor no meio do ciclo, vale a nota de gestor mais recente.
     evals = await conn.fetch(
         """SELECT e.id, e.evaluated_user_id::text, e.eval_type
            FROM public.evaluations e
-           WHERE e.eval_cycle_id = $1 AND e.submitted_at IS NOT NULL""",
-        cycle_id,
+           WHERE e.eval_cycle_id = $1 AND e.company_id = $2 AND e.submitted_at IS NOT NULL
+           ORDER BY e.submitted_at""",
+        cycle_id, company_id,
     )
-
-    # Group scores by evaluated_user_id
     eval_scores: dict = {}
     for e in evals:
-        uid = str(e["evaluated_user_id"])
-        scores_rows = await conn.fetch(
-            "SELECT behavior_key, score FROM public.evaluation_scores WHERE evaluation_id = $1",
-            str(e["id"]),
+        rows = await conn.fetch(
+            "SELECT behavior_key, score FROM public.evaluation_scores WHERE evaluation_id = $1", e["id"],
         )
-        eval_scores.setdefault(uid, {}).setdefault(e["eval_type"], {
-            b["behavior_key"]: b["score"] for b in scores_rows
-        })
+        scores = {r["behavior_key"]: r["score"] for r in rows}
+        if set(scores) >= BEHAVIOR_KEYS:
+            eval_scores.setdefault(e["evaluated_user_id"], {})[e["eval_type"]] = scores
 
-    # Get department goals progress if management_cycle_id is set
-    dept_progress: dict = {}
-    mgmt_cycle_id = str(cycle["management_cycle_id"]) if cycle["management_cycle_id"] else None
-    if mgmt_cycle_id:
-        current_month = datetime.now().month
-        goal_rows = await conn.fetch(
-            "SELECT id, department_id, calculation_type, target_value, weight FROM public.goals WHERE cycle_id = $1",
-            mgmt_cycle_id,
-        )
-        if goal_rows:
-            goal_ids = [str(r["id"]) for r in goal_rows]
-            actual_rows = await conn.fetch(
-                "SELECT goal_id::text, month, actual_value FROM public.goal_monthly_actuals WHERE goal_id = ANY($1::uuid[])",
-                goal_ids,
-            )
-            plan_rows = await conn.fetch(
-                "SELECT goal_id::text, month, planned_value FROM public.goal_monthly_plans WHERE goal_id = ANY($1::uuid[])",
-                goal_ids,
-            )
-            actuals_map = {}
-            for a in actual_rows:
-                actuals_map.setdefault(str(a["goal_id"]), {})[a["month"]] = float(a["actual_value"]) if a["actual_value"] else None
-            plans_map = {}
-            for p in plan_rows:
-                plans_map.setdefault(str(p["goal_id"]), {})[p["month"]] = float(p["planned_value"])
+    dept_progress = (
+        await _department_goal_progress(conn, cycle["management_cycle_id"])
+        if cycle["management_cycle_id"] else {}
+    )
 
-            # Compute pct_year per goal
-            dept_goal_pcts: dict = {}
-            for r in goal_rows:
-                gid = str(r["id"])
-                dept_id = str(r["department_id"])
-                target = float(r["target_value"]) if r["target_value"] else 0
-                calc = r["calculation_type"]
-                months_range = range(1, current_month + 1)
-                set_actuals = {m: actuals_map.get(gid, {}).get(m) for m in months_range if actuals_map.get(gid, {}).get(m) is not None}
-
-                if not set_actuals or not target:
-                    continue
-
-                if calc in ("sum", "subtraction"):
-                    cum = sum(set_actuals.values())
-                elif calc == "average":
-                    vals = list(set_actuals.values())
-                    cum = sum(vals) / len(vals)
-                elif calc == "repeat":
-                    cum = set_actuals[max(set_actuals.keys())]
-                else:
-                    cum = sum(set_actuals.values())
-
-                pct = cum / target * 100
-                weight = float(r["weight"]) if r["weight"] else 0
-                dept_goal_pcts.setdefault(dept_id, []).append((pct, weight))
-
-            # Weighted avg per dept
-            for dept_id, pct_weights in dept_goal_pcts.items():
-                total_weight = sum(w for _, w in pct_weights)
-                if total_weight > 0:
-                    dept_progress[dept_id] = sum(p * w for p, w in pct_weights) / total_weight
-                else:
-                    dept_progress[dept_id] = sum(p for p, _ in pct_weights) / len(pct_weights)
-
-    # Compute and upsert consolidated scores
     updated = 0
-    for profile in profiles:
-        uid = str(profile["user_id"])
-        dept_id = str(profile["department_id"]) if profile["department_id"] else None
-        user_evals = eval_scores.get(uid, {})
+    without_score = []
+    async with conn.transaction():
+        for profile in profiles:
+            uid = profile["user_id"]
+            user_evals = eval_scores.get(uid, {})
+            composed = compose_scores(user_evals.get("manager"), user_evals.get("self"))
+            if composed is None:
+                without_score.append(uid)
+                continue
 
-        if not user_evals:
-            continue
+            goals_pct = dept_progress.get(profile["department_id"]) if profile["department_id"] else None
+            nx, ny, quadrant = nine_box(composed["final"], goals_pct)
 
-        # Compose scores: 90% manager + 10% self (or just self if no manager)
-        self_scores = user_evals.get("self", {})
-        manager_scores = user_evals.get("manager", {})
+            await conn.execute(
+                """INSERT INTO public.consolidated_scores
+                   (eval_cycle_id, user_id, company_id, score_cultura, score_entregas, score_desenvolvimento,
+                    score_final, score_manager, score_self, nine_box_x, nine_box_y, nine_box_quadrant, computed_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
+                   ON CONFLICT (eval_cycle_id, user_id) DO UPDATE SET
+                     score_cultura = EXCLUDED.score_cultura,
+                     score_entregas = EXCLUDED.score_entregas,
+                     score_desenvolvimento = EXCLUDED.score_desenvolvimento,
+                     score_final = EXCLUDED.score_final,
+                     score_manager = EXCLUDED.score_manager,
+                     score_self = EXCLUDED.score_self,
+                     nine_box_x = CASE WHEN consolidated_scores.calibrated
+                                       THEN consolidated_scores.nine_box_x ELSE EXCLUDED.nine_box_x END,
+                     nine_box_y = CASE WHEN consolidated_scores.calibrated
+                                       THEN consolidated_scores.nine_box_y ELSE EXCLUDED.nine_box_y END,
+                     nine_box_quadrant = CASE WHEN consolidated_scores.calibrated
+                                       THEN consolidated_scores.nine_box_quadrant ELSE EXCLUDED.nine_box_quadrant END,
+                     computed_at = now()""",
+                cycle_id, uid, company_id,
+                composed["cultura"], composed["entregas"], composed["desenvolvimento"],
+                composed["final"], composed["manager"], composed["self"], nx, ny, quadrant,
+            )
+            updated += 1
 
-        if manager_scores and self_scores:
-            composed = {
-                k: round(manager_scores.get(k, self_scores.get(k, 0)) * 0.9 + self_scores.get(k, 0) * 0.1, 4)
-                for k in BEHAVIOR_KEYS
-                if k in manager_scores or k in self_scores
-            }
-        elif manager_scores:
-            composed = manager_scores
-        else:
-            composed = self_scores
+        # Nota antiga de quem hoje não tem avaliação de gestor (o cálculo anterior aceitava
+        # só a autoavaliação) não pode continuar no 9Box.
+        if without_score:
+            await conn.execute(
+                """DELETE FROM public.consolidated_scores
+                   WHERE eval_cycle_id = $1 AND user_id = ANY($2::uuid[]) AND NOT calibrated""",
+                cycle_id, without_score,
+            )
 
-        pillar = _compute_pillar_scores(composed)
-        goals_pct = dept_progress.get(dept_id) if dept_id else None
-        nx, ny, quadrant = _compute_9box(pillar["score_final"], goals_pct)
-
-        await conn.execute(
-            """INSERT INTO public.consolidated_scores
-               (eval_cycle_id, user_id, company_id, score_cultura, score_entregas, score_desenvolvimento,
-                score_final, nine_box_x, nine_box_y, nine_box_quadrant, computed_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
-               ON CONFLICT (eval_cycle_id, user_id) DO UPDATE SET
-                 score_cultura = EXCLUDED.score_cultura,
-                 score_entregas = EXCLUDED.score_entregas,
-                 score_desenvolvimento = EXCLUDED.score_desenvolvimento,
-                 score_final = EXCLUDED.score_final,
-                 nine_box_x = EXCLUDED.nine_box_x,
-                 nine_box_y = EXCLUDED.nine_box_y,
-                 nine_box_quadrant = EXCLUDED.nine_box_quadrant,
-                 computed_at = now()""",
-            cycle_id, uid, company_id,
-            pillar["score_cultura"], pillar["score_entregas"], pillar["score_desenvolvimento"],
-            pillar["score_final"], nx, ny, quadrant,
-        )
-        updated += 1
-
-    return {"ok": True, "updated": updated}
+    return {"ok": True, "updated": updated, "pending_manager": len(without_score)}
 
 
 # ── Calibrate (manual 9Box override) ─────────────────────────────────────────
@@ -577,15 +631,11 @@ async def calibrate(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await _get_cycle(cycle_id, company_id, conn)
+    _uuid_or_404(body.user_id, "Colaborador")
+    quadrant = NINE_BOX_QUADRANTS[(body.nine_box_y, body.nine_box_x)]
 
-    quadrants = {
-        (1, 1): "Insuficiente", (1, 2): "Contribuidor", (1, 3): "Alcança Resultados",
-        (2, 1): "Competência Consistente", (2, 2): "Essenciais", (2, 3): "Futuro Talento",
-        (3, 1): "Alta Competência", (3, 2): "Forte Talento", (3, 3): "Super Talento",
-    }
-    quadrant = quadrants.get((body.nine_box_y, body.nine_box_x))
-
-    await conn.execute(
+    result = await conn.execute(
         """UPDATE public.consolidated_scores
            SET nine_box_x = $3, nine_box_y = $4, nine_box_quadrant = $5,
                calibrated = true, calibration_note = $6
@@ -593,6 +643,8 @@ async def calibrate(
         cycle_id, body.user_id, body.nine_box_x, body.nine_box_y, quadrant,
         body.calibration_note, company_id,
     )
+    if result == "UPDATE 0":
+        raise HTTPException(status_code=404, detail="Nota consolidada não encontrada")
     return {"ok": True, "quadrant": quadrant}
 
 
@@ -607,6 +659,7 @@ async def get_9box(
 ):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
+    await _get_cycle(cycle_id, company_id, conn)
 
     consolidated = await conn.fetch(
         f"""SELECT cs.user_id::text, cs.score_final, cs.score_cultura, cs.score_entregas,
@@ -621,7 +674,6 @@ async def get_9box(
         cycle_id, company_id, include_inactive,
     )
 
-    # Group by quadrant position
     grid: dict = {}
     for r in consolidated:
         if r["nine_box_x"] is None or r["nine_box_y"] is None:
@@ -633,7 +685,7 @@ async def get_9box(
             "email": r["email"],
             "department": r["department_name"],
             "deactivated_at": iso_or_none(r["deactivated_at"]),
-            "score_final": float(r["score_final"]) if r["score_final"] else None,
+            "score_final": _float(r["score_final"]),
             "nine_box_x": r["nine_box_x"],
             "nine_box_y": r["nine_box_y"],
             "nine_box_quadrant": r["nine_box_quadrant"],
