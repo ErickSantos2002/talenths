@@ -38,6 +38,8 @@ function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
 
 // ── Request Dialog ────────────────────────────────────────────────────────────
 
+const MIN_REASON_LENGTH = 20;
+
 function RequestDialog({
   types,
   onClose,
@@ -61,7 +63,7 @@ function RequestDialog({
         type_id: typeId,
         start_date: startDate,
         end_date: isPartial ? startDate : endDate,
-        reason: reason || undefined,
+        reason: reason.trim(),
         ...(isPartial ? { start_time: startTime, end_time: endTime } : {}),
       }),
     onSuccess: () => {
@@ -73,15 +75,18 @@ function RequestDialog({
       toast({ title: "Erro ao enviar", description: e.message, variant: "destructive" }),
   });
 
-  const selectedType = types.find((t) => t.id === typeId);
   const days =
     !isPartial && startDate && endDate
       ? Math.max(0, Math.floor((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000) + 1)
       : 0;
 
-  const canSubmit = isPartial
-    ? typeId && startDate && startTime && endTime && endTime > startTime
-    : typeId && startDate && endDate && days > 0;
+  const reasonLength = reason.trim().length;
+  const reasonOk = reasonLength >= MIN_REASON_LENGTH;
+  const canSubmit =
+    reasonOk &&
+    (isPartial
+      ? typeId && startDate && startTime && endTime && endTime > startTime
+      : typeId && startDate && endDate && days > 0);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -107,9 +112,6 @@ function RequestDialog({
                 ))}
               </SelectContent>
             </Select>
-            {selectedType && !selectedType.requires_approval && (
-              <p className="text-xs text-emerald-400">Aprovação automática — sem necessidade de revisão.</p>
-            )}
           </div>
 
           <div className="flex rounded-lg border overflow-hidden text-sm">
@@ -167,14 +169,23 @@ function RequestDialog({
           )}
 
           <div className="space-y-1">
-            <Label>Motivo (opcional)</Label>
+            <Label htmlFor="absence-reason">Motivo</Label>
             <Textarea
+              id="absence-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Descrição do motivo da ausência..."
+              placeholder="Explique o motivo da saída..."
               rows={3}
               className="resize-none"
+              required
+              aria-describedby="absence-reason-count"
             />
+            <p
+              id="absence-reason-count"
+              className={`text-xs ${reasonOk ? "text-muted-foreground" : "text-amber-500"}`}
+            >
+              {reasonOk ? `${reasonLength} caracteres` : `Mínimo de ${MIN_REASON_LENGTH} caracteres (${reasonLength}/${MIN_REASON_LENGTH})`}
+            </p>
           </div>
         </div>
         <DialogFooter>

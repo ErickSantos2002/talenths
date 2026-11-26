@@ -39,6 +39,6 @@ Se você é gestor ou administrador, também pode cadastrar eventos:
 
 **Um dia mostra "+2" em vez dos eventos.** Cada dia mostra até três eventos. Clique no dia para ver a lista completa.
 
-**Vejo as minhas férias, mas não as dos colegas.** O colaborador vê só as próprias ausências aprovadas. Pedidos ainda em análise não aparecem no calendário.
+**Vejo as minhas ausências, mas não as dos colegas.** O colaborador vê só as próprias ausências aprovadas. Pedidos ainda em análise não aparecem no calendário.
 
 **Os aniversários não aparecem em Próximos eventos.** Essa lista mostra só eventos e ausências. Os aniversários ficam marcados nos dias do calendário.

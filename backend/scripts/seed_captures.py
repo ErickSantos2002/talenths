@@ -714,18 +714,19 @@ class Seeder:
 
     async def absences(self) -> None:
         types = {}
-        for name, color, approval in (("Férias", "#10b981", True), ("Folga", "#6366f1", True),
-                                      ("Atestado médico", "#ef4444", False)):
+        for name, color, approval in (("Ida ao médico", "#f59e0b", True), ("Saída pessoal", "#8b5cf6", True),
+                                      ("Outro", "#6b7280", True)):
             types[name] = await self.ins("absence_types", company_id=self.company_id, name=name, color=color,
                                          requires_approval=approval)
-        rows = [("ana", "Férias", 30, 14, "approved", "Viagem em família."),
-                ("ana", "Folga", 8, 1, "pending", "Banco de horas."),
-                ("ana", "Atestado médico", -25, 1, "approved", "Consulta."),
-                ("bruno", "Folga", 4, 1, "pending", "Mudança de casa."),
-                ("carla", "Férias", -3, 10, "approved", None),
-                ("diego", "Férias", 45, 20, "pending", None)]
+        # O pedido antigo de "Ida ao médico" mostra como fica um aprovado automático de antes da 038.
+        rows = [("ana", "Outro", 30, 3, "approved", "Viagem para o casamento da minha irmã."),
+                ("ana", "Saída pessoal", 8, 1, "pending", "Resolver documentação no cartório."),
+                ("ana", "Ida ao médico", -25, 1, "approved", "Consulta de rotina com o cardiologista."),
+                ("bruno", "Saída pessoal", 4, 1, "pending", "Mudança de casa, entrega dos móveis."),
+                ("carla", "Ida ao médico", -3, 1, "approved", "Exame de sangue agendado no laboratório."),
+                ("diego", "Outro", 45, 2, "pending", "Prova da pós-graduação em outra cidade.")]
         for key, tname, offset, n, st, reason in rows:
-            auto = tname == "Atestado médico"
+            auto = key == "ana" and tname == "Ida ao médico"
             reviewed = st != "pending"
             requested_at = self.now - timedelta(days=27 if auto else 3)
             await self.ins("absence_requests", company_id=self.company_id, user_id=self.users[key],

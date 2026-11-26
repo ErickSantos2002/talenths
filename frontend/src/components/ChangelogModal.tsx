@@ -20,8 +20,10 @@ const CHANGELOG: ChangelogVersion[] = [
     date: "26/11/2026",
     current: true,
     entries: [
-      { type: "novidade", text: "Em Ausências e Férias, cada pedido mostra quando foi solicitado e, depois de decidido, quem aprovou ou recusou e quando." },
-      { type: "melhoria", text: "Pedidos de tipos que não exigem aprovação aparecem como \"Aprovada automaticamente\", para não serem confundidos com uma aprovação do gestor." },
+      { type: "novidade", text: "Ausências agora é só o pedido de saída, com três tipos: Ida ao médico, Saída pessoal e Outro. Todos passam pela aprovação do RH." },
+      { type: "novidade", text: "O motivo passou a ser obrigatório no pedido de ausência, com pelo menos 20 caracteres." },
+      { type: "novidade", text: "Em Ausências, cada pedido mostra quando foi solicitado e, depois de decidido, quem aprovou ou recusou e quando." },
+      { type: "melhoria", text: "Pedidos antigos que entraram aprovados sem análise aparecem como \"Aprovada automaticamente\", para não serem confundidos com uma aprovação do gestor." },
       { type: "melhoria", text: "Ausências de parte do dia mostram o horário pedido na tela do RH, em vez de \"(0 dias)\"." },
       { type: "melhoria", text: "O relatório de ausências ganhou as colunas Decidido por e Decidido em." },
     ],

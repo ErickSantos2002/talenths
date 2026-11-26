@@ -143,7 +143,7 @@ async def report_absences(
             r["reason"] or "",
             r["review_note"] or "",
             _fmt_date(r["created_at"]),
-            "Automática (tipo sem aprovação)" if r["auto_approved"] else (r["reviewer_name"] or ""),
+            "Automática (sem análise)" if r["auto_approved"] else (r["reviewer_name"] or ""),
             _fmt_date(r["reviewed_at"]),
         ]
         for r in rows

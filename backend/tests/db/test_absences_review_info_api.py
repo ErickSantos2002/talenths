@@ -20,6 +20,7 @@ async def test_auto_approved_request_records_when_and_how(db, client_as):
 
     created = (await client_as(user).post("/absences/request", json={
         "type_id": type_id, "start_date": "2027-01-05", "start_time": "10:00", "end_time": "11:30",
+        "reason": "Consulta médica de rotina",
     })).json()
     assert created["status"] == "approved"
 
@@ -37,6 +38,7 @@ async def test_manual_approval_shows_reviewer_name(db, client_as):
 
     created = (await client_as(user).post("/absences/request", json={
         "type_id": type_id, "start_date": "2027-02-01", "end_date": "2027-02-03",
+        "reason": "Viagem para resolver assuntos",
     })).json()
     assert created["status"] == "pending"
     assert created["auto_approved"] is False and created["reviewed_at"] is None
@@ -56,9 +58,10 @@ async def test_report_csv_has_decision_columns(db, client_as):
     auto_type = await _type(db, company, requires_approval=False)
     await client_as(user).post("/absences/request", json={
         "type_id": auto_type, "start_date": "2027-01-05", "end_date": "2027-01-05",
+        "reason": "Consulta médica de rotina",
     })
 
     text = (await client_as(hr).get("/reports/absences")).content.decode("utf-8-sig")
     header, row = text.splitlines()[:2]
     assert "Decidido por" in header and "Decidido em" in header
-    assert "Automática (tipo sem aprovação)" in row
+    assert "Automática (sem análise)" in row

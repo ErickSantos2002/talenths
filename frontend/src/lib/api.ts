@@ -409,9 +409,6 @@ import type { AbsenceType, AbsenceRequest } from "@/types/absences";
 
 export const absences = {
   types: () => get<AbsenceType[]>("/absences/types"),
-  createType: (data: object) => post<AbsenceType>("/absences/types", data),
-  updateType: (id: string, data: object) => put<AbsenceType>(`/absences/types/${id}`, data),
-  deleteType: (id: string) => del(`/absences/types/${id}`),
   my: () => get<AbsenceRequest[]>("/absences/my"),
   team: () => get<AbsenceRequest[]>("/absences/team"),
   calendar: () => get<AbsenceRequest[]>("/absences/calendar"),

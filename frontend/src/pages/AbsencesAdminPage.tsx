@@ -5,7 +5,6 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,8 +16,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { AbsenceType, AbsenceRequest } from "@/types/absences";
-import { CalendarOff, CheckCircle2, XCircle, Clock, Settings, Calendar, ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import type { AbsenceRequest } from "@/types/absences";
+import { CalendarOff, CheckCircle2, XCircle, Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -58,7 +57,7 @@ function PeriodText({ request }: { request: AbsenceRequest }) {
 function decisionText(request: AbsenceRequest) {
   if (request.status === "pending" || !request.reviewed_at) return null;
   const when = formatDateTime(request.reviewed_at);
-  if (request.auto_approved) return `Aprovada automaticamente em ${when} (o tipo não exige aprovação)`;
+  if (request.auto_approved) return `Aprovada automaticamente, sem análise, em ${when}`;
   const verb = request.status === "approved" ? "Aprovada" : "Recusada";
   return `${verb} por ${request.reviewer_name ?? "usuário removido"} em ${when}`;
 }
@@ -394,156 +393,6 @@ function CalendarTab() {
   );
 }
 
-// ── Types Tab ─────────────────────────────────────────────────────────────────
-
-function TypeDialog({
-  type,
-  onClose,
-}: {
-  type?: AbsenceType;
-  onClose: () => void;
-}) {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [name, setName] = useState(type?.name ?? "");
-  const [color, setColor] = useState(type?.color ?? "#6366f1");
-  const [requiresApproval, setRequiresApproval] = useState(type?.requires_approval ?? true);
-
-  const mutation = useMutation({
-    mutationFn: () =>
-      type
-        ? absencesApi.updateType(type.id, { name, color, requires_approval: requiresApproval })
-        : absencesApi.createType({ name, color, requires_approval: requiresApproval }),
-    onSuccess: () => {
-      toast({ title: type ? "Tipo atualizado!" : "Tipo criado!" });
-      queryClient.invalidateQueries({ queryKey: ["absence-types"] });
-      onClose();
-    },
-    onError: (e: Error) =>
-      toast({ title: "Erro", description: e.message, variant: "destructive" }),
-  });
-
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{type ? "Editar tipo" : "Novo tipo de ausência"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-1">
-            <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Férias" />
-          </div>
-          <div className="space-y-1">
-            <Label>Cor</Label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="h-9 w-16 cursor-pointer rounded border"
-              />
-              <span className="text-sm text-muted-foreground">{color}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="req-approval"
-              checked={requiresApproval}
-              onChange={(e) => setRequiresApproval(e.target.checked)}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="req-approval">Requer aprovação do gestor</Label>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => mutation.mutate()} disabled={!name.trim() || mutation.isPending}>
-            {mutation.isPending ? "Salvando..." : "Salvar"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function TypesTab() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [dialog, setDialog] = useState<{ open: boolean; type?: AbsenceType }>({ open: false });
-
-  const { data: types = [], isLoading } = useQuery({
-    queryKey: ["absence-types"],
-    queryFn: absencesApi.types,
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: absencesApi.deleteType,
-    onSuccess: () => {
-      toast({ title: "Tipo removido." });
-      queryClient.invalidateQueries({ queryKey: ["absence-types"] });
-    },
-    onError: (e: Error) =>
-      toast({ title: "Erro ao remover", description: e.message, variant: "destructive" }),
-  });
-
-  return (
-    <div className="space-y-4">
-      {dialog.open && (
-        <TypeDialog type={dialog.type} onClose={() => setDialog({ open: false })} />
-      )}
-
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
-          Tipos de ausência
-        </h2>
-        <Button size="sm" onClick={() => setDialog({ open: true })}>
-          <Plus className="h-4 w-4 mr-2" /> Novo tipo
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando...</p>
-      ) : types.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-16 text-center">
-          <Settings className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-          <p className="text-muted-foreground">Nenhum tipo de ausência cadastrado.</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {types.map((t) => (
-            <Card key={t.id} className="hover:shadow-md hover:border-primary/20 transition-all">
-              <CardContent className="p-3 flex items-center gap-3">
-                <div className="h-4 w-4 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.requires_approval ? "Requer aprovação" : "Aprovação automática"}
-                  </p>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25" onClick={() => setDialog({ open: true, type: t })}>
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
-                    onClick={() => {
-                      if (confirm(`Remover tipo "${t.name}"?`)) deleteMutation.mutate(t.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AbsencesAdminPage() {
@@ -552,7 +401,7 @@ export default function AbsencesAdminPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <CalendarOff className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">Ausências e Férias</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Ausências</h1>
         </div>
 
         <Tabs defaultValue="requests">
@@ -571,13 +420,6 @@ export default function AbsencesAdminPage() {
               <Calendar className="h-4 w-4" />
               Calendário
             </TabsTrigger>
-            <TabsTrigger
-              value="types"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Tipos
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="requests" className="mt-6">
@@ -586,10 +428,6 @@ export default function AbsencesAdminPage() {
 
           <TabsContent value="calendar" className="mt-6">
             <CalendarTab />
-          </TabsContent>
-
-          <TabsContent value="types" className="mt-6">
-            <TypesTab />
           </TabsContent>
         </Tabs>
       </div>
