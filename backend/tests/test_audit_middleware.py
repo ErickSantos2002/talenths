@@ -58,3 +58,8 @@ def test_rotulos_ancorados_nao_confundem_rotas_parecidas():
     assert _resolve_action("POST", f"/feedbacks/{VID}/respond") == "Feedback respondido"
     assert _resolve_action("POST", f"/timeclock/adjustments/{VID}/approve") == "Ajuste de ponto aprovado"
     assert _resolve_action("PUT", f"/onboarding/checklist-tasks/{VID}/complete") == "Tarefa de onboarding marcada ou desmarcada"
+
+
+def test_absence_edit_has_its_own_label():
+    assert _resolve_action("PUT", f"/absences/{VID}") == "Solicitação de ausência editada"
+    assert _resolve_action("PUT", f"/absences/{VID}/approve") == "Ausência aprovada"

@@ -732,6 +732,7 @@ class Seeder:
             await self.ins("absence_requests", company_id=self.company_id, user_id=self.users[key],
                            type_id=types[tname], start_date=self.days(offset), end_date=self.days(offset + n - 1),
                            days=n, reason=reason, status=st, auto_approved=auto, created_at=requested_at,
+                           updated_at=self.now - timedelta(days=1) if key == "bruno" else None,
                            reviewed_by=self.users["gestor"] if reviewed and not auto else None,
                            reviewed_at=(requested_at if auto else self.now - timedelta(days=2)) if reviewed else None)
 

@@ -65,6 +65,7 @@ def _ser_request(r) -> dict:
         "reviewer_name": r.get("reviewer_name"),
         "auto_approved": r.get("auto_approved", False),
         "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+        "updated_at": r["updated_at"].isoformat() if r.get("updated_at") else None,
     }
 
 
@@ -150,13 +151,8 @@ async def get_calendar(
     return [_ser_request(r) for r in rows]
 
 
-@router.post("/request", status_code=201)
-async def create_request(
-    body: dict,
-    user_id: str = Depends(get_current_user_id),
-    conn: asyncpg.Connection = Depends(get_db),
-):
-    company_id = await _get_company_id(user_id, conn)
+async def _validated_fields(body: dict, company_id: str, conn: asyncpg.Connection) -> dict:
+    """Campos de um pedido (criação ou edição), já validados com as regras da tela."""
     reason = (body.get("reason") or "").strip()
     if len(reason) < MIN_REASON_LENGTH:
         raise HTTPException(400, f"O motivo precisa ter pelo menos {MIN_REASON_LENGTH} caracteres")
@@ -164,9 +160,7 @@ async def create_request(
 
     start_time_str = body.get("start_time")
     end_time_str = body.get("end_time")
-    is_partial = bool(start_time_str and end_time_str)
-
-    if is_partial:
+    if start_time_str and end_time_str:
         end = start
         start_time = time_type.fromisoformat(start_time_str)
         end_time = time_type.fromisoformat(end_time_str)
@@ -187,8 +181,21 @@ async def create_request(
     )
     if not atype:
         raise HTTPException(404, "Tipo de ausência não encontrado")
+    return {
+        "type": atype, "start": start, "end": end, "start_time": start_time,
+        "end_time": end_time, "days": days, "reason": reason,
+    }
 
-    auto_approved = not atype["requires_approval"]
+
+@router.post("/request", status_code=201)
+async def create_request(
+    body: dict,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _get_company_id(user_id, conn)
+    f = await _validated_fields(body, company_id, conn)
+    auto_approved = not f["type"]["requires_approval"]
     status = "approved" if auto_approved else "pending"
     row = await conn.fetchrow(
         """INSERT INTO absence_requests
@@ -196,12 +203,42 @@ async def create_request(
                 status, auto_approved, reviewed_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CASE WHEN $11 THEN now() END)
            RETURNING *""",
-        company_id, user_id, body["type_id"], start, end, start_time, end_time, days,
-        reason, status, auto_approved,
+        company_id, user_id, f["type"]["id"], f["start"], f["end"], f["start_time"], f["end_time"],
+        f["days"], f["reason"], status, auto_approved,
     )
     full = await conn.fetchrow(
         REQUEST_JOIN + " WHERE ar.id = $1", row["id"]
     )
+    return _ser_request(full)
+
+
+@router.put("/{request_id}")
+async def update_request(
+    request_id: str, body: dict,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    company_id = await _get_company_id(user_id, conn)
+    current = await conn.fetchval(
+        "SELECT status FROM absence_requests WHERE id = $1 AND user_id = $2 AND company_id = $3",
+        request_id, user_id, company_id,
+    )
+    if current is None:
+        raise HTTPException(404, "Solicitação não encontrada")
+    if current != "pending":
+        raise HTTPException(409, "Solicitação já não está pendente")
+    f = await _validated_fields(body, company_id, conn)
+    row = await conn.fetchrow(
+        """UPDATE absence_requests
+              SET type_id = $1, start_date = $2, end_date = $3, start_time = $4, end_time = $5,
+                  days = $6, reason = $7, updated_at = now()
+            WHERE id = $8 AND user_id = $9 AND status = 'pending' RETURNING id""",
+        f["type"]["id"], f["start"], f["end"], f["start_time"], f["end_time"], f["days"], f["reason"],
+        request_id, user_id,
+    )
+    if not row:
+        raise HTTPException(409, "Solicitação já não está pendente")
+    full = await conn.fetchrow(REQUEST_JOIN + " WHERE ar.id = $1", request_id)
     return _ser_request(full)
 
 

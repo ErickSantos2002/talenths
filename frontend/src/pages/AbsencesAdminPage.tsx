@@ -230,6 +230,7 @@ function RequestCard({
             )}
             <p className="text-xs text-muted-foreground/80">
               Solicitada em {formatDateTime(request.created_at)}
+              {request.updated_at && <> · Editada em {formatDateTime(request.updated_at)}</>}
               {decisionText(request) && <> · {decisionText(request)}</>}
             </p>
           </div>

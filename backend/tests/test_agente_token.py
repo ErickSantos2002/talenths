@@ -106,6 +106,7 @@ def test_fora_de_proposito_nao_e_escrita_do_agente():
         ("DELETE", "/pdi/plans/{plan_id}"),
         ("DELETE", "/goals/comments/{comment_id}"),
         ("POST", "/absences/types"),
+        ("PUT", "/absences/{request_id}"),
         ("POST", "/onboarding/templates"),
         ("POST", "/documents/upload"),
         ("PATCH", "/profiles/me"),

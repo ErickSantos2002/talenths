@@ -25,7 +25,9 @@ Antes de se ausentar do trabalho, de um dia inteiro ou só de algumas horas.
 5. Em **Motivo**, explique a saída com pelo menos 20 caracteres. Embaixo do campo, a tela conta quantos faltam.
 6. Clique em **Enviar solicitação**.
 
-![Minhas Ausências com uma saída pessoal pendente com o botão de cancelar e pedidos aprovados](/capturas/minhas-ausencias.webp)
+![Minhas Ausências com uma saída pessoal pendente com os botões de editar e cancelar e pedidos aprovados](/capturas/minhas-ausencias.webp)
+
+**Para corrigir um pedido:** enquanto ele estiver **Pendente**, clique no lápis à direita do pedido. O formulário abre preenchido. Ajuste o que precisar e clique em **Salvar alterações**. O RH vê que o pedido foi editado.
 
 ## O que acontece depois
 
@@ -35,7 +37,7 @@ Antes de se ausentar do trabalho, de um dia inteiro ou só de algumas horas.
 
 ## Dúvidas comuns
 
-**Como cancelo um pedido?** Enquanto ele estiver **Pendente**, clique no ícone de lixeira à direita e confirme. Depois de aprovado ou recusado, o pedido não pode mais ser cancelado por aqui. Fale com o RH.
+**Como cancelo um pedido?** Enquanto ele estiver **Pendente**, clique no ícone de lixeira à direita e confirme. Depois de aprovado ou recusado, o pedido não pode mais ser cancelado nem editado por aqui. Fale com o RH.
 
 **O total de dias conta sábado e domingo?** Sim. O total conta todos os dias corridos entre a data de início e a de fim.
 

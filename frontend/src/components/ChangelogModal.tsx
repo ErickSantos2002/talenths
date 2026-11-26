@@ -16,9 +16,17 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
-    version: "v1.21.0",
+    version: "v1.22.0",
     date: "26/11/2026",
     current: true,
+    entries: [
+      { type: "novidade", text: "Em Minhas Ausências, dá para editar um pedido enquanto ele ainda está pendente: clique no lápis ao lado do pedido." },
+      { type: "melhoria", text: "Na tela Ausências, o RH vê quando um pedido foi editado depois de enviado." },
+    ],
+  },
+  {
+    version: "v1.21.0",
+    date: "26/11/2026",
     entries: [
       { type: "novidade", text: "Ausências agora é só o pedido de saída, com três tipos: Ida ao médico, Saída pessoal e Outro. Todos passam pela aprovação do RH." },
       { type: "novidade", text: "O motivo passou a ser obrigatório no pedido de ausência, com pelo menos 20 caracteres." },

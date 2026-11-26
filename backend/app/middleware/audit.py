@@ -37,6 +37,7 @@ _ACTION_MAP: list[tuple[re.Pattern, str]] = [(re.compile(p), label) for p, label
     (r"POST /absences/request", "Solicitação de ausência criada"),
     (rf"PUT /absences/{_ID}/approve", "Ausência aprovada"),
     (rf"PUT /absences/{_ID}/reject", "Ausência recusada"),
+    (rf"PUT /absences/{_ID}", "Solicitação de ausência editada"),
     (rf"DELETE /absences/{_ID}", "Solicitação de ausência removida"),
 
     (rf"POST /timeclock/{_ID}/adjust", "Ajuste de ponto solicitado"),

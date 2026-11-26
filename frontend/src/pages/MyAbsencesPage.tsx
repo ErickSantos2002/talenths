@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { AbsenceRequest, AbsenceType } from "@/types/absences";
-import { CalendarOff, Plus, Trash2 } from "lucide-react";
+import { CalendarOff, Pencil, Plus, Trash2 } from "lucide-react";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 
@@ -42,32 +42,37 @@ const MIN_REASON_LENGTH = 20;
 
 function RequestDialog({
   types,
+  request,
   onClose,
 }: {
   types: AbsenceType[];
+  request?: AbsenceRequest;
   onClose: () => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [typeId, setTypeId] = useState("");
-  const [isPartial, setIsPartial] = useState(false);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [reason, setReason] = useState("");
+  const isEdit = Boolean(request);
+  const [typeId, setTypeId] = useState(request?.type_id ?? "");
+  const [isPartial, setIsPartial] = useState(Boolean(request?.start_time));
+  const [startDate, setStartDate] = useState(request?.start_date ?? "");
+  const [endDate, setEndDate] = useState(request?.end_date ?? "");
+  const [startTime, setStartTime] = useState(request?.start_time ?? "");
+  const [endTime, setEndTime] = useState(request?.end_time ?? "");
+  const [reason, setReason] = useState(request?.reason ?? "");
 
   const mutation = useMutation({
-    mutationFn: () =>
-      absencesApi.request({
+    mutationFn: () => {
+      const data = {
         type_id: typeId,
         start_date: startDate,
         end_date: isPartial ? startDate : endDate,
         reason: reason.trim(),
         ...(isPartial ? { start_time: startTime, end_time: endTime } : {}),
-      }),
+      };
+      return request ? absencesApi.update(request.id, data) : absencesApi.request(data);
+    },
     onSuccess: () => {
-      toast({ title: "Solicitação enviada!" });
+      toast({ title: isEdit ? "Solicitação atualizada!" : "Solicitação enviada!" });
       queryClient.invalidateQueries({ queryKey: ["absences-my"] });
       onClose();
     },
@@ -92,7 +97,7 @@ function RequestDialog({
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Solicitar ausência</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar solicitação" : "Solicitar ausência"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1">
@@ -191,7 +196,7 @@ function RequestDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={() => mutation.mutate()} disabled={!canSubmit || mutation.isPending}>
-            {mutation.isPending ? "Enviando..." : "Enviar solicitação"}
+            {mutation.isPending ? "Salvando..." : isEdit ? "Salvar alterações" : "Enviar solicitação"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -205,6 +210,7 @@ export default function MyAbsencesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
+  const [editing, setEditing] = useState<AbsenceRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["absences-my"],
@@ -231,6 +237,9 @@ export default function MyAbsencesPage() {
       <div className="space-y-6">
         {showDialog && (
           <RequestDialog types={types} onClose={() => setShowDialog(false)} />
+        )}
+        {editing && (
+          <RequestDialog types={types} request={editing} onClose={() => setEditing(null)} />
         )}
 
         <div className="flex items-center justify-between">
@@ -291,14 +300,28 @@ export default function MyAbsencesPage() {
                       )}
                     </div>
                     {r.status === "pending" && (
-                      <button
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
-                        onClick={() => {
-                          if (confirm("Cancelar esta solicitação?")) deleteMutation.mutate(r.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          type="button"
+                          aria-label="Editar solicitação"
+                          title="Editar solicitação"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500 transition-colors hover:bg-amber-500/25"
+                          onClick={() => setEditing(r)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Cancelar solicitação"
+                          title="Cancelar solicitação"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/15 text-destructive transition-colors hover:bg-destructive/25"
+                          onClick={() => {
+                            if (confirm("Cancelar esta solicitação?")) deleteMutation.mutate(r.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </CardContent>

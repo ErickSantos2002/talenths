@@ -4,6 +4,7 @@ export interface AbsenceType {
   color: string;
   requires_approval: boolean;
   created_at: string;
+  updated_at?: string | null;
 }
 
 export interface AbsenceRequest {
@@ -27,4 +28,5 @@ export interface AbsenceRequest {
   reviewer_name?: string | null;
   auto_approved: boolean;
   created_at: string;
+  updated_at?: string | null;
 }

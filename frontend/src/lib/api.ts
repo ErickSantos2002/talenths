@@ -413,6 +413,7 @@ export const absences = {
   team: () => get<AbsenceRequest[]>("/absences/team"),
   calendar: () => get<AbsenceRequest[]>("/absences/calendar"),
   request: (data: object) => post<AbsenceRequest>("/absences/request", data),
+  update: (id: string, data: object) => put<AbsenceRequest>(`/absences/${id}`, data),
   approve: (id: string, note?: string) => put<AbsenceRequest>(`/absences/${id}/approve`, { note }),
   reject: (id: string, note?: string) => put<AbsenceRequest>(`/absences/${id}/reject`, { note }),
   delete: (id: string) => del(`/absences/${id}`),
