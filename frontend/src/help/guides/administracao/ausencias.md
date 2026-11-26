@@ -20,6 +20,8 @@ Em **Ausências** você aprova ou recusa os pedidos de saída dos colaboradores 
 1. No menu, no bloco **Empresa**, em **Gestão de RH**, clique em **Ausências**.
 2. Na aba **Solicitações**, veja em **Pendentes** os pedidos que esperam resposta e, em **Histórico**, os já decididos. Cada pedido mostra a pessoa, o departamento, o tipo, o período (com o horário, se for só parte do dia), o motivo e, embaixo, quando foi solicitado. Nos pedidos do **Histórico**, essa linha diz também quem aprovou ou recusou e quando. Se a pessoa corrigiu o pedido depois de enviar, aparece também **Editada em**, com a data e a hora.
 
+**Para achar um pedido antigo:** o **Histórico** mostra primeiro as ausências mais recentes, em páginas. Use os filtros acima da lista para ver só uma pessoa (**Todas as pessoas**), um tipo (**Todos os tipos**) ou só as aprovadas ou recusadas (**Todas as situações**). Embaixo da lista, mude de página ou escolha quantos pedidos ver por vez em **Exibir**. Os **Pendentes** aparecem sempre todos, sem página.
+
 ![Ausências com três solicitações pendentes, com os botões Recusar e Aprovar, e o histórico de solicitações decididas](/capturas/admin-ausencias.webp)
 
 **Para responder a um pedido:**

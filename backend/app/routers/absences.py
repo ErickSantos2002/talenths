@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from datetime import datetime, timezone, date as date_type, time as time_type
 import asyncpg
 
@@ -134,6 +136,71 @@ async def get_team_requests(
         company_id,
     )
     return [_ser_request(r) for r in rows]
+
+
+@router.get("/team/pending")
+async def get_team_pending(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    rows = await conn.fetch(
+        REQUEST_JOIN + " WHERE ar.company_id = $1 AND ar.status = 'pending' ORDER BY ar.start_date, ar.created_at",
+        company_id,
+    )
+    return [_ser_request(r) for r in rows]
+
+
+@router.get("/team/history")
+async def get_team_history(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+    person: str | None = Query(None, alias="user_id"),
+    type_id: str | None = None,
+    status: Literal["approved", "rejected"] | None = None,
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    where = ["ar.company_id = $1", "ar.status <> 'pending'"]
+    params: list = [company_id]
+    for column, value in (("ar.user_id", person), ("ar.type_id", type_id), ("ar.status", status)):
+        if value:
+            params.append(value)
+            where.append(f"{column} = ${len(params)}")
+    where_sql = " WHERE " + " AND ".join(where)
+    total = await conn.fetchval(f"SELECT count(*) FROM absence_requests ar{where_sql}", *params)
+    rows = await conn.fetch(
+        REQUEST_JOIN + where_sql
+        + f" ORDER BY ar.start_date DESC, ar.created_at DESC LIMIT ${len(params) + 1} OFFSET ${len(params) + 2}",
+        *params, limit, (page - 1) * limit,
+    )
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": max(1, -(-total // limit)),
+        "items": [_ser_request(r) for r in rows],
+    }
+
+
+@router.get("/team/people")
+async def get_team_people(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    """Quem já pediu ausência — as opções do filtro por pessoa do Histórico."""
+    await _require_manager(user_id, conn)
+    company_id = await _get_company_id(user_id, conn)
+    rows = await conn.fetch(
+        """SELECT DISTINCT p.user_id, p.name FROM absence_requests ar
+           JOIN profiles p ON p.user_id = ar.user_id
+           WHERE ar.company_id = $1 ORDER BY p.name""",
+        company_id,
+    )
+    return [{"user_id": str(r["user_id"]), "name": r["name"]} for r in rows]
 
 
 @router.get("/calendar")

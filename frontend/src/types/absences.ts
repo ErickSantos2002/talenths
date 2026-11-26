@@ -30,3 +30,11 @@ export interface AbsenceRequest {
   created_at: string;
   updated_at?: string | null;
 }
+
+export interface AbsenceHistoryPage {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  items: AbsenceRequest[];
+}

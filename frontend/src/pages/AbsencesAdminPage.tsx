@@ -16,6 +16,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { usePageSize } from "@/hooks/use-page-size";
+import { TablePagination } from "@/components/TablePagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { AbsenceRequest } from "@/types/absences";
 import { CalendarOff, CheckCircle2, XCircle, Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -131,21 +134,89 @@ function ReviewDialog({
 
 // ── Requests Tab ──────────────────────────────────────────────────────────────
 
+const ALL = "all";
+
+type HistoryFilters = { userId: string; typeId: string; status: string };
+
+function HistoryFiltersBar({
+  filters,
+  onChange,
+}: {
+  filters: HistoryFilters;
+  onChange: (f: HistoryFilters) => void;
+}) {
+  const { data: people = [] } = useQuery({ queryKey: ["absences-team", "people"], queryFn: absencesApi.teamPeople });
+  const { data: types = [] } = useQuery({ queryKey: ["absence-types"], queryFn: absencesApi.types });
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Select value={filters.userId} onValueChange={(userId) => onChange({ ...filters, userId })}>
+        <SelectTrigger className="h-9 w-[220px]" aria-label="Filtrar por pessoa">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>Todas as pessoas</SelectItem>
+          {people.map((p) => (
+            <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={filters.typeId} onValueChange={(typeId) => onChange({ ...filters, typeId })}>
+        <SelectTrigger className="h-9 w-[180px]" aria-label="Filtrar por tipo">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>Todos os tipos</SelectItem>
+          {types.map((t) => (
+            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={filters.status} onValueChange={(status) => onChange({ ...filters, status })}>
+        <SelectTrigger className="h-9 w-[180px]" aria-label="Filtrar por situação">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>Todas as situações</SelectItem>
+          <SelectItem value="approved">Aprovadas</SelectItem>
+          <SelectItem value="rejected">Recusadas</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function RequestsTab() {
   const [reviewing, setReviewing] = useState<{
     request: AbsenceRequest;
     action: "approve" | "reject";
   } | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = usePageSize("absences-history", 10);
+  const [filters, setFilters] = useState<HistoryFilters>({ userId: ALL, typeId: ALL, status: ALL });
+  const hasFilters = filters.userId !== ALL || filters.typeId !== ALL || filters.status !== ALL;
 
-  const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["absences-team"],
-    queryFn: absencesApi.team,
+  const { data: pending = [], isLoading: loadingPending } = useQuery({
+    queryKey: ["absences-team", "pending"],
+    queryFn: absencesApi.teamPending,
   });
 
-  const pending = requests.filter((r) => r.status === "pending");
-  const decided = requests.filter((r) => r.status !== "pending");
+  const { data: history, isLoading: loadingHistory } = useQuery({
+    queryKey: ["absences-team", "history", page, limit, filters],
+    queryFn: () =>
+      absencesApi.teamHistory({
+        page,
+        limit,
+        user_id: filters.userId === ALL ? undefined : filters.userId,
+        type_id: filters.typeId === ALL ? undefined : filters.typeId,
+        status: filters.status === ALL ? undefined : filters.status,
+      }),
+    placeholderData: (prev) => prev,
+  });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+  if (loadingPending || loadingHistory) return <p className="text-sm text-muted-foreground">Carregando...</p>;
+
+  const noRequestsAtAll = pending.length === 0 && !hasFilters && (history?.total ?? 0) === 0;
 
   return (
     <div className="space-y-6">
@@ -157,7 +228,7 @@ function RequestsTab() {
         />
       )}
 
-      {pending.length === 0 && decided.length === 0 && (
+      {noRequestsAtAll && (
         <div className="rounded-xl border border-dashed p-16 text-center">
           <CalendarOff className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
           <p className="text-muted-foreground">Nenhuma solicitação ainda.</p>
@@ -180,14 +251,45 @@ function RequestsTab() {
         </section>
       )}
 
-      {decided.length > 0 && (
+      {!noRequestsAtAll && history && (
         <section className="space-y-3">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60">
             Histórico
           </h2>
-          {decided.map((r) => (
-            <RequestCard key={r.id} request={r} />
-          ))}
+          <HistoryFiltersBar
+            filters={filters}
+            onChange={(f) => {
+              setFilters(f);
+              setPage(1);
+            }}
+          />
+          {history.items.length === 0 ? (
+            <p className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+              {hasFilters ? "Nenhum pedido encontrado com esses filtros." : "Nenhum pedido decidido ainda."}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {history.items.map((r) => (
+                <RequestCard key={r.id} request={r} />
+              ))}
+              <TablePagination
+                currentPage={history.page}
+                totalPages={history.pages}
+                totalItems={history.total}
+                startIdx={(history.page - 1) * history.limit}
+                endIdx={Math.min(history.page * history.limit, history.total)}
+                itemLabel="pedidos"
+                onPage={setPage}
+                onPrev={() => setPage((p) => Math.max(1, p - 1))}
+                onNext={() => setPage((p) => Math.min(history.pages, p + 1))}
+                pageSize={limit}
+                onPageSizeChange={(size) => {
+                  setLimit(size);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
         </section>
       )}
     </div>

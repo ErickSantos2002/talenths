@@ -405,12 +405,20 @@ export const learning = {
 
 // ── Absences ──────────────────────────────────────────────────────────────────
 
-import type { AbsenceType, AbsenceRequest } from "@/types/absences";
+import type { AbsenceType, AbsenceRequest, AbsenceHistoryPage } from "@/types/absences";
 
 export const absences = {
   types: () => get<AbsenceType[]>("/absences/types"),
   my: () => get<AbsenceRequest[]>("/absences/my"),
-  team: () => get<AbsenceRequest[]>("/absences/team"),
+  teamPending: () => get<AbsenceRequest[]>("/absences/team/pending"),
+  teamHistory: (params: { page: number; limit: number; user_id?: string; type_id?: string; status?: string }) => {
+    const qs = new URLSearchParams({ page: String(params.page), limit: String(params.limit) });
+    if (params.user_id) qs.set("user_id", params.user_id);
+    if (params.type_id) qs.set("type_id", params.type_id);
+    if (params.status) qs.set("status", params.status);
+    return get<AbsenceHistoryPage>(`/absences/team/history?${qs}`);
+  },
+  teamPeople: () => get<{ user_id: string; name: string }[]>("/absences/team/people"),
   calendar: () => get<AbsenceRequest[]>("/absences/calendar"),
   request: (data: object) => post<AbsenceRequest>("/absences/request", data),
   update: (id: string, data: object) => put<AbsenceRequest>(`/absences/${id}`, data),
