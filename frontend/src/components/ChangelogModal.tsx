@@ -16,9 +16,19 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.21.0",
+    date: "26/11/2026",
+    current: true,
+    entries: [
+      { type: "novidade", text: "Em Ausências e Férias, cada pedido mostra quando foi solicitado e, depois de decidido, quem aprovou ou recusou e quando." },
+      { type: "melhoria", text: "Pedidos de tipos que não exigem aprovação aparecem como \"Aprovada automaticamente\", para não serem confundidos com uma aprovação do gestor." },
+      { type: "melhoria", text: "Ausências de parte do dia mostram o horário pedido na tela do RH, em vez de \"(0 dias)\"." },
+      { type: "melhoria", text: "O relatório de ausências ganhou as colunas Decidido por e Decidido em." },
+    ],
+  },
+  {
     version: "v1.20.0",
     date: "18/11/2026",
-    current: true,
     entries: [
       { type: "novidade", text: "Cada colaborador agora tem um gestor responsável, definido pelo RH no cadastro. Só ele dá a nota de gestor daquela pessoa." },
       { type: "novidade", text: "Gestores avaliam a própria equipe em Minha Avaliação, na nova aba Avaliar minha equipe." },

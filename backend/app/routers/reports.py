@@ -118,11 +118,13 @@ async def report_absences(
     rows = await conn.fetch(
         """SELECT p.name, p.email, d.name AS department,
                   at.name AS type_name, ar.start_date, ar.end_date, ar.days,
-                  ar.status, ar.reason, ar.review_note, ar.created_at
+                  ar.status, ar.reason, ar.review_note, ar.created_at,
+                  ar.auto_approved, ar.reviewed_at, rp.name AS reviewer_name
            FROM absence_requests ar
            JOIN profiles p ON p.user_id = ar.user_id
            LEFT JOIN departments d ON d.id = p.department_id
            JOIN absence_types at ON at.id = ar.type_id
+           LEFT JOIN profiles rp ON rp.user_id = ar.reviewed_by
            WHERE ar.company_id = $1
            ORDER BY ar.created_at DESC""",
         company_id,
@@ -141,10 +143,15 @@ async def report_absences(
             r["reason"] or "",
             r["review_note"] or "",
             _fmt_date(r["created_at"]),
+            "Automática (tipo sem aprovação)" if r["auto_approved"] else (r["reviewer_name"] or ""),
+            _fmt_date(r["reviewed_at"]),
         ]
         for r in rows
     ]
-    headers = ["Nome", "E-mail", "Departamento", "Tipo", "Início", "Fim", "Dias", "Status", "Motivo", "Nota do Gestor", "Solicitado em"]
+    headers = [
+        "Nome", "E-mail", "Departamento", "Tipo", "Início", "Fim", "Dias", "Status", "Motivo",
+        "Nota do Gestor", "Solicitado em", "Decidido por", "Decidido em",
+    ]
     return _csv_response(data, headers, "ausencias.csv")
 
 

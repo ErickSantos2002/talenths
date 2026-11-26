@@ -725,12 +725,14 @@ class Seeder:
                 ("carla", "Férias", -3, 10, "approved", None),
                 ("diego", "Férias", 45, 20, "pending", None)]
         for key, tname, offset, n, st, reason in rows:
+            auto = tname == "Atestado médico"
             reviewed = st != "pending"
+            requested_at = self.now - timedelta(days=27 if auto else 3)
             await self.ins("absence_requests", company_id=self.company_id, user_id=self.users[key],
                            type_id=types[tname], start_date=self.days(offset), end_date=self.days(offset + n - 1),
-                           days=n, reason=reason, status=st,
-                           reviewed_by=self.users["gestor"] if reviewed else None,
-                           reviewed_at=self.now - timedelta(days=2) if reviewed else None)
+                           days=n, reason=reason, status=st, auto_approved=auto, created_at=requested_at,
+                           reviewed_by=self.users["gestor"] if reviewed and not auto else None,
+                           reviewed_at=(requested_at if auto else self.now - timedelta(days=2)) if reviewed else None)
 
     async def benefits(self) -> None:
         rows = [("Plano de saúde", "saude", "Cobertura nacional com coparticipação.", "Saúde Exemplo", "info", None),

@@ -19,7 +19,7 @@ Em **Ausências e Férias** você aprova ou recusa as solicitações de férias,
 ## Passo a passo
 
 1. No menu, no bloco **Empresa**, em **Gestão de RH**, clique em **Ausências**.
-2. Na aba **Solicitações**, veja em **Pendentes** os pedidos que esperam resposta e, em **Histórico**, os já decididos. Cada pedido mostra a pessoa, o departamento, o tipo, o período, o número de dias e o motivo.
+2. Na aba **Solicitações**, veja em **Pendentes** os pedidos que esperam resposta e, em **Histórico**, os já decididos. Cada pedido mostra a pessoa, o departamento, o tipo, o período (com o horário, se for só parte do dia), o motivo e, embaixo, quando foi solicitado. Nos pedidos do **Histórico**, essa linha diz também quem aprovou ou recusou e quando, ou que o pedido foi **aprovado automaticamente**.
 
 ![Ausências e Férias com três solicitações pendentes, com os botões Recusar e Aprovar, e o histórico de solicitações aprovadas](/capturas/admin-ausencias.webp)
 
@@ -47,11 +47,9 @@ Em **Ausências e Férias** você aprova ou recusa as solicitações de férias,
 
 ## Dúvidas comuns
 
-**Um pedido mostra "(0 dias)".** É uma ausência de parte do dia. O horário pedido não aparece nesta tela; a pessoa vê o horário em **Minhas Ausências**.
-
 **A pessoa recebe notificação da decisão?** Não. A decisão aparece na tela **Minhas Ausências** dela, mas o TalentHS não envia notificação.
 
-**Um pedido entrou já aprovado.** O tipo escolhido não pede aprovação: **Requer aprovação do gestor** está desmarcado nele, na aba **Tipos**.
+**Um pedido entrou já aprovado.** O tipo escolhido não pede aprovação: **Requer aprovação do gestor** está desmarcado nele, na aba **Tipos**. O pedido aparece no **Histórico** como **Aprovada automaticamente**, sem nome de quem aprovou. Se esse tipo deve passar por você, edite-o e marque a opção; vale para os pedidos novos.
 
 **Não consigo remover um tipo.** Um tipo que já foi usado em algum pedido não pode ser removido: aparece **Erro ao remover**.
 

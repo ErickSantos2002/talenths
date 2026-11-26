@@ -24,5 +24,7 @@ export interface AbsenceRequest {
   status: "pending" | "approved" | "rejected";
   review_note?: string;
   reviewed_at?: string;
+  reviewer_name?: string | null;
+  auto_approved: boolean;
   created_at: string;
 }

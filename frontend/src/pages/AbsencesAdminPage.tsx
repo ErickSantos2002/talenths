@@ -31,6 +31,38 @@ function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
   return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20">Pendente</Badge>;
 }
 
+function formatDate(isoDate: string) {
+  return new Date(isoDate + "T12:00:00").toLocaleDateString("pt-BR");
+}
+
+function formatDateTime(iso: string) {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function PeriodText({ request }: { request: AbsenceRequest }) {
+  if (request.start_time && request.end_time)
+    return (
+      <>
+        {formatDate(request.start_date)}, das {request.start_time} às {request.end_time}
+      </>
+    );
+  return (
+    <>
+      {formatDate(request.start_date)} até {formatDate(request.end_date)}{" "}
+      <span className="font-medium">({request.days} {request.days === 1 ? "dia" : "dias"})</span>
+    </>
+  );
+}
+
+function decisionText(request: AbsenceRequest) {
+  if (request.status === "pending" || !request.reviewed_at) return null;
+  const when = formatDateTime(request.reviewed_at);
+  if (request.auto_approved) return `Aprovada automaticamente em ${when} (o tipo não exige aprovação)`;
+  const verb = request.status === "approved" ? "Aprovada" : "Recusada";
+  return `${verb} por ${request.reviewer_name ?? "usuário removido"} em ${when}`;
+}
+
 // ── Review Dialog ─────────────────────────────────────────────────────────────
 
 function ReviewDialog({
@@ -70,9 +102,7 @@ function ReviewDialog({
         </DialogHeader>
         <div className="space-y-3 py-2">
           <p className="text-sm text-muted-foreground">
-            <strong>{request.user_name}</strong> — {request.type_name} de{" "}
-            {new Date(request.start_date + "T12:00:00").toLocaleDateString("pt-BR")} até{" "}
-            {new Date(request.end_date + "T12:00:00").toLocaleDateString("pt-BR")} ({request.days} dias)
+            <strong>{request.user_name}</strong> — {request.type_name}: <PeriodText request={request} />
           </p>
           <div className="space-y-1">
             <Label>Nota (opcional)</Label>
@@ -191,10 +221,7 @@ function RequestCard({
               <StatusBadge status={request.status} />
             </div>
             <p className="text-sm text-muted-foreground">
-              {request.type_name} —{" "}
-              {new Date(request.start_date + "T12:00:00").toLocaleDateString("pt-BR")} até{" "}
-              {new Date(request.end_date + "T12:00:00").toLocaleDateString("pt-BR")}{" "}
-              <span className="font-medium">({request.days} dias)</span>
+              {request.type_name} — <PeriodText request={request} />
             </p>
             {request.reason && (
               <p className="text-xs text-muted-foreground italic">"{request.reason}"</p>
@@ -202,6 +229,10 @@ function RequestCard({
             {request.review_note && (
               <p className="text-xs text-muted-foreground">Nota: {request.review_note}</p>
             )}
+            <p className="text-xs text-muted-foreground/80">
+              Solicitada em {formatDateTime(request.created_at)}
+              {decisionText(request) && <> · {decisionText(request)}</>}
+            </p>
           </div>
           {request.status === "pending" && onApprove && onReject && (
             <div className="flex gap-2 shrink-0">

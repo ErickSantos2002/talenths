@@ -63,6 +63,8 @@ def _ser_request(r) -> dict:
         "status": r["status"],
         "review_note": r.get("review_note"),
         "reviewed_at": r["reviewed_at"].isoformat() if r.get("reviewed_at") else None,
+        "reviewer_name": r.get("reviewer_name"),
+        "auto_approved": r.get("auto_approved", False),
         "created_at": r["created_at"].isoformat() if r["created_at"] else None,
     }
 
@@ -144,11 +146,12 @@ async def delete_type(
 
 REQUEST_JOIN = """
     SELECT ar.*, p.name AS user_name, p.email AS user_email, d.name AS department,
-           at.name AS type_name, at.color AS type_color
+           at.name AS type_name, at.color AS type_color, rp.name AS reviewer_name
     FROM absence_requests ar
     JOIN profiles p ON p.user_id = ar.user_id
     LEFT JOIN departments d ON d.id = p.department_id
     JOIN absence_types at ON at.id = ar.type_id
+    LEFT JOIN profiles rp ON rp.user_id = ar.reviewed_by
 """
 
 
@@ -229,13 +232,16 @@ async def create_request(
     if not atype:
         raise HTTPException(404, "Tipo de ausência não encontrado")
 
-    status = "pending" if atype["requires_approval"] else "approved"
+    auto_approved = not atype["requires_approval"]
+    status = "approved" if auto_approved else "pending"
     row = await conn.fetchrow(
         """INSERT INTO absence_requests
-               (company_id, user_id, type_id, start_date, end_date, start_time, end_time, days, reason, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *""",
+               (company_id, user_id, type_id, start_date, end_date, start_time, end_time, days, reason,
+                status, auto_approved, reviewed_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CASE WHEN $11 THEN now() END)
+           RETURNING *""",
         company_id, user_id, body["type_id"], start, end, start_time, end_time, days,
-        body.get("reason"), status,
+        body.get("reason"), status, auto_approved,
     )
     full = await conn.fetchrow(
         REQUEST_JOIN + " WHERE ar.id = $1", row["id"]
