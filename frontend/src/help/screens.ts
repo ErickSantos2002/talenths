@@ -107,7 +107,7 @@ export const SCREENS: Screen[] = [
   item("/admin/bingo", "Bingo", Dices, "comunicacao", ADMIN),
   hidden("/admin/bingo/:gameId/imprimir", "Impressão do bingo", ADMIN),
 
-  item("/admin/ausencias", "Ausências", CalendarOff, "rh", ADMIN),
+  item("/admin/solicitacoes", "Solicitações", CalendarOff, "rh", ADMIN),
   item("/admin/beneficios", "Benefícios", Gift, "rh", ADMIN),
   item("/admin/ponto", "Ponto Eletrônico", Clock, "rh", ADMIN),
   item("/admin/tabela-salarial", "Tabela Salarial", DollarSign, "rh", ADMIN),
@@ -142,7 +142,7 @@ export const SCREENS: Screen[] = [
   hidden("/ajuda/:module/:slug", "Guia de ajuda", ALL),
   item("/bingo", "Bingo", Dices, "comunicacao-pessoal", ALL),
 
-  item("/minhas-ausencias", "Minhas Ausências", CalendarOff, "rh-pessoal", ALL),
+  item("/minhas-solicitacoes", "Minhas Solicitações", CalendarOff, "rh-pessoal", ALL),
   item("/meus-beneficios", "Meus Benefícios", Gift, "rh-pessoal", ALL),
   item("/meu-onboarding", "Meu Onboarding", ListChecks, "rh-pessoal", ALL),
   item("/meu-ponto", "Meu Ponto", Clock, "rh-pessoal", ALL, { requires: "timeclock_enabled" }),

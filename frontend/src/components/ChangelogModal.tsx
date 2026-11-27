@@ -16,9 +16,18 @@ interface ChangelogVersion {
 
 const CHANGELOG: ChangelogVersion[] = [
   {
+    version: "v1.24.0",
+    date: "27/11/2026",
+    current: true,
+    entries: [
+      { type: "novidade", text: "Ausências agora se chama Solicitações: além de pedir para sair, você pode pedir para pagar hora, informando o dia e o horário da hora extra." },
+      { type: "melhoria", text: "Cada pedido mostra se é Saída ou Pagar hora, e o relatório de solicitações traz essa informação." },
+      { type: "melhoria", text: "No Ponto Eletrônico, a aba de pedidos do RH passou a se chamar Pedidos de ajuste." },
+    ],
+  },
+  {
     version: "v1.23.0",
     date: "26/11/2026",
-    current: true,
     entries: [
       { type: "novidade", text: "Na tela Ausências, o histórico agora é dividido em páginas e tem filtros por pessoa, tipo e situação." },
     ],

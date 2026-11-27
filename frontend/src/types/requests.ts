@@ -1,13 +1,21 @@
-export interface AbsenceType {
+export type RequestCategory = "saida" | "pagar_hora";
+
+export const CATEGORY_LABEL: Record<RequestCategory, string> = {
+  saida: "Saída",
+  pagar_hora: "Pagar hora",
+};
+
+export interface HrRequestType {
   id: string;
   name: string;
   color: string;
   requires_approval: boolean;
+  category: RequestCategory;
   created_at: string;
   updated_at?: string | null;
 }
 
-export interface AbsenceRequest {
+export interface HrRequest {
   id: string;
   user_id: string;
   user_name?: string;
@@ -16,6 +24,7 @@ export interface AbsenceRequest {
   type_id: string;
   type_name?: string;
   type_color?: string;
+  type_category: RequestCategory;
   start_date: string;
   end_date: string;
   start_time?: string | null;
@@ -31,10 +40,10 @@ export interface AbsenceRequest {
   updated_at?: string | null;
 }
 
-export interface AbsenceHistoryPage {
+export interface HrRequestHistoryPage {
   total: number;
   page: number;
   limit: number;
   pages: number;
-  items: AbsenceRequest[];
+  items: HrRequest[];
 }

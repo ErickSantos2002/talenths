@@ -12,7 +12,7 @@ O menu, na lateral esquerda, leva você a todas as telas do TalentHS. Ele fica s
 
 ## Quando usar
 
-Sempre que quiser trocar de tela: ver seus vídeos, responder uma avaliação, consultar o calendário, pedir uma ausência e assim por diante.
+Sempre que quiser trocar de tela: ver seus vídeos, responder uma avaliação, consultar o calendário, fazer uma solicitação ao RH e assim por diante.
 
 ## Passo a passo
 

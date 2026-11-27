@@ -39,7 +39,7 @@ describe("screens", () => {
       "Minha Avaliação", "Meus Testes",
       "Minha Trilha", "Meu PDI", "Minha Universidade", "Workshops",
       "Comunicados", "Pesquisas", "Feedbacks", "Documentos", "Vídeos", "Bingo",
-      "Minhas Ausências", "Meus Benefícios", "Meu Onboarding",
+      "Minhas Solicitações", "Meus Benefícios", "Meu Onboarding",
     ]);
   });
 

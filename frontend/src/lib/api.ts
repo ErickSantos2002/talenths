@@ -403,28 +403,31 @@ export const learning = {
   },
 };
 
-// ── Absences ──────────────────────────────────────────────────────────────────
+// ── Solicitações (saída e pagar hora) ─────────────────────────────────────────
 
-import type { AbsenceType, AbsenceRequest, AbsenceHistoryPage } from "@/types/absences";
+import type { HrRequestType, HrRequest, HrRequestHistoryPage, RequestCategory } from "@/types/requests";
 
-export const absences = {
-  types: () => get<AbsenceType[]>("/absences/types"),
-  my: () => get<AbsenceRequest[]>("/absences/my"),
-  teamPending: () => get<AbsenceRequest[]>("/absences/team/pending"),
-  teamHistory: (params: { page: number; limit: number; user_id?: string; type_id?: string; status?: string }) => {
+export const requests = {
+  types: () => get<HrRequestType[]>("/requests/types"),
+  my: () => get<HrRequest[]>("/requests/my"),
+  teamPending: () => get<HrRequest[]>("/requests/team/pending"),
+  teamHistory: (params: {
+    page: number; limit: number; user_id?: string; type_id?: string; status?: string; category?: RequestCategory;
+  }) => {
     const qs = new URLSearchParams({ page: String(params.page), limit: String(params.limit) });
     if (params.user_id) qs.set("user_id", params.user_id);
     if (params.type_id) qs.set("type_id", params.type_id);
     if (params.status) qs.set("status", params.status);
-    return get<AbsenceHistoryPage>(`/absences/team/history?${qs}`);
+    if (params.category) qs.set("category", params.category);
+    return get<HrRequestHistoryPage>(`/requests/team/history?${qs}`);
   },
-  teamPeople: () => get<{ user_id: string; name: string }[]>("/absences/team/people"),
-  calendar: () => get<AbsenceRequest[]>("/absences/calendar"),
-  request: (data: object) => post<AbsenceRequest>("/absences/request", data),
-  update: (id: string, data: object) => put<AbsenceRequest>(`/absences/${id}`, data),
-  approve: (id: string, note?: string) => put<AbsenceRequest>(`/absences/${id}/approve`, { note }),
-  reject: (id: string, note?: string) => put<AbsenceRequest>(`/absences/${id}/reject`, { note }),
-  delete: (id: string) => del(`/absences/${id}`),
+  teamPeople: () => get<{ user_id: string; name: string }[]>("/requests/team/people"),
+  calendar: () => get<HrRequest[]>("/requests/calendar"),
+  request: (data: object) => post<HrRequest>("/requests/request", data),
+  update: (id: string, data: object) => put<HrRequest>(`/requests/${id}`, data),
+  approve: (id: string, note?: string) => put<HrRequest>(`/requests/${id}/approve`, { note }),
+  reject: (id: string, note?: string) => put<HrRequest>(`/requests/${id}/reject`, { note }),
+  delete: (id: string) => del(`/requests/${id}`),
 };
 
 // ── Timeclock (Ponto Eletrônico) ───────────────────────────────────────────────
@@ -536,7 +539,7 @@ async function downloadReport(path: string, filename: string): Promise<void> {
 export const reports = {
   collaborators: (includeInactive?: boolean) =>
     downloadReport(withInactive("/reports/collaborators", includeInactive), "colaboradores.csv"),
-  absences: () => downloadReport("/reports/absences", "ausencias.csv"),
+  requests: () => downloadReport("/reports/requests", "solicitacoes.csv"),
   benefits: () => downloadReport("/reports/benefits", "beneficios.csv"),
   pdi: () => downloadReport("/reports/pdi", "pdi.csv"),
   learning: () => downloadReport("/reports/learning", "treinamentos.csv"),

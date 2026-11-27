@@ -47,7 +47,7 @@ Nos dois casos o ponto some, até o tour ganhar outro passo novo.
 
 - O painel fecha sozinho quando você troca de tela. Clique no **?** de novo para ver o guia da tela nova.
 - Se você trocar de tela no meio de um passeio do **Mostrar nesta tela**, ele fecha sozinho.
-- Na central de ajuda, use o campo **Buscar na ajuda** para encontrar um guia por palavra, como "ausência" ou "avaliação". Os guias também aparecem separados por grupo do menu.
+- Na central de ajuda, use o campo **Buscar na ajuda** para encontrar um guia por palavra, como "solicitação" ou "avaliação". Os guias também aparecem separados por grupo do menu.
 
 ## Dúvidas comuns
 
