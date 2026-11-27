@@ -1,4 +1,4 @@
-"""Colaborador edita o próprio pedido de ausência enquanto ele está pendente."""
+"""Colaborador edita o próprio pedido (solicitação) enquanto ele está pendente."""
 from tests.db.conftest import make_company, make_user
 
 REASON = "Consulta de rotina marcada"

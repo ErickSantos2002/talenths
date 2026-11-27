@@ -174,12 +174,12 @@ async def test_toda_escrita_da_lista_passa_pela_porta_do_agente(db, agente):
 
 
 async def test_escrita_respeita_o_papel_do_dono(db, agente):
-    from tests.db.test_rh_writes_scope_api import make_absence
+    from tests.db.test_rh_writes_scope_api import make_request
 
     company = await make_company(db)
     user = await make_user(db, company)
     hr = await make_user(db, company, role="manager")
-    req = await make_absence(db, company, user)
+    req = await make_request(db, company, user)
 
     r_user = await agente(f"/absences/{req}/approve", emitir(sub=await email_of(db, user)), method="PUT", json={})
     assert r_user.status_code == 403 and r_user.json()["detail"] != GATE_DETAIL
@@ -190,28 +190,28 @@ async def test_escrita_respeita_o_papel_do_dono(db, agente):
 
 
 async def test_escrita_do_agente_na_auditoria_com_rotulo_e_via(db, agente, audit_calls):
-    from tests.db.test_rh_writes_scope_api import make_absence
+    from tests.db.test_rh_writes_scope_api import make_request
 
     company = await make_company(db)
     user = await make_user(db, company)
     hr = await make_user(db, company, role="manager")
-    req = await make_absence(db, company, user)
+    req = await make_request(db, company, user)
 
     await agente(f"/absences/{req}/reject", emitir(sub=await email_of(db, hr)), method="PUT", json={})
 
     (user_id, method, _path, action, status_code, _ip, via), = audit_calls
-    assert (user_id, method, action, status_code, via) == (hr, "PUT", "Ausência recusada", 200, "erick-bot")
+    assert (user_id, method, action, status_code, via) == (hr, "PUT", "Solicitação recusada", 200, "erick-bot")
 
 
 async def test_rh_pelo_agente_so_cancela_o_proprio_pedido_pendente(db, agente):
-    from tests.db.test_rh_writes_scope_api import make_absence
+    from tests.db.test_rh_writes_scope_api import make_request
 
     company = await make_company(db)
     user = await make_user(db, company)
     hr = await make_user(db, company, role="manager")
-    colleague_req = await make_absence(db, company, user)
-    own_approved = await make_absence(db, company, hr, status="approved")
-    own_pending = await make_absence(db, company, hr)
+    colleague_req = await make_request(db, company, user)
+    own_approved = await make_request(db, company, hr, status="approved")
+    own_pending = await make_request(db, company, hr)
     token = emitir(sub=await email_of(db, hr))
 
     for req in (colleague_req, own_approved, own_pending):

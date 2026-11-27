@@ -34,11 +34,12 @@ _ACTION_MAP: list[tuple[re.Pattern, str]] = [(re.compile(p), label) for p, label
     (rf"POST /collaborators/{_ID}/deactivate", "Colaborador desligado"),
     (rf"POST /collaborators/{_ID}/reactivate", "Colaborador reativado"),
 
-    (r"POST /absences/request", "Solicitação de ausência criada"),
-    (rf"PUT /absences/{_ID}/approve", "Ausência aprovada"),
-    (rf"PUT /absences/{_ID}/reject", "Ausência recusada"),
-    (rf"PUT /absences/{_ID}", "Solicitação de ausência editada"),
-    (rf"DELETE /absences/{_ID}", "Solicitação de ausência removida"),
+    # /absences é o apelido antigo das solicitações (HS.OS ainda não migrado).
+    (r"POST /(?:requests|absences)/request", "Solicitação criada"),
+    (rf"PUT /(?:requests|absences)/{_ID}/approve", "Solicitação aprovada"),
+    (rf"PUT /(?:requests|absences)/{_ID}/reject", "Solicitação recusada"),
+    (rf"PUT /(?:requests|absences)/{_ID}", "Solicitação editada"),
+    (rf"DELETE /(?:requests|absences)/{_ID}", "Solicitação removida"),
 
     (rf"POST /timeclock/{_ID}/adjust", "Ajuste de ponto solicitado"),
     (r"POST /timeclock/manual-self", "Batida lançada pelo colaborador"),

@@ -6,8 +6,7 @@ import asyncpg
 
 from app.dependencies import get_db, get_current_user_id, via_agente
 
-# Montado em /requests e, enquanto o HS.OS não migra, também em /absences (main.py).
-router = APIRouter(tags=["requests"])
+router = APIRouter(prefix="/requests", tags=["requests"])
 
 # Solicitações ao RH: pedido de saída ou de pagar hora (hora extra que compensa horas
 # devidas). Tipos fixos, todos com aprovação. O saldo de horas é do sistema de ponto.
@@ -414,3 +413,15 @@ async def delete_request(
             "DELETE FROM hr_requests WHERE id = $1 AND user_id = $2 AND status = 'pending'",
             request_id, user_id,
         )
+
+
+# Apelido temporário: o HS.OS (Guardi) ainda chama /absences. As mesmas rotas, com o
+# prefixo dentro do router (a porta do agente confere o template completo da rota); por
+# ele só aparecem saídas (legacy_alias). Sai quando o HS.OS migrar
+# (docs/superpowers/specs/2026-11-27-solicitacoes-hsos.md).
+legacy_router = APIRouter(prefix="/absences", tags=["requests"], deprecated=True)
+for _route in router.routes:
+    legacy_router.add_api_route(
+        _route.path.removeprefix(router.prefix), _route.endpoint,
+        methods=list(_route.methods), status_code=_route.status_code,
+    )

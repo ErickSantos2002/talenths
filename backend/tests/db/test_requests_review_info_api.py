@@ -61,7 +61,7 @@ async def test_report_csv_has_decision_columns(db, client_as):
         "reason": "Consulta médica de rotina",
     })
 
-    text = (await client_as(hr).get("/reports/absences")).content.decode("utf-8-sig")
+    text = (await client_as(hr).get("/reports/requests")).content.decode("utf-8-sig")
     header, row = text.splitlines()[:2]
     assert "Decidido por" in header and "Decidido em" in header
     assert "Automática (sem análise)" in row

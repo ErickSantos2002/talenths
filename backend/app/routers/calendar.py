@@ -153,10 +153,10 @@ async def get_feed(
         absences = await conn.fetch(
             """SELECT ar.id, ar.start_date, ar.end_date, ar.days,
                       p.name AS user_name, at.name AS type_name, at.color
-               FROM absence_requests ar
+               FROM hr_requests ar
                JOIN profiles p ON p.user_id = ar.user_id
-               JOIN absence_types at ON at.id = ar.type_id
-               WHERE ar.company_id = $1 AND ar.status = 'approved'
+               JOIN hr_request_types at ON at.id = ar.type_id
+               WHERE ar.company_id = $1 AND ar.status = 'approved' AND at.category = 'saida'
                  AND (p.deactivated_at IS NULL OR ar.start_date <= CURRENT_DATE)
                ORDER BY ar.start_date""",
             company_id,
@@ -165,10 +165,10 @@ async def get_feed(
         absences = await conn.fetch(
             """SELECT ar.id, ar.start_date, ar.end_date, ar.days,
                       p.name AS user_name, at.name AS type_name, at.color
-               FROM absence_requests ar
+               FROM hr_requests ar
                JOIN profiles p ON p.user_id = ar.user_id
-               JOIN absence_types at ON at.id = ar.type_id
-               WHERE ar.user_id = $1 AND ar.status = 'approved'
+               JOIN hr_request_types at ON at.id = ar.type_id
+               WHERE ar.user_id = $1 AND ar.status = 'approved' AND at.category = 'saida'
                ORDER BY ar.start_date""",
             user_id,
         )

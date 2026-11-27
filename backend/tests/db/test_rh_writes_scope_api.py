@@ -4,7 +4,7 @@ import uuid
 from tests.db.conftest import make_company, make_department, make_user
 
 
-async def make_absence(db, company, user, status="pending") -> str:
+async def make_request(db, company, user, status="pending") -> str:
     type_id = await db.fetchval(
         "INSERT INTO public.hr_request_types (company_id, name) VALUES ($1, 'Folga') RETURNING id", company
     )
@@ -19,7 +19,7 @@ async def test_aprovar_e_recusar_ausencia_de_outra_empresa_da_404(db, client_as)
     mine, other = await make_company(db), await make_company(db)
     hr = await make_user(db, mine, role="manager")
     stranger = await make_user(db, other)
-    req = await make_absence(db, other, stranger)
+    req = await make_request(db, other, stranger)
 
     for verb in ("approve", "reject"):
         assert (await client_as(hr).put(f"/absences/{req}/{verb}", json={})).status_code == 404
@@ -30,7 +30,7 @@ async def test_aprovar_o_que_ja_nao_esta_pendente_da_409(db, client_as):
     company = await make_company(db)
     hr = await make_user(db, company, role="manager")
     user = await make_user(db, company)
-    req = await make_absence(db, company, user, status="rejected")
+    req = await make_request(db, company, user, status="rejected")
 
     r = await client_as(hr).put(f"/absences/{req}/approve", json={})
 
@@ -42,7 +42,7 @@ async def test_aprovar_pendente_da_empresa_funciona(db, client_as):
     company = await make_company(db)
     hr = await make_user(db, company, role="manager")
     user = await make_user(db, company)
-    req = await make_absence(db, company, user)
+    req = await make_request(db, company, user)
 
     r = await client_as(hr).put(f"/absences/{req}/approve", json={"note": "ok"})
 

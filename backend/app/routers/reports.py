@@ -106,10 +106,14 @@ async def report_collaborators(
     return _csv_response(data, headers, "colaboradores.csv")
 
 
-# ── Absences ──────────────────────────────────────────────────────────────────
+# ── Solicitações ──────────────────────────────────────────────────────────────
 
-@router.get("/absences")
-async def report_absences(
+CATEGORY_LABELS = {"saida": "Saída", "pagar_hora": "Pagar hora"}
+
+
+@router.get("/requests")
+@router.get("/absences", deprecated=True)  # apelido antigo, até o HS.OS migrar
+async def report_requests(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
@@ -117,13 +121,13 @@ async def report_absences(
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
         """SELECT p.name, p.email, d.name AS department,
-                  at.name AS type_name, ar.start_date, ar.end_date, ar.days,
+                  at.name AS type_name, at.category, ar.start_date, ar.end_date, ar.days,
                   ar.status, ar.reason, ar.review_note, ar.created_at,
                   ar.auto_approved, ar.reviewed_at, rp.name AS reviewer_name
-           FROM absence_requests ar
+           FROM hr_requests ar
            JOIN profiles p ON p.user_id = ar.user_id
            LEFT JOIN departments d ON d.id = p.department_id
-           JOIN absence_types at ON at.id = ar.type_id
+           JOIN hr_request_types at ON at.id = ar.type_id
            LEFT JOIN profiles rp ON rp.user_id = ar.reviewed_by
            WHERE ar.company_id = $1
            ORDER BY ar.created_at DESC""",
@@ -136,6 +140,7 @@ async def report_absences(
             r["email"] or "",
             r["department"] or "",
             r["type_name"] or "",
+            CATEGORY_LABELS.get(r["category"], ""),
             _fmt_date(r["start_date"]),
             _fmt_date(r["end_date"]),
             r["days"],
@@ -149,10 +154,10 @@ async def report_absences(
         for r in rows
     ]
     headers = [
-        "Nome", "E-mail", "Departamento", "Tipo", "Início", "Fim", "Dias", "Status", "Motivo",
+        "Nome", "E-mail", "Departamento", "Tipo", "Categoria", "Início", "Fim", "Dias", "Status", "Motivo",
         "Nota do Gestor", "Solicitado em", "Decidido por", "Decidido em",
     ]
-    return _csv_response(data, headers, "ausencias.csv")
+    return _csv_response(data, headers, "solicitacoes.csv")
 
 
 # ── Benefits ──────────────────────────────────────────────────────────────────

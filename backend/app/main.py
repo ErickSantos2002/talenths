@@ -28,7 +28,7 @@ from app.routers.workshops import router as workshops_router
 from app.routers.communications import router as communications_router
 from app.routers.onboarding import router as onboarding_router
 from app.routers.surveys import router as surveys_router
-from app.routers.requests import router as requests_router
+from app.routers.requests import router as requests_router, legacy_router as requests_legacy_router
 from app.routers.benefits import router as benefits_router
 from app.routers.salary import router as salary_router
 from app.routers.reports import router as reports_router
@@ -114,10 +114,8 @@ app.include_router(workshops_router)
 app.include_router(communications_router)
 app.include_router(onboarding_router)
 app.include_router(surveys_router)
-app.include_router(requests_router, prefix="/requests")
-# Apelido temporário: o HS.OS (Guardi) ainda chama /absences. Por ele só aparecem saídas,
-# como antes da 040. Sai quando o HS.OS migrar (docs/superpowers/specs/2026-11-27-solicitacoes-hsos.md).
-app.include_router(requests_router, prefix="/absences", include_in_schema=False)
+app.include_router(requests_router)
+app.include_router(requests_legacy_router)
 app.include_router(benefits_router)
 app.include_router(salary_router)
 app.include_router(reports_router)
