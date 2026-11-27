@@ -6,13 +6,13 @@ async def _types(db, company):
     ids = {}
     for name in ("Ida ao médico", "Saída pessoal", "Outro"):
         ids[name] = str(await db.fetchval(
-            "INSERT INTO public.absence_types (company_id, name) VALUES ($1, $2) RETURNING id", company, name))
+            "INSERT INTO public.hr_request_types (company_id, name) VALUES ($1, $2) RETURNING id", company, name))
     return ids
 
 
 async def _req(db, company, user, type_id, start, status):
     return str(await db.fetchval(
-        """INSERT INTO public.absence_requests (company_id, user_id, type_id, start_date, end_date, days, status, reason)
+        """INSERT INTO public.hr_requests (company_id, user_id, type_id, start_date, end_date, days, status, reason)
            VALUES ($1, $2, $3, $4::text::date, $4::text::date, 1, $5, 'Motivo com mais de vinte caracteres') RETURNING id""",
         company, user, type_id, start, status,
     ))

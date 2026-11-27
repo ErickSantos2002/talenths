@@ -48,7 +48,7 @@ async def test_edicao_valida_como_na_criacao(db, client_as):
     assert r.status_code == 400 and r.json()["detail"] == "O motivo precisa ter pelo menos 20 caracteres"
     r = await c.put(f"/absences/{created['id']}", json={**base, "end_date": "2027-01-05", "reason": NEW_REASON})
     assert r.status_code == 400
-    row = await db.fetchrow("SELECT reason, updated_at FROM public.absence_requests WHERE id = $1::uuid", created["id"])
+    row = await db.fetchrow("SELECT reason, updated_at FROM public.hr_requests WHERE id = $1::uuid", created["id"])
     assert row["reason"] == REASON and row["updated_at"] is None
 
 
@@ -59,7 +59,7 @@ async def test_outra_pessoa_e_rh_nao_editam(db, client_as):
     payload = {"type_id": types["Outro"], "start_date": "2027-01-06", "end_date": "2027-01-06", "reason": NEW_REASON}
     for user in (other, hr):
         assert (await client_as(user).put(f"/absences/{created['id']}", json=payload)).status_code == 404
-    assert await db.fetchval("SELECT reason FROM public.absence_requests WHERE id = $1::uuid", created["id"]) == REASON
+    assert await db.fetchval("SELECT reason FROM public.hr_requests WHERE id = $1::uuid", created["id"]) == REASON
 
 
 async def test_pedido_ja_decidido_nao_edita(db, client_as):
@@ -70,4 +70,4 @@ async def test_pedido_ja_decidido_nao_edita(db, client_as):
         "type_id": types["Outro"], "start_date": "2027-01-06", "end_date": "2027-01-06", "reason": NEW_REASON,
     })
     assert r.status_code == 409 and r.json()["detail"] == "Solicitação já não está pendente"
-    assert await db.fetchval("SELECT status FROM public.absence_requests WHERE id = $1::uuid", created["id"]) == "approved"
+    assert await db.fetchval("SELECT status FROM public.hr_requests WHERE id = $1::uuid", created["id"]) == "approved"

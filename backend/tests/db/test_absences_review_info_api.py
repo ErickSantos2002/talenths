@@ -3,7 +3,7 @@ from tests.db.conftest import make_company, make_user
 
 async def _type(db, company_id, requires_approval: bool) -> str:
     return str(await db.fetchval(
-        "INSERT INTO public.absence_types (company_id, name, requires_approval) VALUES ($1, 'Tipo', $2) RETURNING id",
+        "INSERT INTO public.hr_request_types (company_id, name, requires_approval) VALUES ($1, 'Tipo', $2) RETURNING id",
         company_id, requires_approval,
     ))
 

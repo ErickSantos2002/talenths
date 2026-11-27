@@ -186,7 +186,7 @@ async def test_escrita_respeita_o_papel_do_dono(db, agente):
 
     r_hr = await agente(f"/absences/{req}/approve", emitir(sub=await email_of(db, hr)), method="PUT", json={})
     assert r_hr.status_code == 200
-    assert str(await db.fetchval("SELECT reviewed_by FROM public.absence_requests WHERE id = $1", req)) == hr
+    assert str(await db.fetchval("SELECT reviewed_by FROM public.hr_requests WHERE id = $1", req)) == hr
 
 
 async def test_escrita_do_agente_na_auditoria_com_rotulo_e_via(db, agente, audit_calls):
@@ -217,7 +217,7 @@ async def test_rh_pelo_agente_so_cancela_o_proprio_pedido_pendente(db, agente):
     for req in (colleague_req, own_approved, own_pending):
         await agente(f"/absences/{req}", token, method="DELETE")
 
-    left = {str(r["id"]) for r in await db.fetch("SELECT id FROM public.absence_requests WHERE company_id = $1", company)}
+    left = {str(r["id"]) for r in await db.fetch("SELECT id FROM public.hr_requests WHERE company_id = $1", company)}
     assert left == {colleague_req, own_approved}
 
 
