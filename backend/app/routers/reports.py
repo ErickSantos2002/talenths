@@ -106,26 +106,42 @@ async def report_collaborators(
     return _csv_response(data, headers, "colaboradores.csv")
 
 
-# ── Absences ──────────────────────────────────────────────────────────────────
+# ── Solicitações ──────────────────────────────────────────────────────────────
 
-@router.get("/absences")
-async def report_absences(
+CATEGORY_LABELS = {"saida": "Saída", "pagar_hora": "Pagar hora"}
+
+
+@router.get("/requests")
+async def report_requests(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    return await _requests_csv(user_id, conn, legacy=False)
+
+
+@router.get("/absences", deprecated=True)
+async def report_absences_legacy(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    # Apelido até o HS.OS migrar: o CSV de antes da 040 — só saídas, sem a coluna Categoria.
+    return await _requests_csv(user_id, conn, legacy=True)
+
+
+async def _requests_csv(user_id: str, conn: asyncpg.Connection, legacy: bool):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
         """SELECT p.name, p.email, d.name AS department,
-                  at.name AS type_name, ar.start_date, ar.end_date, ar.days,
+                  at.name AS type_name, at.category, ar.start_date, ar.end_date, ar.days,
                   ar.status, ar.reason, ar.review_note, ar.created_at,
                   ar.auto_approved, ar.reviewed_at, rp.name AS reviewer_name
-           FROM absence_requests ar
+           FROM hr_requests ar
            JOIN profiles p ON p.user_id = ar.user_id
            LEFT JOIN departments d ON d.id = p.department_id
-           JOIN absence_types at ON at.id = ar.type_id
+           JOIN hr_request_types at ON at.id = ar.type_id
            LEFT JOIN profiles rp ON rp.user_id = ar.reviewed_by
-           WHERE ar.company_id = $1
+           WHERE ar.company_id = $1""" + (" AND at.category = 'saida'" if legacy else "") + """
            ORDER BY ar.created_at DESC""",
         company_id,
     )
@@ -136,6 +152,7 @@ async def report_absences(
             r["email"] or "",
             r["department"] or "",
             r["type_name"] or "",
+            CATEGORY_LABELS.get(r["category"], ""),
             _fmt_date(r["start_date"]),
             _fmt_date(r["end_date"]),
             r["days"],
@@ -149,10 +166,16 @@ async def report_absences(
         for r in rows
     ]
     headers = [
-        "Nome", "E-mail", "Departamento", "Tipo", "Início", "Fim", "Dias", "Status", "Motivo",
+        "Nome", "E-mail", "Departamento", "Tipo", "Categoria", "Início", "Fim", "Dias", "Status", "Motivo",
         "Nota do Gestor", "Solicitado em", "Decidido por", "Decidido em",
     ]
-    return _csv_response(data, headers, "ausencias.csv")
+    if legacy:
+        col = headers.index("Categoria")
+        headers.pop(col)
+        for row in data:
+            row.pop(col)
+        return _csv_response(data, headers, "ausencias.csv")
+    return _csv_response(data, headers, "solicitacoes.csv")
 
 
 # ── Benefits ──────────────────────────────────────────────────────────────────

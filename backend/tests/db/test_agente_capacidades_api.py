@@ -73,6 +73,11 @@ async def test_capacidades_do_login(db, agente, role, papel):
     rotas = {tuple(p) for p in body["rotas"]}
     assert ("GET", "/agente/capacidades") in rotas
     assert ("POST", "/absences/request") in rotas
+    assert ("POST", "/requests/request") in rotas
+    # Durante a transição do HS.OS as duas formas valem (spec 2026-11-27-solicitacoes).
+    rh_pair = {("PUT", "/requests/{request_id}/approve"), ("PUT", "/absences/{request_id}/approve")}
+    assert (rh_pair <= rotas) == (role != "user")
+    assert not (rh_pair & rotas) or role != "user"
     if role == "user":
         assert rotas == set(todas_as_rotas_do_agente()) - SO_RH
     else:

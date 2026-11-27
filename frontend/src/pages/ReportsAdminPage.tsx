@@ -32,13 +32,13 @@ const REPORTS: ReportCard[] = [
     canIncludeInactive: true,
   },
   {
-    title: "Ausências",
-    description: "Todas as solicitações de ausência com tipo, período, status e notas do gestor.",
-    filename: "ausencias.csv",
+    title: "Solicitações",
+    description: "Todos os pedidos de saída e de pagar hora com tipo, período, status e notas do gestor.",
+    filename: "solicitacoes.csv",
     icon: CalendarOff,
     iconBg: "bg-amber-500/10",
     iconColor: "text-amber-400",
-    fn: reportsApi.absences,
+    fn: reportsApi.requests,
   },
   {
     title: "Benefícios",

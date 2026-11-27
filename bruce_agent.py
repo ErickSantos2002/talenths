@@ -311,7 +311,7 @@ def relatorio_resultados_testes() -> dict:
 
 def relatorio_ausencias() -> dict:
     """Gera relatório consolidado de ausências."""
-    return api("GET", "/reports/absences")
+    return api("GET", "/reports/requests")
 
 
 def relatorio_beneficios() -> dict:
@@ -335,12 +335,12 @@ def relatorio_aprendizado() -> dict:
 
 def tipos_ausencia() -> dict:
     """Lista tipos de ausência cadastrados (férias, atestado, licença, etc)."""
-    return {"tipos": api("GET", "/absences/types")}
+    return {"tipos": api("GET", "/requests/types")}
 
 
 def ausencias_da_equipe(user_id: str = None) -> dict:
     """Lista ausências da equipe, opcionalmente filtradas por colaborador."""
-    path = "/absences/team"
+    path = "/requests/team"
     if user_id:
         path += f"?user_id={user_id}"
     return api("GET", path)
@@ -351,18 +351,18 @@ def solicitar_ausencia(tipo_id: str, data_inicio: str, data_fim: str, motivo: st
     payload = {"type_id": tipo_id, "start_date": data_inicio, "end_date": data_fim}
     if motivo:
         payload["reason"] = motivo
-    return api("POST", "/absences/request", json=payload)
+    return api("POST", "/requests/request", json=payload)
 
 
 def aprovar_ausencia(request_id: str) -> dict:
     """Aprova uma solicitação de ausência."""
-    return api("PUT", f"/absences/{request_id}/approve")
+    return api("PUT", f"/requests/{request_id}/approve")
 
 
 def rejeitar_ausencia(request_id: str, motivo: str = None) -> dict:
     """Rejeita uma solicitação de ausência."""
     payload = {"reason": motivo} if motivo else {}
-    return api("PUT", f"/absences/{request_id}/reject", json=payload)
+    return api("PUT", f"/requests/{request_id}/reject", json=payload)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

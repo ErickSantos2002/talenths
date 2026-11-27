@@ -23,6 +23,8 @@ ROTAS_DO_AGENTE = frozenset({
     "/companies/presentation", "/companies/internal-rules", "/culture",
     "/communications/birthdays", "/communications/milestones", "/communications/announcements",
     "/notifications",
+    "/requests/types", "/requests/my", "/requests/team", "/requests/calendar",
+    # Apelido antigo: sai quando o HS.OS migrar (spec 2026-11-27-solicitacoes).
     "/absences/types", "/absences/my", "/absences/team", "/absences/calendar",
     "/calendar/feed",
     "/timeclock/my/today", "/timeclock/my", "/timeclock/team", "/timeclock/requests",
@@ -43,7 +45,7 @@ ROTAS_DO_AGENTE = frozenset({
     "/surveys", "/surveys/{survey_id}/results",
     "/documents/my",
     "/tests/available", "/tests/my-attempts",
-    "/reports/collaborators", "/reports/absences", "/reports/benefits", "/reports/pdi",
+    "/reports/collaborators", "/reports/requests", "/reports/absences", "/reports/benefits", "/reports/pdi",
     "/reports/learning",
 })
 
@@ -54,6 +56,8 @@ ROTAS_DO_AGENTE = frozenset({
 # enviar ou calibrar avaliação, exclusões, configurações e anexos.
 ESCRITAS_DO_AGENTE = frozenset({
     # colaborador
+    ("POST", "/requests/request"),
+    ("DELETE", "/requests/{request_id}"),
     ("POST", "/absences/request"),
     ("DELETE", "/absences/{request_id}"),
     ("POST", "/timeclock/{punch_id}/adjust"),
@@ -63,6 +67,8 @@ ESCRITAS_DO_AGENTE = frozenset({
     ("DELETE", "/workshops/{workshop_id}/register"),
     ("PUT", "/onboarding/checklist-tasks/{task_id}/complete"),
     # RH — aprovações
+    ("PUT", "/requests/{request_id}/approve"),
+    ("PUT", "/requests/{request_id}/reject"),
     ("PUT", "/absences/{request_id}/approve"),
     ("PUT", "/absences/{request_id}/reject"),
     ("POST", "/timeclock/adjustments/{req_id}/approve"),
@@ -92,7 +98,7 @@ ESCRITAS_DO_AGENTE = frozenset({
 # (tests/db/test_agente_capacidades_api.py) confere esta tabela contra os 403 das rotas.
 SO_RH = frozenset({
     ("GET", "/collaborators"),
-    ("GET", "/absences/team"),
+    ("GET", "/requests/team"), ("GET", "/absences/team"),
     ("GET", "/timeclock/team"), ("GET", "/timeclock/requests"),
     ("GET", "/pdi/team"),
     ("GET", "/evaluations/scores"), ("GET", "/evaluations/team-status"), ("GET", "/evaluations/9box"),
@@ -103,8 +109,9 @@ SO_RH = frozenset({
     ("GET", "/career/team"),
     ("GET", "/salary/references"), ("GET", "/salary/table"), ("GET", "/salary/positioning"),
     ("GET", "/surveys/{survey_id}/results"),
-    ("GET", "/reports/collaborators"), ("GET", "/reports/absences"), ("GET", "/reports/benefits"),
+    ("GET", "/reports/collaborators"), ("GET", "/reports/requests"), ("GET", "/reports/absences"), ("GET", "/reports/benefits"),
     ("GET", "/reports/pdi"), ("GET", "/reports/learning"),
+    ("PUT", "/requests/{request_id}/approve"), ("PUT", "/requests/{request_id}/reject"),
     ("PUT", "/absences/{request_id}/approve"), ("PUT", "/absences/{request_id}/reject"),
     ("POST", "/timeclock/adjustments/{req_id}/approve"), ("POST", "/timeclock/adjustments/{req_id}/reject"),
     ("POST", "/timeclock/punches/{punch_id}/confirm"), ("POST", "/timeclock/punches/{punch_id}/reject"),

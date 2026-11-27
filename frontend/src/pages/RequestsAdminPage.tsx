@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { absences as absencesApi } from "@/lib/api";
+import { requests as requestsApi } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,13 +19,14 @@ import { useToast } from "@/hooks/use-toast";
 import { usePageSize } from "@/hooks/use-page-size";
 import { TablePagination } from "@/components/TablePagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { AbsenceRequest } from "@/types/absences";
+import type { HrRequest } from "@/types/requests";
+import { RequestCategoryBadge } from "@/components/requests/RequestCategoryBadge";
 import { CalendarOff, CheckCircle2, XCircle, Clock, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
+function StatusBadge({ status }: { status: HrRequest["status"] }) {
   if (status === "approved")
     return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20">Aprovada</Badge>;
   if (status === "rejected")
@@ -42,7 +43,7 @@ function formatDateTime(iso: string) {
   return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-function PeriodText({ request }: { request: AbsenceRequest }) {
+function PeriodText({ request }: { request: HrRequest }) {
   if (request.start_time && request.end_time)
     return (
       <>
@@ -57,7 +58,7 @@ function PeriodText({ request }: { request: AbsenceRequest }) {
   );
 }
 
-function decisionText(request: AbsenceRequest) {
+function decisionText(request: HrRequest) {
   if (request.status === "pending" || !request.reviewed_at) return null;
   const when = formatDateTime(request.reviewed_at);
   if (request.auto_approved) return `Aprovada automaticamente, sem análise, em ${when}`;
@@ -72,7 +73,7 @@ function ReviewDialog({
   action,
   onClose,
 }: {
-  request: AbsenceRequest;
+  request: HrRequest;
   action: "approve" | "reject";
   onClose: () => void;
 }) {
@@ -83,11 +84,11 @@ function ReviewDialog({
   const mutation = useMutation({
     mutationFn: () =>
       action === "approve"
-        ? absencesApi.approve(request.id, note || undefined)
-        : absencesApi.reject(request.id, note || undefined),
+        ? requestsApi.approve(request.id, note || undefined)
+        : requestsApi.reject(request.id, note || undefined),
     onSuccess: () => {
       toast({ title: action === "approve" ? "Solicitação aprovada!" : "Solicitação recusada." });
-      queryClient.invalidateQueries({ queryKey: ["absences-team"] });
+      queryClient.invalidateQueries({ queryKey: ["requests-team"] });
       onClose();
     },
     onError: (e: Error) =>
@@ -145,8 +146,8 @@ function HistoryFiltersBar({
   filters: HistoryFilters;
   onChange: (f: HistoryFilters) => void;
 }) {
-  const { data: people = [] } = useQuery({ queryKey: ["absences-team", "people"], queryFn: absencesApi.teamPeople });
-  const { data: types = [] } = useQuery({ queryKey: ["absence-types"], queryFn: absencesApi.types });
+  const { data: people = [] } = useQuery({ queryKey: ["requests-team", "people"], queryFn: requestsApi.teamPeople });
+  const { data: types = [] } = useQuery({ queryKey: ["request-types"], queryFn: requestsApi.types });
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -188,23 +189,23 @@ function HistoryFiltersBar({
 
 function RequestsTab() {
   const [reviewing, setReviewing] = useState<{
-    request: AbsenceRequest;
+    request: HrRequest;
     action: "approve" | "reject";
   } | null>(null);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = usePageSize("absences-history", 10);
+  const [limit, setLimit] = usePageSize("requests-history", 10);
   const [filters, setFilters] = useState<HistoryFilters>({ userId: ALL, typeId: ALL, status: ALL });
   const hasFilters = filters.userId !== ALL || filters.typeId !== ALL || filters.status !== ALL;
 
   const { data: pending = [], isLoading: loadingPending } = useQuery({
-    queryKey: ["absences-team", "pending"],
-    queryFn: absencesApi.teamPending,
+    queryKey: ["requests-team", "pending"],
+    queryFn: requestsApi.teamPending,
   });
 
   const { data: history, isLoading: loadingHistory } = useQuery({
-    queryKey: ["absences-team", "history", page, limit, filters],
+    queryKey: ["requests-team", "history", page, limit, filters],
     queryFn: () =>
-      absencesApi.teamHistory({
+      requestsApi.teamHistory({
         page,
         limit,
         user_id: filters.userId === ALL ? undefined : filters.userId,
@@ -301,7 +302,7 @@ function RequestCard({
   onApprove,
   onReject,
 }: {
-  request: AbsenceRequest;
+  request: HrRequest;
   onApprove?: () => void;
   onReject?: () => void;
 }) {
@@ -319,6 +320,7 @@ function RequestCard({
               {request.department && (
                 <span className="text-xs text-muted-foreground">· {request.department}</span>
               )}
+              <RequestCategoryBadge category={request.type_category} />
               <StatusBadge status={request.status} />
             </div>
             <p className="text-sm text-muted-foreground">
@@ -366,12 +368,12 @@ function CalendarTab() {
   const [month, setMonth] = useState(today.getMonth());
 
   const { data: approved = [], isLoading } = useQuery({
-    queryKey: ["absences-calendar"],
-    queryFn: absencesApi.calendar,
+    queryKey: ["requests-calendar"],
+    queryFn: requestsApi.calendar,
   });
 
   const dayMap = useMemo(() => {
-    const map: Record<string, AbsenceRequest[]> = {};
+    const map: Record<string, HrRequest[]> = {};
     for (const r of approved) {
       const start = new Date(r.start_date + "T12:00:00");
       const end = new Date(r.end_date + "T12:00:00");
@@ -442,7 +444,7 @@ function CalendarTab() {
             if (!day) return <div key={i} className="bg-muted/20 min-h-[80px]" />;
 
             const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const dayAbsences = dayMap[key] ?? [];
+            const dayRequests = dayMap[key] ?? [];
             const isToday =
               today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
 
@@ -461,7 +463,7 @@ function CalendarTab() {
                   {day}
                 </div>
                 <div className="space-y-0.5">
-                  {dayAbsences.slice(0, 3).map((r, idx) => (
+                  {dayRequests.slice(0, 3).map((r, idx) => (
                     <div
                       key={idx}
                       title={`${r.user_name} — ${r.type_name}`}
@@ -471,8 +473,8 @@ function CalendarTab() {
                       {r.user_name?.split(" ")[0]} — {r.type_name}
                     </div>
                   ))}
-                  {dayAbsences.length > 3 && (
-                    <div className="text-[10px] text-muted-foreground px-1">+{dayAbsences.length - 3} mais</div>
+                  {dayRequests.length > 3 && (
+                    <div className="text-[10px] text-muted-foreground px-1">+{dayRequests.length - 3} mais</div>
                   )}
                 </div>
               </div>
@@ -498,13 +500,13 @@ function CalendarTab() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function AbsencesAdminPage() {
+export default function RequestsAdminPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <CalendarOff className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">Ausências</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Solicitações</h1>
         </div>
 
         <Tabs defaultValue="requests">
@@ -514,7 +516,7 @@ export default function AbsencesAdminPage() {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-11 px-4 font-medium text-muted-foreground data-[state=active]:text-foreground gap-2"
             >
               <Clock className="h-4 w-4" />
-              Solicitações
+              Pedidos
             </TabsTrigger>
             <TabsTrigger
               value="calendar"

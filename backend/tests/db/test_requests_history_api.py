@@ -6,13 +6,13 @@ async def _types(db, company):
     ids = {}
     for name in ("Ida ao médico", "Saída pessoal", "Outro"):
         ids[name] = str(await db.fetchval(
-            "INSERT INTO public.absence_types (company_id, name) VALUES ($1, $2) RETURNING id", company, name))
+            "INSERT INTO public.hr_request_types (company_id, name) VALUES ($1, $2) RETURNING id", company, name))
     return ids
 
 
 async def _req(db, company, user, type_id, start, status):
     return str(await db.fetchval(
-        """INSERT INTO public.absence_requests (company_id, user_id, type_id, start_date, end_date, days, status, reason)
+        """INSERT INTO public.hr_requests (company_id, user_id, type_id, start_date, end_date, days, status, reason)
            VALUES ($1, $2, $3, $4::text::date, $4::text::date, 1, $5, 'Motivo com mais de vinte caracteres') RETURNING id""",
         company, user, type_id, start, status,
     ))
@@ -39,18 +39,18 @@ async def _scenario(db):
 
 async def test_pendentes_vem_completos_e_so_da_empresa(db, client_as):
     hr, *_ , pending = await _scenario(db)
-    body = (await client_as(hr).get("/absences/team/pending")).json()
+    body = (await client_as(hr).get("/requests/team/pending")).json()
     assert sorted(r["id"] for r in body) == sorted(pending)
 
 
 async def test_historico_paginado_mais_recente_primeiro(db, client_as):
     hr, *_ = await _scenario(db)
     c = client_as(hr)
-    p1 = (await c.get("/absences/team/history", params={"limit": 10})).json()
+    p1 = (await c.get("/requests/team/history", params={"limit": 10})).json()
     assert (p1["total"], p1["page"], p1["limit"], p1["pages"]) == (25, 1, 10, 3)
     assert [r["start_date"] for r in p1["items"]][:2] == ["2027-01-25", "2027-01-24"]
     assert all(r["status"] != "pending" for r in p1["items"])
-    p3 = (await c.get("/absences/team/history", params={"limit": 10, "page": 3})).json()
+    p3 = (await c.get("/requests/team/history", params={"limit": 10, "page": 3})).json()
     assert len(p3["items"]) == 5 and p3["items"][-1]["start_date"] == "2027-01-01"
 
 
@@ -59,22 +59,22 @@ async def test_historico_filtra_por_pessoa_tipo_e_situacao(db, client_as):
     c = client_as(hr)
 
     async def total(**params):
-        return (await c.get("/absences/team/history", params=params)).json()["total"]
+        return (await c.get("/requests/team/history", params=params)).json()["total"]
 
     assert await total(user_id=beto) == 10
     assert await total(type_id=t["Ida ao médico"]) == 13
     assert await total(status="rejected") == 5
     assert await total(user_id=ana, status="rejected", type_id=t["Ida ao médico"]) == 2  # dias 5 e 15
-    assert (await c.get("/absences/team/history", params={"status": "pending"})).status_code == 422
+    assert (await c.get("/requests/team/history", params={"status": "pending"})).status_code == 422
 
 
 async def test_pessoas_do_filtro_sao_quem_tem_pedido(db, client_as):
     hr, ana, beto, *_ = await _scenario(db)
-    body = (await client_as(hr).get("/absences/team/people")).json()
+    body = (await client_as(hr).get("/requests/team/people")).json()
     assert body == [{"user_id": ana, "name": "Ana"}, {"user_id": beto, "name": "Beto"}]
 
 
 async def test_colaborador_nao_acessa(db, client_as):
     _, ana, *_ = await _scenario(db)
-    for path in ("/absences/team/pending", "/absences/team/history", "/absences/team/people"):
+    for path in ("/requests/team/pending", "/requests/team/history", "/requests/team/people"):
         assert (await client_as(ana).get(path)).status_code == 403

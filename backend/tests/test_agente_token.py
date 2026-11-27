@@ -74,6 +74,11 @@ def test_so_rota_da_lista_e_com_o_metodo_da_lista():
     assert rota_liberada_ao_agente("PUT", "/absences/{request_id}/approve")
     assert not rota_liberada_ao_agente("POST", "/absences/{request_id}/approve")
     assert not rota_liberada_ao_agente("GET", "/absences/my/extra")
+    assert rota_liberada_ao_agente("GET", "/requests/my")
+    assert rota_liberada_ao_agente("POST", "/requests/request")
+    assert rota_liberada_ao_agente("PUT", "/requests/{request_id}/approve")
+    assert rota_liberada_ao_agente("DELETE", "/requests/{request_id}")
+    assert not rota_liberada_ao_agente("PUT", "/requests/{request_id}")
     assert not rota_liberada_ao_agente("GET", None)
     for proibida in (
         "/tests/{test_id}", "/tests/{test_id}/take", "/tests/attempts/{attempt_id}",
@@ -120,4 +125,4 @@ def test_toda_escrita_da_lista_existe_no_app_com_esse_metodo():
     paths = app.openapi()["paths"]
     missing = {(m, p) for m, p in ESCRITAS_DO_AGENTE if m.lower() not in paths.get(p, {})}
     assert missing == set()
-    assert len(ESCRITAS_DO_AGENTE) == 27
+    assert len(ESCRITAS_DO_AGENTE) == 31

@@ -14,7 +14,7 @@ No **Ponto Eletrônico** você acompanha as batidas de ponto de quem registra o 
 
 - Para ver quem já começou a trabalhar hoje e quem não registrou ponto.
 - Para conferir as horas de uma pessoa no mês, antes do fechamento.
-- Quando houver pedidos na aba **Solicitações**.
+- Quando houver pedidos na aba **Pedidos de ajuste**.
 
 ## Passo a passo
 
@@ -33,13 +33,13 @@ Quem foi desligado não aparece na aba **Hoje** nem na escolha de **Colaborador*
 4. Para incluir uma batida que faltou, clique em **Adicionar batida**, preencha **Data e hora**, o **Tipo** e, se quiser, a **Observação (opcional)**, e clique em **Salvar**. O **Tipo** escolhido não decide se a batida conta como entrada ou saída: veja em Dúvidas comuns.
 5. Para corrigir uma batida, clique no lápis dela, altere e clique em **Salvar**. Para apagar, clique na lixeira e confirme em **Excluir**.
 
-**Para responder às solicitações:**
+**Para responder aos pedidos de ajuste:**
 
-1. Abra a aba **Solicitações**. O número ao lado do nome da aba mostra quantos pedidos esperam resposta.
+1. Abra a aba **Pedidos de ajuste**. O número ao lado do nome da aba mostra quantos pedidos esperam resposta.
 2. Em **Registros manuais pendentes**, veja as batidas que a pessoa registrou depois, com o motivo. Clique em **Confirmar** para valer a batida ou em **Cancelar** para descartá-la.
 3. Em **Ajustes de horário**, veja o horário atual riscado, o horário pedido e o motivo. Clique em **Aprovar** para trocar o horário ou em **Negar** para manter o atual.
 
-![Aba Solicitações do Ponto Eletrônico com um pedido de ajuste de saída, o horário atual riscado, o horário pedido e os botões Aprovar e Negar](/capturas/admin-ponto-solicitacoes.webp)
+![Aba Pedidos de ajuste do Ponto Eletrônico com um pedido de ajuste de saída, o horário atual riscado, o horário pedido e os botões Aprovar e Negar](/capturas/admin-ponto-solicitacoes.webp)
 
 ## O que acontece depois
 
@@ -56,4 +56,4 @@ Quem foi desligado não aparece na aba **Hoje** nem na escolha de **Colaborador*
 
 **A pessoa recebe notificação da minha resposta?** Não. A resposta aparece na tela **Meu Ponto** dela, mas o TalentHS não envia notificação.
 
-**Confirmei, cancelei, aprovei ou neguei por engano.** Os botões de **Solicitações** agem na hora, sem confirmação. Corrija a batida na aba **Por período**, com o lápis, **Adicionar batida** ou a lixeira.
+**Confirmei, cancelei, aprovei ou neguei por engano.** Os botões de **Pedidos de ajuste** agem na hora, sem confirmação. Corrija a batida na aba **Por período**, com o lápis, **Adicionar batida** ou a lixeira.

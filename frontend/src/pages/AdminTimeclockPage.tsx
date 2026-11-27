@@ -343,7 +343,7 @@ function PeriodTab() {
   );
 }
 
-// ── Aba Solicitações ───────────────────────────────────────────────────────────
+// ── Aba Pedidos de ajuste ───────────────────────────────────────────────────────────
 
 function RequestsTab() {
   const { toast } = useToast();
@@ -445,7 +445,7 @@ export default function AdminTimeclockPage() {
               Por período
             </TabsTrigger>
             <TabsTrigger value="requests" className="data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none border-b-2 border-transparent gap-2">
-              Solicitações
+              Pedidos de ajuste
               {pendingCount > 0 && <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/15 h-5 px-1.5">{pendingCount}</Badge>}
             </TabsTrigger>
           </TabsList>

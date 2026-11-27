@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { absences as absencesApi } from "@/lib/api";
+import { requests as requestsApi } from "@/lib/api";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,12 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import type { AbsenceRequest, AbsenceType } from "@/types/absences";
+import { CATEGORY_LABEL, type HrRequest, type HrRequestType, type RequestCategory } from "@/types/requests";
+import { RequestCategoryBadge } from "@/components/requests/RequestCategoryBadge";
 import { CalendarOff, Pencil, Plus, Trash2 } from "lucide-react";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 
-function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
+function StatusBadge({ status }: { status: HrRequest["status"] }) {
   if (status === "approved")
     return <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/20">Aprovada</Badge>;
   if (status === "rejected")
@@ -40,20 +41,43 @@ function StatusBadge({ status }: { status: AbsenceRequest["status"] }) {
 
 const MIN_REASON_LENGTH = 20;
 
+function SegmentButton({ active, onClick, disabled, children }: {
+  active: boolean; onClick: () => void; disabled?: boolean; children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={`flex-1 py-2 transition-colors disabled:cursor-not-allowed ${active ? "bg-primary text-primary-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted disabled:hover:bg-muted/40"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function RequestDialog({
   types,
   request,
   onClose,
 }: {
-  types: AbsenceType[];
-  request?: AbsenceRequest;
+  types: HrRequestType[];
+  request?: HrRequest;
   onClose: () => void;
 }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEdit = Boolean(request);
-  const [typeId, setTypeId] = useState(request?.type_id ?? "");
-  const [isPartial, setIsPartial] = useState(Boolean(request?.start_time));
+  // A categoria não muda na edição: o backend recusa a troca.
+  const [category, setCategory] = useState<RequestCategory>(request?.type_category ?? "saida");
+  const leaveTypes = types.filter((t) => t.category === "saida");
+  const payType = types.find((t) => t.category === "pagar_hora");
+  const isPayHours = category === "pagar_hora";
+  const [leaveTypeId, setLeaveTypeId] = useState(request?.type_category === "saida" ? request.type_id : "");
+  const typeId = isPayHours ? payType?.id ?? "" : leaveTypeId;
+  const [partialChoice, setPartialChoice] = useState(Boolean(request?.start_time));
+  const isPartial = isPayHours || partialChoice;
   const [startDate, setStartDate] = useState(request?.start_date ?? "");
   const [endDate, setEndDate] = useState(request?.end_date ?? "");
   const [startTime, setStartTime] = useState(request?.start_time ?? "");
@@ -69,11 +93,11 @@ function RequestDialog({
         reason: reason.trim(),
         ...(isPartial ? { start_time: startTime, end_time: endTime } : {}),
       };
-      return request ? absencesApi.update(request.id, data) : absencesApi.request(data);
+      return request ? requestsApi.update(request.id, data) : requestsApi.request(data);
     },
     onSuccess: () => {
       toast({ title: isEdit ? "Solicitação atualizada!" : "Solicitação enviada!" });
-      queryClient.invalidateQueries({ queryKey: ["absences-my"] });
+      queryClient.invalidateQueries({ queryKey: ["requests-my"] });
       onClose();
     },
     onError: (e: Error) =>
@@ -97,17 +121,34 @@ function RequestDialog({
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar solicitação" : "Solicitar ausência"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar solicitação" : "Nova solicitação"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-1">
-            <Label>Tipo de ausência</Label>
-            <Select value={typeId} onValueChange={setTypeId}>
+            <Label>O que você quer pedir?</Label>
+            <div className="flex rounded-lg border overflow-hidden text-sm">
+              {(["saida", "pagar_hora"] as const).map((c) => (
+                <SegmentButton key={c} active={category === c} disabled={isEdit && category !== c} onClick={() => setCategory(c)}>
+                  {CATEGORY_LABEL[c]}
+                </SegmentButton>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {isPayHours
+                ? "Combine com o RH o dia e o horário da hora extra que compensa horas que você deve."
+                : "Peça antes de sair: ida ao médico, saída pessoal ou outro motivo."}
+            </p>
+          </div>
+
+          {!isPayHours && (
+          <div className="space-y-1">
+            <Label>Tipo de saída</Label>
+            <Select value={leaveTypeId} onValueChange={setLeaveTypeId}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione..." />
               </SelectTrigger>
               <SelectContent>
-                {types.map((t) => (
+                {leaveTypes.map((t) => (
                   <SelectItem key={t.id} value={t.id}>
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full" style={{ backgroundColor: t.color }} />
@@ -118,38 +159,29 @@ function RequestDialog({
               </SelectContent>
             </Select>
           </div>
+          )}
 
-          <div className="flex rounded-lg border overflow-hidden text-sm">
-            <button
-              type="button"
-              onClick={() => setIsPartial(false)}
-              className={`flex-1 py-2 transition-colors ${!isPartial ? "bg-primary text-primary-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted"}`}
-            >
-              Dia inteiro
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPartial(true)}
-              className={`flex-1 py-2 transition-colors ${isPartial ? "bg-primary text-primary-foreground font-medium" : "bg-muted/40 text-muted-foreground hover:bg-muted"}`}
-            >
-              Horário específico
-            </button>
-          </div>
+          {!isPayHours && (
+            <div className="flex rounded-lg border overflow-hidden text-sm">
+              <SegmentButton active={!partialChoice} onClick={() => setPartialChoice(false)}>Dia inteiro</SegmentButton>
+              <SegmentButton active={partialChoice} onClick={() => setPartialChoice(true)}>Horário específico</SegmentButton>
+            </div>
+          )}
 
           {isPartial ? (
             <>
               <div className="space-y-1">
-                <Label>Data</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <Label htmlFor="request-date">{isPayHours ? "Dia" : "Data"}</Label>
+                <Input id="request-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label>Horário de início</Label>
-                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                  <Label htmlFor="request-start">{isPayHours ? "Das" : "Horário de início"}</Label>
+                  <Input id="request-start" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <Label>Horário de fim</Label>
-                  <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                  <Label htmlFor="request-end">{isPayHours ? "Às" : "Horário de fim"}</Label>
+                  <Input id="request-end" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
                 </div>
               </div>
             </>
@@ -174,19 +206,19 @@ function RequestDialog({
           )}
 
           <div className="space-y-1">
-            <Label htmlFor="absence-reason">Motivo</Label>
+            <Label htmlFor="request-reason">Motivo</Label>
             <Textarea
-              id="absence-reason"
+              id="request-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Explique o motivo da saída..."
+              placeholder={isPayHours ? "Explique quais horas você vai compensar..." : "Explique o motivo da saída..."}
               rows={3}
               className="resize-none"
               required
-              aria-describedby="absence-reason-count"
+              aria-describedby="request-reason-count"
             />
             <p
-              id="absence-reason-count"
+              id="request-reason-count"
               className={`text-xs ${reasonOk ? "text-muted-foreground" : "text-amber-500"}`}
             >
               {reasonOk ? `${reasonLength} caracteres` : `Mínimo de ${MIN_REASON_LENGTH} caracteres (${reasonLength}/${MIN_REASON_LENGTH})`}
@@ -206,27 +238,27 @@ function RequestDialog({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function MyAbsencesPage() {
+export default function MyRequestsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
-  const [editing, setEditing] = useState<AbsenceRequest | null>(null);
+  const [editing, setEditing] = useState<HrRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["absences-my"],
-    queryFn: absencesApi.my,
+    queryKey: ["requests-my"],
+    queryFn: requestsApi.my,
   });
 
   const { data: types = [] } = useQuery({
-    queryKey: ["absence-types"],
-    queryFn: absencesApi.types,
+    queryKey: ["request-types"],
+    queryFn: requestsApi.types,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: absencesApi.delete,
+    mutationFn: requestsApi.delete,
     onSuccess: () => {
       toast({ title: "Solicitação removida." });
-      queryClient.invalidateQueries({ queryKey: ["absences-my"] });
+      queryClient.invalidateQueries({ queryKey: ["requests-my"] });
     },
     onError: (e: Error) =>
       toast({ title: "Erro ao remover", description: e.message, variant: "destructive" }),
@@ -245,11 +277,11 @@ export default function MyAbsencesPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CalendarOff className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Minhas Ausências</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Minhas Solicitações</h1>
           </div>
           <Button onClick={() => setShowDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Solicitar ausência
+            Nova solicitação
           </Button>
         </div>
 
@@ -258,9 +290,9 @@ export default function MyAbsencesPage() {
         ) : requests.length === 0 ? (
           <div className="rounded-xl border border-dashed p-16 text-center">
             <CalendarOff className="mx-auto h-10 w-10 text-muted-foreground/40 mb-3" />
-            <p className="text-muted-foreground">Você não tem solicitações de ausência.</p>
+            <p className="text-muted-foreground">Você não tem solicitações.</p>
             <Button className="mt-4" onClick={() => setShowDialog(true)}>
-              Solicitar ausência
+              Nova solicitação
             </Button>
           </div>
         ) : (
@@ -276,6 +308,7 @@ export default function MyAbsencesPage() {
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-sm">{r.type_name}</span>
+                        <RequestCategoryBadge category={r.type_category} />
                         <StatusBadge status={r.status} />
                       </div>
                       <p className="text-sm text-muted-foreground">

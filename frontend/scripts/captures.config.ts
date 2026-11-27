@@ -80,7 +80,7 @@ export const CAPTURES: Capture[] = [
   { name: "meus-documentos", account: "ana", route: () => "/meus-documentos" },
   { name: "video", account: "ana", route: (ids) => `/videos/${ids.video}` },
   { name: "bingo", account: "ana", route: () => "/bingo" },
-  { name: "minhas-ausencias", account: "ana", route: () => "/minhas-ausencias" },
+  { name: "minhas-solicitacoes", account: "ana", route: () => "/minhas-solicitacoes" },
   { name: "meus-beneficios", account: "ana", route: () => "/meus-beneficios" },
   { name: "meu-onboarding", account: "ana", route: () => "/meu-onboarding" },
   { name: "meu-ponto", account: "bruno", route: () => "/meu-ponto" },
@@ -115,7 +115,7 @@ export const CAPTURES: Capture[] = [
   { name: "admin-bingo", account: "gestor", route: () => "/admin/bingo" },
   { name: "admin-bingo-jogo", account: "gestor", route: () => "/admin/bingo", steps: [{ role: "button", name: "Abrir", exact: true }] },
   { name: "admin-bingo-imprimir", account: "gestor", route: (ids) => `/admin/bingo/${ids.bingo_game}/imprimir` },
-  { name: "admin-ausencias", account: "gestor", route: () => "/admin/ausencias" },
+  { name: "admin-solicitacoes", account: "gestor", route: () => "/admin/solicitacoes" },
   {
     name: "admin-beneficios",
     account: "gestor",
@@ -123,7 +123,7 @@ export const CAPTURES: Capture[] = [
     steps: [{ role: "tab", name: "Colaboradores", exact: true }],
   },
   { name: "admin-ponto", account: "gestor", route: () => "/admin/ponto" },
-  { name: "admin-ponto-solicitacoes", account: "gestor", route: () => "/admin/ponto", steps: [{ role: "tab", name: "Solicitações" }] },
+  { name: "admin-ponto-solicitacoes", account: "gestor", route: () => "/admin/ponto", steps: [{ role: "tab", name: "Pedidos de ajuste" }] },
   {
     name: "admin-tabela-salarial",
     account: "gestor",

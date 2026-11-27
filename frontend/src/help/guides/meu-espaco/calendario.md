@@ -8,7 +8,7 @@ ordem: 40
 
 ## Para que serve
 
-O **Calendário** mostra num só lugar os eventos da empresa (reuniões, prazos, feriados), as suas ausências aprovadas e os aniversários dos colegas.
+O **Calendário** mostra num só lugar os eventos da empresa (reuniões, prazos, feriados), as suas saídas aprovadas e os aniversários dos colegas.
 
 ## Quando usar
 
@@ -39,6 +39,6 @@ Se você é gestor ou administrador, também pode cadastrar eventos:
 
 **Um dia mostra "+2" em vez dos eventos.** Cada dia mostra até três eventos. Clique no dia para ver a lista completa.
 
-**Vejo as minhas ausências, mas não as dos colegas.** O colaborador vê só as próprias ausências aprovadas. Pedidos ainda em análise não aparecem no calendário.
+**Vejo as minhas saídas, mas não as dos colegas.** O colaborador vê só as próprias saídas aprovadas. Pedidos ainda em análise e pedidos de pagar hora não aparecem no calendário.
 
 **Os aniversários não aparecem em Próximos eventos.** Essa lista mostra só eventos e ausências. Os aniversários ficam marcados nos dias do calendário.

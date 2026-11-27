@@ -39,8 +39,8 @@ import OnboardingAdminPage from "./pages/OnboardingAdminPage";
 import MyOnboardingPage from "./pages/MyOnboardingPage";
 import SurveysAdminPage from "./pages/SurveysAdminPage";
 import MySurveysPage from "./pages/MySurveysPage";
-import AbsencesAdminPage from "./pages/AbsencesAdminPage";
-import MyAbsencesPage from "./pages/MyAbsencesPage";
+import RequestsAdminPage from "./pages/RequestsAdminPage";
+import MyRequestsPage from "./pages/MyRequestsPage";
 import AdminTimeclockPage from "./pages/AdminTimeclockPage";
 import MyTimeclockPage from "./pages/MyTimeclockPage";
 import BenefitsAdminPage from "./pages/BenefitsAdminPage";
@@ -329,21 +329,26 @@ const App = () => (
               }
             />
             <Route
-              path="/admin/ausencias"
+              path="/admin/solicitacoes"
               element={
                 <ProtectedRoute requiredRoles={["master_admin", "manager"]}>
-                  <AbsencesAdminPage />
+                  <RequestsAdminPage />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/minhas-ausencias"
+              path="/minhas-solicitacoes"
               element={
                 <ProtectedRoute>
-                  <MyAbsencesPage />
+                  <MyRequestsPage />
                 </ProtectedRoute>
               }
             />
+            {/* Ausências virou Solicitações (v1.24.0): links salvos continuam valendo. */}
+            <Route path="/admin/ausencias" element={<Navigate to="/admin/solicitacoes" replace />} />
+            <Route path="/minhas-ausencias" element={<Navigate to="/minhas-solicitacoes" replace />} />
+            <Route path="/ajuda/administracao/ausencias" element={<Navigate to="/ajuda/administracao/solicitacoes" replace />} />
+            <Route path="/ajuda/rh/minhas-ausencias" element={<Navigate to="/ajuda/rh/minhas-solicitacoes" replace />} />
             <Route
               path="/bingo"
               element={

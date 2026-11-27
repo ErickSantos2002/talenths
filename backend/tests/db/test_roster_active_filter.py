@@ -61,13 +61,13 @@ async def test_birthdays_and_milestones_exclude_deactivated(db, client_as):
 async def test_calendar_hides_deactivated_birthdays_and_future_absences(db, client_as):
     company, manager, active, gone = await setup(db)
     absence_type = await db.fetchval(
-        "INSERT INTO public.absence_types (company_id, name) VALUES ($1, 'Férias') RETURNING id", company
+        "INSERT INTO public.hr_request_types (company_id, name) VALUES ($1, 'Férias') RETURNING id", company
     )
     today = date.today()
     for uid, start in ((gone, today - timedelta(days=40)), (gone, today + timedelta(days=10)),
                        (active, today + timedelta(days=10))):
         await db.execute(
-            """INSERT INTO public.absence_requests (company_id, user_id, type_id, start_date, end_date, days, status)
+            """INSERT INTO public.hr_requests (company_id, user_id, type_id, start_date, end_date, days, status)
                VALUES ($1, $2, $3, $4, $4, 1, 'approved')""",
             company, uid, absence_type, start,
         )
@@ -258,13 +258,13 @@ async def test_test_stats_exclude_deactivated(db, client_as):
 async def test_absence_calendar_hides_future_absences_of_deactivated(db, client_as):
     company, manager, active, gone = await setup(db)
     absence_type = await db.fetchval(
-        "INSERT INTO public.absence_types (company_id, name) VALUES ($1, 'Férias') RETURNING id", company
+        "INSERT INTO public.hr_request_types (company_id, name) VALUES ($1, 'Férias') RETURNING id", company
     )
     today = date.today()
     for uid, start in ((gone, today - timedelta(days=40)), (gone, today + timedelta(days=10)),
                        (active, today + timedelta(days=10))):
         await db.execute(
-            """INSERT INTO public.absence_requests (company_id, user_id, type_id, start_date, end_date, days, status)
+            """INSERT INTO public.hr_requests (company_id, user_id, type_id, start_date, end_date, days, status)
                VALUES ($1, $2, $3, $4, $4, 1, 'approved')""",
             company, uid, absence_type, start,
         )

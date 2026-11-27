@@ -4,12 +4,12 @@ import uuid
 from tests.db.conftest import make_company, make_department, make_user
 
 
-async def make_absence(db, company, user, status="pending") -> str:
+async def make_request(db, company, user, status="pending") -> str:
     type_id = await db.fetchval(
-        "INSERT INTO public.absence_types (company_id, name) VALUES ($1, 'Folga') RETURNING id", company
+        "INSERT INTO public.hr_request_types (company_id, name) VALUES ($1, 'Folga') RETURNING id", company
     )
     return str(await db.fetchval(
-        """INSERT INTO public.absence_requests (company_id, user_id, type_id, start_date, end_date, days, status)
+        """INSERT INTO public.hr_requests (company_id, user_id, type_id, start_date, end_date, days, status)
            VALUES ($1, $2, $3, '2026-12-01', '2026-12-01', 1, $4) RETURNING id""",
         company, user, type_id, status,
     ))
@@ -19,30 +19,30 @@ async def test_aprovar_e_recusar_ausencia_de_outra_empresa_da_404(db, client_as)
     mine, other = await make_company(db), await make_company(db)
     hr = await make_user(db, mine, role="manager")
     stranger = await make_user(db, other)
-    req = await make_absence(db, other, stranger)
+    req = await make_request(db, other, stranger)
 
     for verb in ("approve", "reject"):
         assert (await client_as(hr).put(f"/absences/{req}/{verb}", json={})).status_code == 404
-    assert await db.fetchval("SELECT status FROM public.absence_requests WHERE id = $1", req) == "pending"
+    assert await db.fetchval("SELECT status FROM public.hr_requests WHERE id = $1", req) == "pending"
 
 
 async def test_aprovar_o_que_ja_nao_esta_pendente_da_409(db, client_as):
     company = await make_company(db)
     hr = await make_user(db, company, role="manager")
     user = await make_user(db, company)
-    req = await make_absence(db, company, user, status="rejected")
+    req = await make_request(db, company, user, status="rejected")
 
     r = await client_as(hr).put(f"/absences/{req}/approve", json={})
 
     assert r.status_code == 409
-    assert await db.fetchval("SELECT status FROM public.absence_requests WHERE id = $1", req) == "rejected"
+    assert await db.fetchval("SELECT status FROM public.hr_requests WHERE id = $1", req) == "rejected"
 
 
 async def test_aprovar_pendente_da_empresa_funciona(db, client_as):
     company = await make_company(db)
     hr = await make_user(db, company, role="manager")
     user = await make_user(db, company)
-    req = await make_absence(db, company, user)
+    req = await make_request(db, company, user)
 
     r = await client_as(hr).put(f"/absences/{req}/approve", json={"note": "ok"})
 

@@ -8,7 +8,7 @@ ordem: 220
 
 ## Para que serve
 
-Em **Relatórios** você baixa os dados do TalentHS em planilhas CSV, que abrem no Excel, no Google Planilhas e em outros programas. Há um relatório para cada assunto: colaboradores, ausências, benefícios, PDI e cursos concluídos.
+Em **Relatórios** você baixa os dados do TalentHS em planilhas CSV, que abrem no Excel, no Google Planilhas e em outros programas. Há um relatório para cada assunto: colaboradores, solicitações, benefícios, PDI e cursos concluídos.
 
 ## Quando usar
 
@@ -19,14 +19,14 @@ Em **Relatórios** você baixa os dados do TalentHS em planilhas CSV, que abrem 
 
 1. No menu, no bloco **Empresa**, em **Sistema**, clique em **Relatórios**.
 2. Veja os cartões de relatório. Cada um diz o que o arquivo traz.
-3. No cartão desejado, clique no botão de baixar, que leva o nome do arquivo, como **Baixar colaboradores.csv** ou **Baixar ausencias.csv**. Enquanto o arquivo é gerado, o botão mostra **Gerando...**.
+3. No cartão desejado, clique no botão de baixar, que leva o nome do arquivo, como **Baixar colaboradores.csv** ou **Baixar solicitacoes.csv**. Enquanto o arquivo é gerado, o botão mostra **Gerando...**.
 
-![Tela Relatórios com os cartões Colaboradores, Ausências, Benefícios, PDI e o de cursos concluídos, cada um com o botão de baixar](/capturas/admin-relatorios.webp)
+![Tela Relatórios com os cartões Colaboradores, Solicitações, Benefícios, PDI e o de cursos concluídos, cada um com o botão de baixar](/capturas/admin-relatorios.webp)
 
 Os relatórios disponíveis:
 
 - **Colaboradores** (**Baixar colaboradores.csv**): nome, e-mail, departamento, perfil de acesso, cargo, nascimento, admissão e telefone;
-- **Ausências** (**Baixar ausencias.csv**): todas as solicitações, com tipo, período, dias, status, motivo e a nota do gestor;
+- **Solicitações** (**Baixar solicitacoes.csv**): todos os pedidos de saída e de pagar hora, com tipo, categoria, período, dias, status, motivo e a nota do gestor;
 - **Benefícios** (**Baixar beneficios.csv**): os benefícios de cada pessoa, com categoria, fornecedor, valor e vigência;
 - **PDI** (**Baixar pdi.csv**): os planos e as ações, com status, prazos e datas de conclusão;
 - o último cartão, de cursos e capacitações: os cursos concluídos por pessoa, com área, horas, data e origem.
@@ -44,4 +44,4 @@ O relatório **Colaboradores** traz só quem está ativo. Para incluir quem foi 
 
 **No relatório de benefícios, o vale-transporte está com o Valor vazio.** O arquivo traz o valor do catálogo ou o valor definido para a pessoa. O total do vale-transporte, calculado pelas passagens, não entra no arquivo; consulte-o em [Benefícios](/ajuda/administracao/beneficios).
 
-**O relatório de ausências traz pedidos de todos?** Sim: pendentes, aprovados e recusados, de todas as pessoas da empresa.
+**O relatório de solicitações traz pedidos de todos?** Sim: pendentes, aprovados e recusados, de todas as pessoas da empresa.

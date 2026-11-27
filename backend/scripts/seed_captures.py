@@ -712,12 +712,12 @@ class Seeder:
 
     # ── RH ──────────────────────────────────────────────────────────────────
 
-    async def absences(self) -> None:
+    async def hr_requests(self) -> None:
         types = {}
-        for name, color, approval in (("Ida ao médico", "#f59e0b", True), ("Saída pessoal", "#8b5cf6", True),
-                                      ("Outro", "#6b7280", True)):
-            types[name] = await self.ins("absence_types", company_id=self.company_id, name=name, color=color,
-                                         requires_approval=approval)
+        for name, color, category in (("Ida ao médico", "#f59e0b", "saida"), ("Saída pessoal", "#8b5cf6", "saida"),
+                                      ("Outro", "#6b7280", "saida"), ("Pagar hora", "#10b981", "pagar_hora")):
+            types[name] = await self.ins("hr_request_types", company_id=self.company_id, name=name, color=color,
+                                         requires_approval=True, category=category)
         # O pedido antigo de "Ida ao médico" mostra como fica um aprovado automático de antes da 038.
         rows = [("ana", "Outro", 30, 3, "approved", "Viagem para o casamento da minha irmã."),
                 ("ana", "Saída pessoal", 8, 1, "pending", "Resolver documentação no cartório."),
@@ -729,12 +729,22 @@ class Seeder:
             auto = key == "ana" and tname == "Ida ao médico"
             reviewed = st != "pending"
             requested_at = self.now - timedelta(days=27 if auto else 3)
-            await self.ins("absence_requests", company_id=self.company_id, user_id=self.users[key],
+            await self.ins("hr_requests", company_id=self.company_id, user_id=self.users[key],
                            type_id=types[tname], start_date=self.days(offset), end_date=self.days(offset + n - 1),
                            days=n, reason=reason, status=st, auto_approved=auto, created_at=requested_at,
                            updated_at=self.now - timedelta(days=1) if key == "bruno" else None,
                            reviewed_by=self.users["gestor"] if reviewed and not auto else None,
                            reviewed_at=(requested_at if auto else self.now - timedelta(days=2)) if reviewed else None)
+        # Pagar hora: sempre com o horário da hora extra, no mesmo dia.
+        for key, offset, start, end, st, reason in (
+                ("ana", 6, time(18, 0), time(20, 0), "pending", "Compensar a saída ao cartório da semana passada."),
+                ("bruno", -2, time(17, 30), time(19, 30), "approved", "Pagar as duas horas da consulta do dia 10.")):
+            await self.ins("hr_requests", company_id=self.company_id, user_id=self.users[key],
+                           type_id=types["Pagar hora"], start_date=self.days(offset), end_date=self.days(offset),
+                           start_time=start, end_time=end, days=0, reason=reason, status=st,
+                           created_at=self.now - timedelta(days=2),
+                           reviewed_by=self.users["gestor"] if st != "pending" else None,
+                           reviewed_at=self.now - timedelta(days=1) if st != "pending" else None)
 
     async def benefits(self) -> None:
         rows = [("Plano de saúde", "saude", "Cobertura nacional com coparticipação.", "Saúde Exemplo", "info", None),
@@ -801,20 +811,20 @@ class Seeder:
             await self.ins("notifications", user_id=self.users[key], type=kind, title=title, message=msg)
         # Linhas como as que app/middleware/audit.py grava: rótulo de _ACTION_MAP, caminho real
         # (com o id) e o status da resposta — a exclusão de benefício em uso responde 409.
-        absence = await self.conn.fetchval(
-            "SELECT id FROM public.absence_requests WHERE status = 'approved' ORDER BY start_date LIMIT 1")
+        hr_request = await self.conn.fetchval(
+            "SELECT id FROM public.hr_requests WHERE status = 'approved' ORDER BY start_date LIMIT 1")
         catalog = await self.conn.fetchval(
             "SELECT id FROM public.benefit_catalog WHERE company_id = $1 ORDER BY name LIMIT 1", self.company_id)
         feedback = await self.conn.fetchval(
             "SELECT id FROM public.feedback_requests WHERE company_id = $1 ORDER BY title LIMIT 1", self.company_id)
         actions = [
-            ("gestor", "PUT", f"/absences/{absence}/approve", "Ausência aprovada", 200),
+            ("gestor", "PUT", f"/requests/{hr_request}/approve", "Solicitação aprovada", 200),
             ("gestor", "POST", "/videos", "Vídeo criado", 201),
             ("gestor", "POST", "/communications/announcements", "Comunicado publicado", 201),
             ("admin", "PUT", f"/collaborators/{self.users['igor']}", "Colaborador atualizado", 200),
             ("gestor", "POST", "/benefits/assign", "Benefício atribuído a colaborador", 201),
             ("gestor", "DELETE", f"/benefits/catalog/{catalog}", "Benefício removido do catálogo", 409),
-            ("ana", "POST", "/absences/request", "Solicitação de ausência criada", 201),
+            ("ana", "POST", "/requests/request", "Solicitação criada", 201),
             ("bruno", "POST", f"/feedbacks/{feedback}/respond", "Criação", 201),
             ("gestor", "POST", "/workshops", "Workshop criado", 201),
             ("admin", "POST", "/departments", "Departamento criado", 201),
@@ -878,7 +888,7 @@ class Seeder:
         await self.documents()
         await self.videos()
         await self.bingo()
-        await self.absences()
+        await self.hr_requests()
         await self.benefits()
         await self.timeclock()
         await self.salary()

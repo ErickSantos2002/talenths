@@ -60,6 +60,10 @@ def test_rotulos_ancorados_nao_confundem_rotas_parecidas():
     assert _resolve_action("PUT", f"/onboarding/checklist-tasks/{VID}/complete") == "Tarefa de onboarding marcada ou desmarcada"
 
 
-def test_absence_edit_has_its_own_label():
-    assert _resolve_action("PUT", f"/absences/{VID}") == "Solicitação de ausência editada"
-    assert _resolve_action("PUT", f"/absences/{VID}/approve") == "Ausência aprovada"
+def test_request_actions_have_their_own_labels():
+    for prefix in ("requests", "absences"):
+        assert _resolve_action("POST", f"/{prefix}/request") == "Solicitação criada"
+        assert _resolve_action("PUT", f"/{prefix}/{VID}") == "Solicitação editada"
+        assert _resolve_action("PUT", f"/{prefix}/{VID}/approve") == "Solicitação aprovada"
+        assert _resolve_action("PUT", f"/{prefix}/{VID}/reject") == "Solicitação recusada"
+        assert _resolve_action("DELETE", f"/{prefix}/{VID}") == "Solicitação removida"
