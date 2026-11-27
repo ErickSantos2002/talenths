@@ -112,11 +112,23 @@ CATEGORY_LABELS = {"saida": "Saída", "pagar_hora": "Pagar hora"}
 
 
 @router.get("/requests")
-@router.get("/absences", deprecated=True)  # apelido antigo, até o HS.OS migrar
 async def report_requests(
     user_id: str = Depends(get_current_user_id),
     conn: asyncpg.Connection = Depends(get_db),
 ):
+    return await _requests_csv(user_id, conn, legacy=False)
+
+
+@router.get("/absences", deprecated=True)
+async def report_absences_legacy(
+    user_id: str = Depends(get_current_user_id),
+    conn: asyncpg.Connection = Depends(get_db),
+):
+    # Apelido até o HS.OS migrar: o CSV de antes da 040 — só saídas, sem a coluna Categoria.
+    return await _requests_csv(user_id, conn, legacy=True)
+
+
+async def _requests_csv(user_id: str, conn: asyncpg.Connection, legacy: bool):
     await _require_manager(user_id, conn)
     company_id = await _get_company_id(user_id, conn)
     rows = await conn.fetch(
@@ -129,7 +141,7 @@ async def report_requests(
            LEFT JOIN departments d ON d.id = p.department_id
            JOIN hr_request_types at ON at.id = ar.type_id
            LEFT JOIN profiles rp ON rp.user_id = ar.reviewed_by
-           WHERE ar.company_id = $1
+           WHERE ar.company_id = $1""" + (" AND at.category = 'saida'" if legacy else "") + """
            ORDER BY ar.created_at DESC""",
         company_id,
     )
@@ -157,6 +169,12 @@ async def report_requests(
         "Nome", "E-mail", "Departamento", "Tipo", "Categoria", "Início", "Fim", "Dias", "Status", "Motivo",
         "Nota do Gestor", "Solicitado em", "Decidido por", "Decidido em",
     ]
+    if legacy:
+        col = headers.index("Categoria")
+        headers.pop(col)
+        for row in data:
+            row.pop(col)
+        return _csv_response(data, headers, "ausencias.csv")
     return _csv_response(data, headers, "solicitacoes.csv")
 
 

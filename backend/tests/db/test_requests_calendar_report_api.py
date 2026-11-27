@@ -39,6 +39,14 @@ async def test_relatorio_tem_categoria(db, client_as):
     assert "Categoria" in header
     assert any("Pagar hora" in row for row in rows)
     assert any(";Saída;" in row or ",Saída," in row for row in rows)
-    legacy = await client_as(hr).get("/reports/absences")
-    assert legacy.status_code == 200
-    assert legacy.content == r.content
+
+
+async def test_relatorio_pelo_apelido_igual_ao_de_antes(db, client_as):
+    """O HS.OS ainda lê /reports/absences: só saídas, sem a coluna nova."""
+    _, hr, _ = await _approved_pair(db, client_as)
+    r = await client_as(hr).get("/reports/absences")
+    assert r.status_code == 200
+    assert "ausencias.csv" in r.headers["content-disposition"]
+    header, *rows = r.content.decode("utf-8-sig").splitlines()
+    assert "Categoria" not in header
+    assert rows and not any("Pagar hora" in row for row in rows)

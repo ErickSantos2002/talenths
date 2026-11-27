@@ -53,6 +53,17 @@ describe("screens", () => {
     expect(screenName("/videos/:id")).toBe(SCREENS.find((s) => s.path === "/videos/:id")!.name);
   });
 
+  it("old Ausências links (screens and guides) redirect to Solicitações", () => {
+    for (const [from, to] of [
+      ["/admin/ausencias", "/admin/solicitacoes"],
+      ["/minhas-ausencias", "/minhas-solicitacoes"],
+      ["/ajuda/administracao/ausencias", "/ajuda/administracao/solicitacoes"],
+      ["/ajuda/rh/minhas-ausencias", "/ajuda/rh/minhas-solicitacoes"],
+    ]) {
+      expect(appSource).toContain(`path="${from}" element={<Navigate to="${to}" replace />}`);
+    }
+  });
+
   it("every protected route in App.tsx is in SCREENS", () => {
     const routes = [...appSource.matchAll(/path="([^"]+)"\s+element=\{\s*<ProtectedRoute/g)].map((m) => m[1]);
     expect(routes.length).toBeGreaterThan(40);

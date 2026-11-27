@@ -347,6 +347,8 @@ const App = () => (
             {/* Ausências virou Solicitações (v1.24.0): links salvos continuam valendo. */}
             <Route path="/admin/ausencias" element={<Navigate to="/admin/solicitacoes" replace />} />
             <Route path="/minhas-ausencias" element={<Navigate to="/minhas-solicitacoes" replace />} />
+            <Route path="/ajuda/administracao/ausencias" element={<Navigate to="/ajuda/administracao/solicitacoes" replace />} />
+            <Route path="/ajuda/rh/minhas-ausencias" element={<Navigate to="/ajuda/rh/minhas-solicitacoes" replace />} />
             <Route
               path="/bingo"
               element={

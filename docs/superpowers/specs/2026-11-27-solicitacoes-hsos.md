@@ -13,7 +13,8 @@ dois passam pela aprovação do RH. O TalentHS não controla saldo de horas.
   relatório `/reports/requests`.
 - **`/absences/*` continua funcionando como apelido**, mas **só enxerga saídas**: tipos,
   listas e histórico filtram `category = 'saida'`, e criar pedido com o tipo Pagar hora
-  por ele dá 404. Ou seja, o Guardi de hoje segue igual e não vê pagar hora.
+  por ele dá 404; `/reports/absences` devolve o CSV de antes (só saídas, sem Categoria).
+  Ou seja, o Guardi de hoje segue igual e não vê pagar hora.
 - O tipo (`GET /requests/types`) ganhou `category`: `"saida"` | `"pagar_hora"`.
 - O pedido ganhou `type_category`, com os mesmos valores.
 - Pagar hora **exige** `start_time` e `end_time` (mesmo dia). Sem eles: 400
